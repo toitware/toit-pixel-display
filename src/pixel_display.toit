@@ -2,16 +2,37 @@
 // Use of this source code is governed by an MIT-style license that can be
 // found in the LICENSE file.
 
-import .bitmap
-import .texture show *
-import two_color
-import three_color
+import bitmap show *
+import .texture
+import .two_color as two_color
+import .three_color as three_color
 import font show Font
 import icons show Icon
-import four_gray
-import true_color
-import peripherals.rpc show *
-import rpc
+import .four_gray as four_gray
+import .true_color as true_color
+
+FLAG_2_COLOR ::=         0b1
+FLAG_3_COLOR ::=         0b10
+FLAG_4_COLOR ::=         0b100
+FLAG_GRAY_SCALE ::=      0b1000
+FLAG_TRUE_COLOR ::=      0b10000
+FLAG_PARTIAL_UPDATES ::= 0b100000
+
+abstract class AbstractDriver:
+  abstract width -> int
+  abstract height -> int
+  abstract flags -> int
+  start_partial_update speed/int -> none:
+  start_full_update speed/int -> none:
+  clean left/int top/int right/int bottom/int -> none:
+  commit left/int top/int right/int bottom/int -> none:
+  draw_two_color x/int y/int w/int h/int pixels/ByteArray:
+    throw "Not a two-color driver"
+  draw_two_bit x/int y/int w/int h/int plane0/ByteArray plane1/ByteArray:
+    throw "Not a two-bit driver"
+  draw_true_color x/int y/int w/int h/int red/ByteArray green/ByteArray blue/ByteArray:
+    throw "Not a true-color driver"
+  close -> none:
 
 class GraphicsContext:
   alignment/int ::= TEXT_TEXTURE_ALIGN_LEFT
@@ -51,29 +72,18 @@ abstract class PixelDisplay:
   flags_ := 0
   dirty_bytes_per_line_ := 0
   dirty_ := null  // A ByteArray
-  rpc_ := ?
+  driver_/AbstractDriver := ?
   speed_ := 50  // Speed-quality of current screen update.
   default_color_ := 0
   default_transform_ := Transform.identity
 
-  constructor.get_ name/string mode/string="default":
-    rpc_ = rpc.Rpc.instance
-    response := rpc_.invoke RPC_DISPLAY_OPEN [name, mode]
-    if response is not List: throw response
-    init_ response
-
-  constructor.no_rpc driver:
-    rpc_ = FakeRpc driver
-    init_ [null, driver.width, driver.height, driver.flags]
-
-  init_ response/List:
-    handle_ = response[0]
-    width_ = response[1]
-    height_ = response[2]
-    flags_ = response[3]
-    assert: width_ & 7 == 0
+  constructor .driver_:
+    width_ = driver_.width
+    height_ = driver_.height
+    flags_ = driver_.flags
+    if width_ & 7 != 0: throw "Width must be multiple of 8"
     height := round_up height_ 8
-    if flags_ & RPC_DISPLAY_FLAG_PARTIAL_UPDATES != 0:
+    if flags_ & FLAG_PARTIAL_UPDATES != 0:
       dirty_bytes_per_line_ = (width_ >> 6) + 1
       dirty_ = ByteArray dirty_bytes_per_line_ * (height >> 3)
 
@@ -249,7 +259,7 @@ abstract class PixelDisplay:
   */
   draw --speed/int=50 -> none:
     speed_ = speed
-    if speed < 10 or flags_ & RPC_DISPLAY_FLAG_PARTIAL_UPDATES == 0:
+    if speed < 10 or flags_ & FLAG_PARTIAL_UPDATES == 0:
       draw_entire_display_
       return
 
@@ -258,7 +268,7 @@ abstract class PixelDisplay:
 
     // TODO(kasper): Once we've started a partial update, we need to make sure we refresh,
     // because otherwise the lock in the display code in the kernel will not be released.
-    rpc_.invoke RPC_DISPLAY_START_PARTIAL_UPDATE [handle_, speed]
+    driver_.start_partial_update speed
     refreshed := false
     try:
       refresh_dimensions ::= [width_, 0, height_, 0]
@@ -305,33 +315,25 @@ abstract class PixelDisplay:
           else:
             redraw_rect_ dirty_left dirty_top dirty_right+8 dirty_bottom+8
 
-    // TODO(kasper): Removed this call. We always call refresh_ afterwards with
-    // better parameters using the refresh dimensions.
-    // rpc_.invoke RPC_DISPLAY_COMMIT [handle_, 0, 0, width_, height_]
-
   abstract max_canvas_height_ width/int -> int
 
   abstract redraw_rect_ left/int top/int right/int bottom/int -> none
 
   clean_rect_ left/int top/int right/int bottom/int -> none:
-    rpc_.invoke RPC_DISPLAY_CLEAN [handle_, left, top, right, bottom]
+    driver_.clean left top right bottom
 
   refresh_ left/int top/int right/int bottom/int -> none:
-    rpc_.invoke RPC_DISPLAY_COMMIT [handle_, left, top, right, bottom]
+    driver_.commit left top right bottom
 
   /// Frees up the display so other process groups can use it.  
   /// This happens automatically when the process group exits.
   close -> none:
-    rpc_.invoke RPC_DISPLAY_CLOSE [handle_]
+    driver_.close
 
 class TwoColorPixelDisplay extends PixelDisplay:
 
-  constructor name:
-    super.get_ name
-    background_ = two_color.InfiniteBackground two_color.WHITE
-
-  constructor.no_rpc driver:
-    super.no_rpc driver
+  constructor driver/AbstractDriver:
+    super driver
     background_ = two_color.InfiniteBackground two_color.WHITE
 
   default_draw_color_ -> int:
@@ -425,7 +427,7 @@ class TwoColorPixelDisplay extends PixelDisplay:
     return max 8 height
 
   draw_entire_display_:
-    rpc_.invoke RPC_DISPLAY_START_FULL_UPDATE [handle_, speed_]
+    driver_.start_full_update speed_
     w := width_
     step := max_canvas_height_ width_
     canvas := two_color.Canvas w (min step (round_up height_ 8))
@@ -433,22 +435,18 @@ class TwoColorPixelDisplay extends PixelDisplay:
     for y := 0; y < height_; y += step:
       background_.write 0 y canvas
       textures_.do: it.write 0 y canvas
-      rpc_.invoke RPC_DISPLAY_DRAW [handle_, 0, y, width_, min (y + step) height_, pixels]
-    rpc_.invoke RPC_DISPLAY_COMMIT [handle_, 0, 0, width_, height_]
+      driver_.draw_two_color 0 y width_ (min (y + step) height_) pixels
+    driver_.commit 0 0 width_ height_
 
   redraw_rect_ left/int top/int right/int bottom/int -> none:
     canvas := two_color.Canvas (right - left) (bottom - top)
     background_.write left top canvas
     textures_.do: it.write left top canvas
-    rpc_.invoke RPC_DISPLAY_DRAW [handle_, left, top, right, bottom, canvas.pixels_]
+    driver_.draw_two_color left top right bottom canvas.pixels_
 
 class FourGrayPixelDisplay extends TwoBitPixelDisplay_:
-  constructor name:
-    super name "four_gray"
-    background_ = four_gray.InfiniteBackground four_gray.WHITE
-
-  constructor.no_rpc driver:
-    super.no_rpc driver
+  constructor driver/AbstractDriver:
+    super driver
     background_ = four_gray.InfiniteBackground four_gray.WHITE
 
   background= color/int -> none:
@@ -517,12 +515,8 @@ class FourGrayPixelDisplay extends TwoBitPixelDisplay_:
     return texture
 
 class ThreeColorPixelDisplay extends TwoBitPixelDisplay_:
-  constructor name:
-    super name
-    background_ = three_color.InfiniteBackground three_color.WHITE
-
-  constructor.no_rpc driver:
-    super.no_rpc driver
+  constructor driver/AbstractDriver:
+    super driver
     background_ = three_color.InfiniteBackground three_color.WHITE
 
   background= color/int -> none:
@@ -582,11 +576,8 @@ class ThreeColorPixelDisplay extends TwoBitPixelDisplay_:
 abstract class TwoBitPixelDisplay_ extends PixelDisplay:
   background_ := three_color.InfiniteBackground three_color.WHITE
 
-  constructor name/string mode/string="default":
-    super.get_ name mode
-
-  constructor.no_rpc driver:
-    super.no_rpc driver
+  constructor driver/AbstractDriver:
+    super driver
 
   max_canvas_height_ width:
     height := 0
@@ -602,29 +593,25 @@ abstract class TwoBitPixelDisplay_ extends PixelDisplay:
     return max 8 height
 
   draw_entire_display_:
-    rpc_.invoke RPC_DISPLAY_START_FULL_UPDATE [handle_, speed_]
+    driver_.start_full_update speed_
     w := width_
     step := max_canvas_height_ width_
     canvas := three_color.Canvas w (min step (round_up height_ 8))
     List.chunk_up 0 height_ step: | y y_end |
       background_.write 0 y canvas
       textures_.do: it.write 0 y canvas
-      rpc_.invoke RPC_DISPLAY_DRAW [handle_, 0, y, width_, y_end, canvas.plane_0_, canvas.plane_1_]
-    rpc_.invoke RPC_DISPLAY_COMMIT [handle_, 0, 0, width_, height_]
+      driver_.draw_two_bit 0 y width_ y_end canvas.plane_0_ canvas.plane_1_
+    driver_.commit 0 0 width_ height_
 
   redraw_rect_ left/int top/int right/int bottom/int -> none:
     canvas := three_color.Canvas (right - left) (bottom - top)
     background_.write left top canvas
     textures_.do: it.write left top canvas
-    rpc_.invoke RPC_DISPLAY_DRAW [handle_, left, top, right, bottom, canvas.plane_0_, canvas.plane_1_]
+    driver_.draw_two_bit left top right bottom canvas.plane_0_ canvas.plane_1_
 
 class TrueColorPixelDisplay extends PixelDisplay:
-  constructor name:
-    super.get_ name
-    background_ = true_color.InfiniteBackground true_color.WHITE
-
-  constructor.no_rpc driver:
-    super.no_rpc driver
+  constructor driver/AbstractDriver:
+    super driver
     background_ = true_color.InfiniteBackground true_color.WHITE
 
   background= color/int -> none:
@@ -690,32 +677,17 @@ class TrueColorPixelDisplay extends PixelDisplay:
     return max 8 height
 
   draw_entire_display_:
-    rpc_.invoke RPC_DISPLAY_START_FULL_UPDATE [handle_, speed_]
+    driver_.start_full_update speed_
     w := width_
     canvas := true_color.Canvas w 8
     for y := 0; y < height_; y += 8:
       background_.write 0 y canvas
       textures_.do: it.write 0 y canvas
-      rpc_.invoke RPC_DISPLAY_DRAW [handle_, 0, y, width_, 8, canvas.red_, canvas.green_, canvas.blue_]
-    rpc_.invoke RPC_DISPLAY_COMMIT [handle_, 0, 0, width_, height_]
+      driver_.draw_true_color 0 y width_ 8 canvas.red_ canvas.green_ canvas.blue_
+    driver_.commit 0 0 width_ height_
 
   redraw_rect_ left/int top/int right/int bottom/int -> none:
     canvas := true_color.Canvas (right - left) (bottom - top)
     background_.write left top canvas
     textures_.do: it.write left top canvas
-    rpc_.invoke RPC_DISPLAY_DRAW [handle_, left, top, right, bottom, canvas.red_, canvas.green_, canvas.blue_]
-
-class FakeRpc:
-  display := ?
-
-  constructor .display:
-
-  invoke name/int args/List:
-    if name == RPC_DISPLAY_START_FULL_UPDATE:
-      display.start_full_update 50
-    else if name == RPC_DISPLAY_START_PARTIAL_UPDATE:
-      display.start_partial_update 50
-    else if name == RPC_DISPLAY_DRAW:
-      display.draw_2_color args[1] args[2] args[3] args[4] args[5]
-    else if name == RPC_DISPLAY_COMMIT:
-      display.refresh args[1] args[2] args[3] args[4]
+    driver_.draw_true_color left top right bottom canvas.red_ canvas.green_ canvas.blue_
