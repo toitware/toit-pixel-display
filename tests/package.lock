@@ -1,0 +1,5 @@
+prefixes:
+  pixel_display: ..
+packages:
+  ..:
+    path: ..

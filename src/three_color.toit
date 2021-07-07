@@ -7,7 +7,7 @@
 // A texture is an object that can draw itself onto a canvas.
 
 import font show Font
-import icons shot Icon
+import icons show Icon
 import .texture
 import .two_bit_texture
 
