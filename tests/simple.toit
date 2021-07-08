@@ -5,7 +5,7 @@
 import expect show *
 import font show Font
 import pixel_display show *
-import two_color
+import pixel_display.two_color
 
 class TwoColorDriver extends AbstractDriver:
   width ::= 128
