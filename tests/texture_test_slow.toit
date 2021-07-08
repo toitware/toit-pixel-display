@@ -7,13 +7,13 @@ import expect show *
 import bitmap show *
 import crypto.sha1 as crypto
 import font show *
-import histogram show *
-import texture show *
+//import histogram show *
+import pixel_display.texture show *
 
-import four_gray
-import three_color
-import true_color
-import two_color
+import pixel_display.four_gray
+import pixel_display.three_color
+import pixel_display.true_color
+import pixel_display.two_color
 
 THREE_COLOR ::= 0
 TWO_COLOR ::= 1
@@ -129,6 +129,7 @@ barcode_factory version code x y orientation:
       return true_color.BarCodeEan13 code x y transform
   unreachable
 
+/*
 histogram_factory version x y w h color orientation:
   orientation_to_transform x y orientation: | x y transform |
     texture := null
@@ -144,6 +145,7 @@ histogram_factory version x y w h color orientation:
       texture.add (random 0 100) - 20
     return texture
   unreachable
+*/
 
 canvas_factory version w h:
   if version == THREE_COLOR:
@@ -483,7 +485,7 @@ test_bounding_box:
         noisy_background.set_pixel x y  // Make pixel red (or black for two-color)
 
     100.repeat:
-      type := random 0 5
+      type := random 0 4  // TODO: 5 is histogram tests.
       texture := null
       x := random 0 WIDTH
       y := random 0 HEIGHT
@@ -524,11 +526,13 @@ test_bounding_box:
         x = texture.display_x
         y = texture.display_y
       else if type == 4:
+        /*
         texture = histogram_factory version x y w h color orientation
         w = texture.display_w
         h = texture.display_h
         x = texture.display_x
         y = texture.display_y
+        */
 
       canvas_x_offset := (random 0 16) << 3
       canvas_y_offset := (random 0 16) << 3

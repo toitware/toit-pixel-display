@@ -5,7 +5,7 @@
 import expect show *
 import font show Font
 import pixel_display show *
-import true_color show *
+import pixel_display.true_color show *
 
 class TestDriver extends AbstractDriver:
   buffer := ByteArray 3 * 64 * 128
