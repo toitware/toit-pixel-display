@@ -12,13 +12,17 @@ class TestDriver extends AbstractDriver:
 
   width ::= 128
   height ::= 64
-  flags ::= FLAG_TRUE_COLOR
-  draw_true_color x/int y/int w/int h/int r/ByteArray g/ByteArray b/ByteArray -> none:
-    h.repeat: | iy |
+  flags ::= FLAG_TRUE_COLOR | FLAG_PARTIAL_UPDATES
+  draw_true_color left/int top/int right/int bottom/int r/ByteArray g/ByteArray b/ByteArray -> none:
+    w := right - left
+    (bottom - top).repeat: | iy |
       w.repeat: | ix |
-        buffer[0 + 3 * (x + ix + (y + iy) * width)] = r[ix + iy * w]
-        buffer[1 + 3 * (x + ix + (y + iy) * width)] = g[ix + iy * w]
-        buffer[2 + 3 * (x + ix + (y + iy) * width)] = b[ix + iy * w]
+        buffer[0 + 3 * (left + ix + (top + iy) * width)] =
+          r[ix + iy * w]
+        buffer[1 + 3 * (left + ix + (top + iy) * width)] =
+          g[ix + iy * w]
+        buffer[2 + 3 * (left + ix + (top + iy) * width)] =
+          b[ix + iy * w]
 
   red_at x y:
     return buffer[0 + 3 * (x + y * width)]
@@ -41,6 +45,7 @@ main:
   display.filled_rectangle ctx 10 20 30 40
   display.text ctx 50 20 "Testing"
   display.text ctx 50 40 "the display"
+  display.draw
   display.text ctx 50 60 "for the win"
 
   display.draw
