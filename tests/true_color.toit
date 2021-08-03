@@ -17,12 +17,9 @@ class TestDriver extends AbstractDriver:
     w := right - left
     (bottom - top).repeat: | iy |
       w.repeat: | ix |
-        buffer[0 + 3 * (left + ix + (top + iy) * width)] =
-          r[ix + iy * w]
-        buffer[1 + 3 * (left + ix + (top + iy) * width)] =
-          g[ix + iy * w]
-        buffer[2 + 3 * (left + ix + (top + iy) * width)] =
-          b[ix + iy * w]
+        buffer[0 + 3 * (left + ix + (top + iy) * width)] = r[ix + iy * w]
+        buffer[1 + 3 * (left + ix + (top + iy) * width)] = g[ix + iy * w]
+        buffer[2 + 3 * (left + ix + (top + iy) * width)] = b[ix + iy * w]
 
   red_at x y:
     return buffer[0 + 3 * (x + y * width)]
