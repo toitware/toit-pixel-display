@@ -71,7 +71,6 @@ abstract class PixelDisplay:
   height_ := 0
   flags_ := 0
 
-
   // Need-to-redraw is tracked as a bit array of dirty bits, arranged in
   // SSD1306 layout so we can use bitmap_rectangle to invalidate areas.
   // One bit in the dirty map covers an area of 8x8 pixels of the display.
