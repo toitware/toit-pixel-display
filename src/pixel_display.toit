@@ -70,8 +70,15 @@ abstract class PixelDisplay:
   width_ := 0
   height_ := 0
   flags_ := 0
+
+  // Need-to-redraw is tracked as a bit array of dirty bits, arranged in
+  // SSD1306 layout so we can use bitmap_rectangle to invalidate areas.
+  // One bit in the dirty map covers an area of 8x8 pixels of the display.
+  CLEAN ::= 1
+  DIRTY ::= 0
   dirty_bytes_per_line_ := 0
-  dirty_ := null  // A ByteArray
+  dirty_ := null
+
   driver_/AbstractDriver := ?
   speed_ := 50  // Speed-quality of current screen update.
   default_color_ := 0
@@ -84,8 +91,9 @@ abstract class PixelDisplay:
     if width_ & 7 != 0: throw "Width must be multiple of 8"
     height := round_up height_ 8
     if flags_ & FLAG_PARTIAL_UPDATES != 0:
-      dirty_bytes_per_line_ = (width_ >> 6) + 1
-      dirty_ = ByteArray dirty_bytes_per_line_ * (height >> 3)
+      dirty_bytes_per_line_ = (width_ >> 3) + 1
+      dirty_strips := (height >> 6) + 1  // 8-tall strips of dirty bits.
+      dirty_ = ByteArray dirty_bytes_per_line_ * dirty_strips  // Initialized to DIRTY, which is 0.
 
   abstract default_draw_color_ -> int
   abstract default_background_color_ -> int
@@ -208,18 +216,6 @@ abstract class PixelDisplay:
 
   invalidate x y w h:
     if not dirty_: return  // Some devices don't use the dirty array to track changes.
-    if x < 0:
-      w += x
-      x = 0
-    if x + w > width_:
-      w = width_ - x
-    if w <= 0: return
-    if y < 0:
-      h += y
-      y = 0
-    if y + h > height_:
-      h = height_ - y
-    if h <= 0: return
 
     // Round up the invalidated area.
     rx := x & 7
@@ -230,22 +226,20 @@ abstract class PixelDisplay:
     h = (h + ry + 7) >> 3
 
     // x, y, w, h now measured in 8x8 blocks.
-    for i := y; i < y + h; i++:
-      idx := i * dirty_bytes_per_line_
-      for j := x; j < x + w; j++:
-        if (idx + (j >> 3)) >= 99:
-        dirty_[idx + (j >> 3)] &= ~(1 << (j & 7))
+    bitmap_rectangle x y DIRTY w h dirty_ dirty_bytes_per_line_
 
   line_is_clean_ y:
-    idx := (y >> 3) * dirty_bytes_per_line_
+    idx := (y >> 6) * dirty_bytes_per_line_
+    mask := 1 << ((y >> 3) & 0b111)
     dirty_bytes_per_line_.repeat: | byte |
-      if dirty_[idx + byte] != 0xff: return false
+      if dirty_[idx + byte] & mask == DIRTY: return false  // Only works because DIRTY == 0
     return true
 
   is_dirty_ x y:
-    idx := (y >> 3) * dirty_bytes_per_line_
-    byte := x >> 6
-    return dirty_[idx + byte] & (1 << ((x >> 3) & 7)) == 0
+    idx := (y >> 6) * dirty_bytes_per_line_
+    mask := 1 << ((y >> 3) & 0b111)
+    byte := x >> 3
+    return dirty_[idx + byte] & mask == DIRTY  // Only works because DIRTY == 0
 
   /// For displays that don't support any form of partial update.
   abstract draw_entire_display_
@@ -264,7 +258,7 @@ abstract class PixelDisplay:
       return
 
     // Send data for the whole screen, even if only part of it changed.
-    if speed < 50: bitmap_zap dirty_ 0
+    if speed < 50: bitmap_zap dirty_ DIRTY
 
     // TODO(kasper): Once we've started a partial update, we need to make sure we refresh,
     // because otherwise the lock in the display code in the kernel will not be released.
@@ -278,7 +272,7 @@ abstract class PixelDisplay:
     finally:
       if not refreshed: refresh_ 0 0 0 0
 
-    bitmap_zap dirty_ 1
+    bitmap_zap dirty_ CLEAN
 
   // Clean determines if we should clean or draw the dirty area.
   update_frame_buffer clean/bool refresh_dimensions:
