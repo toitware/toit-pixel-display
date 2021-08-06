@@ -287,6 +287,7 @@ abstract class PixelDisplay:
       while line_is_clean_ y:
         y += 8
         if y >= height_: break
+      if y >= height_: break
       for x := 0; x < width_; x += width:
         left := x
         right := min x + width width_
@@ -298,10 +299,10 @@ abstract class PixelDisplay:
         mask := 0
         for iy := top; iy < bottom; iy += 8:
           mask |= 1 << ((iy >> 3) & 0b111)
-        idx := (top >> 6) * dirty_bytes_per_line_ + left
+        idx := (top >> 6) * dirty_bytes_per_line_ + (left >> 3)
         end_idx := ((round_up bottom 64) >> 6) * dirty_bytes_per_line_
         dirty_accumulator_[0] = CLEAN_
-        blit dirty_[idx..end_idx] dirty_accumulator_ (right - left) >> 3 --destination_pixel_stride=0 --destination_line_stride=0 --operation=OR
+        blit dirty_[idx..end_idx] dirty_accumulator_ (right - left) >> 3 --source_line_stride=dirty_bytes_per_line_ --destination_pixel_stride=0 --destination_line_stride=0 --operation=OR
         if dirty_accumulator_[0] & mask == CLEAN_:
           continue
 

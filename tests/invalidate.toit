@@ -10,9 +10,11 @@ import pixel_display.true_color show *
 // All redraws are rounded to 8 pixels boundaries.
 
 class AreaRememberingDriver extends AbstractDriver:
-  width ::= 128
-  height ::= 64
+  width/int
+  height/int
   flags ::= FLAG_TRUE_COLOR | FLAG_PARTIAL_UPDATES
+
+  constructor .width .height:
 
   static NOT_VALID_PLUS_  ::=  1000000
   static NOT_VALID_MINUS_ ::= -1000000
@@ -35,7 +37,11 @@ class AreaRememberingDriver extends AbstractDriver:
     last_bottom = max bottom last_bottom
 
 main:
-  driver := AreaRememberingDriver
+  small_test
+  large_test
+
+small_test:
+  driver := AreaRememberingDriver 128 64
   display := TrueColorPixelDisplay driver
   display.background = get_rgb 0 1 2
 
@@ -86,3 +92,38 @@ main:
   expect_equals 8 driver.last_top
   expect_equals 16 driver.last_right
   expect_equals 32 driver.last_bottom
+
+large_test:
+  driver := AreaRememberingDriver 1280 640
+  display := TrueColorPixelDisplay driver
+  display.background = get_rgb 0 1 2
+
+  display.draw
+
+  expect_equals 0 driver.last_left
+  expect_equals 0 driver.last_top
+  expect_equals driver.width driver.last_right
+  expect_equals driver.height driver.last_bottom
+
+  ctx := display.context --landscape --color=(get_rgb 255 120 0)
+
+  set_random_seed "FORTY TWO"
+  100.repeat:
+    left := random driver.width
+    top := random driver.height
+    width := 1 + (random 200)
+    height := 1 + (random 200)
+    right := left + width
+    bottom := top + height
+    display.filled_rectangle ctx left top width height
+
+    driver.reset
+    display.draw
+
+    right = min right driver.width
+    bottom = min bottom driver.height
+
+    expect_equals (round_down left 8) driver.last_left
+    expect_equals (round_down top 8) driver.last_top
+    expect_equals (round_up right 8) driver.last_right
+    expect_equals (round_up bottom 8) driver.last_bottom
