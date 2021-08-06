@@ -38,7 +38,8 @@ class AreaRememberingDriver extends AbstractDriver:
 
 main:
   small_test
-  large_test
+  large_test 56 500
+  large_test 1280 640
 
 small_test:
   driver := AreaRememberingDriver 128 64
@@ -93,8 +94,8 @@ small_test:
   expect_equals 16 driver.last_right
   expect_equals 32 driver.last_bottom
 
-large_test:
-  driver := AreaRememberingDriver 1280 640
+large_test w h:
+  driver := AreaRememberingDriver w h
   display := TrueColorPixelDisplay driver
   display.background = get_rgb 0 1 2
 
@@ -103,9 +104,9 @@ large_test:
   expect_equals 0 driver.last_left
   expect_equals 0 driver.last_top
   expect_equals driver.width driver.last_right
-  expect_equals driver.height driver.last_bottom
+  expect_equals (round_up driver.height 8) driver.last_bottom
 
-  ctx := display.context --landscape --color=(get_rgb 255 120 0)
+  ctx := display.context --color=(get_rgb 255 120 0)
 
   set_random_seed "FORTY TWO"
   100.repeat:
@@ -121,7 +122,7 @@ large_test:
     display.draw
 
     right = min right driver.width
-    bottom = min bottom driver.height
+    bottom = min bottom (round_up driver.height 8)
 
     expect_equals (round_down left 8) driver.last_left
     expect_equals (round_down top 8) driver.last_top
