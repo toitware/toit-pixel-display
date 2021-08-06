@@ -47,10 +47,12 @@ main:
 
   display.draw
 
-  driver.height.repeat: | y |
+  for y := 0; y < driver.height; y += 2:
     line := ""
     driver.width.repeat: | x |
-      line += "$((driver.red_at x y) < 128 ? " " : "*")"
+      top_half := (driver.red_at x y) < 128
+      bottom_half := (driver.red_at x y + 1) < 128
+      line += "$(top_half ? (bottom_half ? " " : "▄") : (bottom_half ? "▀" : "█"))"
     print line
       
   50.repeat: | x |
