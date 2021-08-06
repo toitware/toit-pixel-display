@@ -278,7 +278,7 @@ abstract class PixelDisplay:
 
   // Clean determines if we should clean or draw the dirty area.
   update_frame_buffer clean/bool refresh_dimensions:
-    width := min width_ 128
+    width := min width_ 120
     max_height := round_down (max_canvas_height_ width) 8
 
     // Outer loop - the coarse rectangles that are the max size of
