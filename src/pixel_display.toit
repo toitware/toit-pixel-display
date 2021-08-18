@@ -74,10 +74,12 @@ abstract class PixelDisplay:
   // Need-to-redraw is tracked as a bit array of dirty bits, arranged in
   // SSD1306 layout so we can use bitmap_rectangle to invalidate areas.
   // One bit in the dirty map covers an area of 8x8 pixels of the display.
-  CLEAN ::= 1
-  DIRTY ::= 0
+  static CLEAN_ ::= 0
+  static DIRTY_ ::= 1
   dirty_bytes_per_line_ := 0
   dirty_ := null
+
+  dirty_accumulator_ := ByteArray 1
 
   driver_/AbstractDriver := ?
   speed_ := 50  // Speed-quality of current screen update.
@@ -93,7 +95,7 @@ abstract class PixelDisplay:
     if flags_ & FLAG_PARTIAL_UPDATES != 0:
       dirty_bytes_per_line_ = (width_ >> 3) + 1
       dirty_strips := (height >> 6) + 1  // 8-tall strips of dirty bits.
-      dirty_ = ByteArray dirty_bytes_per_line_ * dirty_strips  // Initialized to DIRTY, which is 0.
+      dirty_ = ByteArray dirty_bytes_per_line_ * dirty_strips: 0xff  // Initialized to DIRTY_, which is 1.
 
   abstract default_draw_color_ -> int
   abstract default_background_color_ -> int
@@ -226,20 +228,20 @@ abstract class PixelDisplay:
     h = (h + ry + 7) >> 3
 
     // x, y, w, h now measured in 8x8 blocks.
-    bitmap_rectangle x y DIRTY w h dirty_ dirty_bytes_per_line_
+    bitmap_rectangle x y DIRTY_ w h dirty_ dirty_bytes_per_line_
 
   line_is_clean_ y:
     idx := (y >> 6) * dirty_bytes_per_line_
     mask := 1 << ((y >> 3) & 0b111)
-    dirty_bytes_per_line_.repeat: | byte |
-      if dirty_[idx + byte] & mask == DIRTY: return false  // Only works because DIRTY == 0
-    return true
+    dirty_accumulator_[0] = CLEAN_
+    blit dirty_[idx..idx+dirty_bytes_per_line_] dirty_accumulator_ dirty_bytes_per_line_ --destination_pixel_stride=0 --operation=OR
+    return dirty_accumulator_[0] & mask == CLEAN_  // Only works because CLEAN_ == 0
 
   is_dirty_ x y:
     idx := (y >> 6) * dirty_bytes_per_line_
     mask := 1 << ((y >> 3) & 0b111)
     byte := x >> 3
-    return dirty_[idx + byte] & mask == DIRTY  // Only works because DIRTY == 0
+    return dirty_[idx + byte] & mask != CLEAN_  // Only works because CLEAN_ == 0
 
   /// For displays that don't support any form of partial update.
   abstract draw_entire_display_
@@ -258,7 +260,7 @@ abstract class PixelDisplay:
       return
 
     // Send data for the whole screen, even if only part of it changed.
-    if speed < 50: bitmap_zap dirty_ DIRTY
+    if speed < 50: bitmap_zap dirty_ DIRTY_
 
     // TODO(kasper): Once we've started a partial update, we need to make sure we refresh,
     // because otherwise the lock in the display code in the kernel will not be released.
@@ -272,27 +274,48 @@ abstract class PixelDisplay:
     finally:
       if not refreshed: refresh_ 0 0 0 0
 
-    bitmap_zap dirty_ CLEAN
+    bitmap_zap dirty_ CLEAN_
 
   // Clean determines if we should clean or draw the dirty area.
   update_frame_buffer clean/bool refresh_dimensions:
-    width := min width_ 128
+    width := min width_ 120
     max_height := round_down (max_canvas_height_ width) 8
 
+    // Outer loop - the coarse rectangles that are the max size of
+    // update patches.
     for y:= 0; y < height_; y += max_height:
       while line_is_clean_ y:
         y += 8
         if y >= height_: break
+      if y >= height_: break
       for x := 0; x < width_; x += width:
         left := x
         right := min x + width width_
         top := y
         bottom := min y + max_height height_
+
+        // Quick check if the whole rectangle is clean.  This is a little
+        // imprecise because the same mask is used for all lines.
+        mask := 0
+        for iy := top; iy < bottom; iy += 8:
+          mask |= 1 << ((iy >> 3) & 0b111)
+        idx := (top >> 6) * dirty_bytes_per_line_ + (left >> 3)
+        end_idx := ((round_up bottom 64) >> 6) * dirty_bytes_per_line_
+        dirty_accumulator_[0] = CLEAN_
+        blit dirty_[idx..end_idx] dirty_accumulator_ (right - left) >> 3 --source_line_stride=dirty_bytes_per_line_ --destination_pixel_stride=0 --destination_line_stride=0 --operation=OR
+        if dirty_accumulator_[0] & mask == CLEAN_:
+          continue
+
+        // Inner loop.  For each coarse rectangle, find the smallest rectangle
+        // that covers all the dirty bits.
         dirty_left := right
         dirty_right := left
         dirty_top := bottom
         dirty_bottom := top
         for iy := top; iy < bottom; iy += 8:
+          line_mask := 1 << ((iy >> 3) & 0b111)
+          if dirty_accumulator_[0] & line_mask == CLEAN_:
+            continue
           for ix := left; ix < right; ix += 8:
             if is_dirty_ ix iy:
               dirty_left = min dirty_left ix
