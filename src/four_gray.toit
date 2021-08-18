@@ -139,6 +139,57 @@ class SimpleWindow extends TwoBitSimpleWindow_:
   constructor x/int y/int w/int h/int transform/Transform border_width/int border_color/int background_color/int:
     super x y w h transform border_width border_color background_color
 
-class RoundedCornerWindow extends TwoBitRoundedCornerWindow_:
-  constructor x/int y/int w/int h/int transform/Transform corner_radius/int background_color/int:
-    super x y w h transform corner_radius background_color
+class RoundedCornerWindow extends RoundedCornerWindow_:
+  background_color := ?
+
+  constructor x y w h transform corner_radius .background_color:
+    super x y w h transform corner_radius
+
+  make_alpha_map_ canvas padding:
+    return ByteArray (canvas.width + padding) * (canvas.height + padding)
+
+  make_opaque_ x y w h map map_width --frame/bool:
+    assert: not frame
+    bytemap_rectangle x y 0xff w h map map_width
+
+  set_opacity_ x y opacity map map_width --frame/bool:
+    assert: not frame
+    if 0 <= x < map_width:
+      y_offset := y * map_width
+      if 0 <= y_offset < map.size:
+        map[x + y_offset] = opacity
+
+  draw_background win_x win_y canvas:
+    bytemap_zap canvas.pixels_ background_color
+
+  draw_frame win_x win_y canvas:
+    throw "UNREACHABLE"
+
+class DropShadowWindow extends DropShadowWindow_:
+  background_color := ?
+  max_shadow_opacity_ := ?
+
+  constructor x y w h transform .background_color --corner_radius=5 --blur_radius=5 --drop_distance_x=10 --drop_distance_y=10 --shadow_opacity_percent=25:
+    max_shadow_opacity_ = (shadow_opacity_percent * 2.5500001).to_int
+    super x y w h transform corner_radius blur_radius drop_distance_x drop_distance_y
+
+  make_alpha_map_ canvas padding:
+    return ByteArray (canvas.width + padding) * (canvas.height + padding)
+
+  make_opaque_ x y w h map map_width --frame/bool:
+    bytemap_rectangle x y (frame ? max_shadow_opacity_ : 255) w h map map_width
+
+  set_opacity_ x y opacity map map_width --frame/bool:
+    if 0 <= x < map_width:
+      y_offset := y * map_width
+      if 0 <= y_offset < map.size:
+        if frame:
+          map[x + y_offset] = (opacity * max_shadow_opacity_) >> 8
+        else:
+          map[x + y_offset] = opacity
+
+  draw_background win_x win_y canvas:
+    bytemap_zap canvas.pixels_ background_color
+
+  draw_frame win_x win_y canvas:
+    bytemap_zap canvas.pixels_ 0

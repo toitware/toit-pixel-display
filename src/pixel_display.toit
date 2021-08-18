@@ -10,6 +10,7 @@ import font show Font
 import icons show Icon
 import .four_gray as four_gray
 import .true_color as true_color
+import .gray_scale as gray_scale
 
 FLAG_2_COLOR ::=         0b1
 FLAG_3_COLOR ::=         0b10
@@ -30,6 +31,8 @@ abstract class AbstractDriver:
     throw "Not a two-color driver"
   draw_two_bit x/int y/int w/int h/int plane0/ByteArray plane1/ByteArray:
     throw "Not a two-bit driver"
+  draw_gray_scale x/int y/int w/int h/int pixels/ByteArray:
+    throw "Not a gray-scale driver"
   draw_true_color x/int y/int w/int h/int red/ByteArray green/ByteArray blue/ByteArray:
     throw "Not a true-color driver"
   close -> none:
@@ -625,6 +628,88 @@ abstract class TwoBitPixelDisplay_ extends PixelDisplay:
     background_.write left top canvas
     textures_.do: it.write left top canvas
     driver_.draw_two_bit left top right bottom canvas.plane_0_ canvas.plane_1_
+
+class GrayScalePixelDisplay extends PixelDisplay:
+  constructor driver/AbstractDriver:
+    super driver
+    background_ = gray_scale.InfiniteBackground gray_scale.WHITE
+
+  background= color/int -> none:
+    if not background_ or background_.color != color:
+      background_ = gray_scale.InfiniteBackground color
+      invalidate 0 0 width_ height_
+
+  text context/GraphicsContext x/int y/int text/string -> gray_scale.TextTexture:
+    if context.font == null: throw "NO_FONT_GIVEN"
+    texture := gray_scale.TextTexture x y context.transform context.alignment text context.font context.color
+    add texture
+    return texture
+
+  icon context/GraphicsContext x/int y/int icon/Icon -> gray_scale.IconTexture:
+    texture := gray_scale.IconTexture x y context.transform context.alignment icon icon.font_ context.color
+    add texture
+    return texture
+
+  filled_rectangle context/GraphicsContext x/int y/int width/int height/int -> gray_scale.FilledRectangle:
+    texture := gray_scale.FilledRectangle context.color x y width height context.transform
+    add texture
+    return texture
+
+  /// A line from x1,y1 to x2,y2.  The line must be horizontal or vertical.
+  line context/GraphicsContext x1/int y1/int x2/int y2/int -> gray_scale.FilledRectangle:
+    texture := gray_scale.FilledRectangle.line context.color x1 y1 x2 y2 context.transform
+    add texture
+    return texture
+
+  /**
+  A texture that contains an uncompressed 2-color image.  Initially all
+    pixels are transparent, but pixels can be given the color from the context
+    with set_pixel.
+  */
+  bitmap context/GraphicsContext x/int y/int width/int height/int -> gray_scale.BitmapTexture:
+    texture := gray_scale.BitmapTexture x y width height context.transform context.color
+    add texture
+    return texture
+
+  /**
+  A texture that contains an uncompressed 2-color image.  Initially all
+    pixels have the background color from the context.  Pixels can be set to
+    the context color with set_pixel, or set to the context background color
+    with clear_pixel.
+  */
+  opaque_bitmap context/GraphicsContext x/int y/int width/int height/int -> gray_scale.OpaqueBitmapTexture:
+    texture := gray_scale.OpaqueBitmapTexture x y width height context.transform context.color context.background
+    add texture
+    return texture
+
+  default_draw_color_ -> int:
+    return gray_scale.BLACK
+
+  default_background_color_ -> int:
+    return gray_scale.WHITE
+
+  max_canvas_height_ width:
+    height := 0
+    // Keep each color component under 2k so you can fit two on a page.
+    height = round_down (2000 / width) 8
+    // We can't work well with canvases that are less than 8 pixels tall.
+    return max 8 height
+
+  draw_entire_display_:
+    driver_.start_full_update speed_
+    w := width_
+    canvas := gray_scale.Canvas w 8
+    for y := 0; y < height_; y += 8:
+      background_.write 0 y canvas
+      textures_.do: it.write 0 y canvas
+      driver_.draw_gray_scale 0 y width_ 8 canvas.pixels_
+    driver_.commit 0 0 width_ height_
+
+  redraw_rect_ left/int top/int right/int bottom/int -> none:
+    canvas := gray_scale.Canvas (right - left) (bottom - top)
+    background_.write left top canvas
+    textures_.do: it.write left top canvas
+    driver_.draw_gray_scale left top right bottom canvas.pixels_
 
 class TrueColorPixelDisplay extends PixelDisplay:
   constructor driver/AbstractDriver:
