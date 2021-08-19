@@ -31,6 +31,12 @@ class TrueColorDriver extends AbstractDriver:
   flags ::= FLAG_TRUE_COLOR
   draw_true_color x/int y/int w/int h/int r/ByteArray g/ByteArray b/ByteArray -> none:
 
+class GrayScaleDriver extends AbstractDriver:
+  width ::= 128
+  height ::= 64
+  flags ::= FLAG_GRAY_SCALE
+  draw_gray_scale x/int y/int w/int h/int pixels/ByteArray -> none:
+
 main:
   driver2 := TwoColorDriver
   display2 := TwoColorPixelDisplay driver2
@@ -44,9 +50,12 @@ main:
   driver_true := TrueColorDriver
   display_true := TrueColorPixelDisplay driver_true
 
+  driver_gray := GrayScaleDriver
+  display_gray := GrayScalePixelDisplay driver_gray
+
   sans10 := Font.get "sans10"
 
-  [display2, display3, display4, display_true].do: | display |
+  [display2, display3, display4, display_true, display_gray].do: | display |
     ctx := display.context --landscape --font=sans10
     display.filled_rectangle ctx 10 20 30 40
     display.text ctx 50 20 "Testing"

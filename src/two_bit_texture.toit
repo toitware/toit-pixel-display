@@ -50,7 +50,7 @@ class TwoBitCanvas_:
     return bit0 + (bit1 << 1)
 
   /**
-  Creates an blank texture with the same dimensions as this one.
+  Creates a blank texture with the same dimensions as this one.
   */
   create_similar:
     return TwoBitCanvas_ width height
@@ -105,8 +105,10 @@ class TwoBitTextTexture_ extends TextTexture_:
     bitmap_draw_text bx by color_&1        orientation string_ font_ canvas.plane_0_ canvas.width
     bitmap_draw_text bx by (color_&2) >> 1 orientation string_ font_ canvas.plane_1_ canvas.width
 
-// A texture that contains an uncompressed 2-color image.  Initially all pixels
-// are transparent, but pixels can be given the color with $set_pixel.
+/**
+A texture that contains an uncompressed 2-color image.  Initially all pixels
+  are transparent, but pixels can be given the color with $set_pixel.
+*/
 class TwoBitBitmapTexture_ extends BitmapTexture_:
   color_ := 0
 
@@ -117,9 +119,13 @@ class TwoBitBitmapTexture_ extends BitmapTexture_:
     bitmap_draw_bitmap bx by (color_ & 1) orientation bytes_ 0 w canvas.plane_0_ canvas.width false
     bitmap_draw_bitmap bx by ((color_ & 2) >> 1) orientation bytes_ 0 w canvas.plane_1_ canvas.width false
 
-// A two color bitmap texture.  Initially all pixels have the background color.
-// Use set_pixel to paint with the foreground, and clear_pixel to paint with
-// the background.
+/**
+A two color bitmap texture where foreground and background pixels in the
+  texture are both drawn.
+Initially all pixels have the background color.
+Use $set_pixel to paint with the foreground, and $clear_pixel to paint with
+  the background.
+*/
 class TwoBitOpaqueBitmapTexture_ extends TwoBitBitmapTexture_:
   background_color_ := 0
 
@@ -154,14 +160,14 @@ class TwoBitBarCodeEan13_ extends BarCodeEan13_:
     bitmap_rectangle x y (plane_0_ & 1) width height canvas.plane_0_ canvas.width
     bitmap_rectangle x y ((plane_0_ & 2) >> 1) width height canvas.plane_1_ canvas.width
 
+/**
+A rectangular window with a fixed width colored border.
+The border is subtracted from the visible area inside the window.
+*/
 class TwoBitSimpleWindow_ extends SimpleWindow_:
   background_color := ?
   border_color := ?
 
-  /**
-   * A rectangular window with a fixed width colored border.  The border is
-   * subtracted from the visible area inside the window.
-   */
   constructor x y w h transform border_width .border_color .background_color:
     super x y w h transform border_width
 

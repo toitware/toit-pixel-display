@@ -762,10 +762,10 @@ abstract class WindowTexture_ extends ResizableTexture:
   Returns a canvas that is an alpha map for the given area that describes where
     the wall around this window shines through.  This defines the edges and
     shadows of a window frame.  For 2-color and 3-color textures this is a
-    bitmap with 0 for transparent and 1 for opaque.  For true-color textures it
-    is a bytemap with 0 for transparent and 0xff for opaque.  As a special case
-    it may return a single-entry byte array, which means all pixels have the same
-    transparency.
+    bitmap with 0 for transparent and 1 for opaque.  For true-color and
+    gray-scale textures it is a bytemap with 0 for transparent and 0xff for
+    opaque.  As a special case it may return a single-entry byte array, which
+    means all pixels have the same transparency.
   */
   abstract frame_map win_x/int win_y/int canvas -> ByteArray
 
@@ -773,10 +773,11 @@ abstract class WindowTexture_ extends ResizableTexture:
   Returns a canvas that is an alpha map for the given area that describes where
     the painting is visible.  This defines the edges of the content of this
     window.  For 2-color and 3-color textures this is a bitmap with 0 for
-    transparent and 1 for opaque.  For true-color textures it is a bytemap with
-    0 for transparent and 0xff for opaque.  As a special case it may return a
-    single-entry byte array, which means all pixels have the same transparency.
-   */
+    transparent and 1 for opaque.  For true-color and gray-scale textures it is
+    a bytemap with 0 for transparent and 0xff for opaque.  As a special case it
+    may return a single-entry byte array, which means all pixels have the same
+    transparency.
+  */
   abstract painting_map win_x/int win_y/int canvas -> ByteArray
 
   /**

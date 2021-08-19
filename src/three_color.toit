@@ -36,7 +36,7 @@ class FilledRectangle extends TwoBitFilledRectangle_:
     assert: color != 3   // Invalid color.
     super color x y w h transform
 
-  /// A line from x1,y1 to x2,y2.  The line must be horizontal or vertical.
+  /// A line from $x1,$y1 to $x2,$y2.  The line must be horizontal or vertical.
   constructor.line color x1/int y1/int x2/int y2/int transform/Transform:
     return FilledRectangle_.line_ x1 y1 x2 y2: | x y w h |
       FilledRectangle color x y w h transform
@@ -64,8 +64,10 @@ class IconTexture extends TextTexture:
     text = new_icon.stringify
     font = new_icon.font_
 
-// A texture that contains an uncompressed 2-color image.  Initially all pixels
-// are transparent, but pixels can be given the color with $set_pixel.
+/**
+A texture that contains an uncompressed 2-color image.  Initially all pixels
+  are transparent, but pixels can be given the color with $set_pixel.
+*/
 class BitmapTexture extends TwoBitBitmapTexture_:
   constructor x/int y/int w/int h/int transform/Transform color/int:
     assert: color != 3   // Invalid color.
@@ -83,11 +85,11 @@ class BarCodeEan13 extends TwoBitBarCodeEan13_:
   constructor code/string x/int y/int transform/Transform:
     super code x y transform BLACK WHITE
 
+/**
+A rectangular window with a fixed width colored border.
+The border is subtracted from the visible area inside the window.
+*/
 class SimpleWindow extends TwoBitSimpleWindow_:
-  /**
-   * A rectangular window with a fixed width colored border.  The border is
-   * subtracted from the visible area inside the window.
-   */
   constructor x y w h transform border_width border_color background_color:
     super x y w h transform border_width border_color background_color
 
