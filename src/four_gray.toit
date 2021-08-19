@@ -62,16 +62,22 @@ class IconTexture extends TwoBitTextTexture_:
     text = new_icon.stringify
     font = new_icon.font_
 
-/// A texture that contains an uncompressed 2-color image.
-/// Initially all pixels are transparent, but pixels can be given the color
-///   with $set_pixel.
+/**
+A texture that contains an uncompressed 2-color image.
+Initially all pixels are transparent, but pixels can be given the color
+  with $set_pixel.
+*/
 class BitmapTexture extends TwoBitBitmapTexture_:
   constructor x/int y/int w/int h/int transform/Transform color/int:
     super x y w h transform color
 
-/// A two color bitmap texture.  Initially all pixels have the background color.
-/// Use $set_pixel to paint with the foreground, and $clear_pixel to paint with
-///   the background.
+/**
+A two color bitmap texture where foreground and background pixels in the
+  texture are both drawn.
+Initially all pixels have the background color.
+Use $set_pixel to paint with the foreground, and $clear_pixel to paint with
+  the background.
+*/
 class OpaqueBitmapTexture extends TwoBitOpaqueBitmapTexture_:
 
   constructor x/int y/int w/int h/int transform/Transform foreground_color/int background_color:
@@ -131,11 +137,11 @@ class BarCodeEan13 extends TwoBitBarCodeEan13_:
   constructor code/string x/int y/int transform/Transform:
     super code x y transform BLACK WHITE
 
+/**
+A rectangular window with a fixed width colored border.
+The border is subtracted from the visible area inside the window.
+*/
 class SimpleWindow extends TwoBitSimpleWindow_:
-  /**
-  A rectangular window with a fixed width colored border.  The border is
-    subtracted from the visible area inside the window.
-  */
   constructor x/int y/int w/int h/int transform/Transform border_width/int border_color/int background_color/int:
     super x y w h transform border_width border_color background_color
 
@@ -170,6 +176,8 @@ class DropShadowWindow extends DropShadowWindow_:
   max_shadow_opacity_ := ?
 
   constructor x y w h transform .background_color --corner_radius=5 --blur_radius=5 --drop_distance_x=10 --drop_distance_y=10 --shadow_opacity_percent=25:
+    // Scale the 0-100% opacity percentage to cover the 8 bit unsigned integer
+    // range 0-255.
     max_shadow_opacity_ = (shadow_opacity_percent * 2.5500001).to_int
     super x y w h transform corner_radius blur_radius drop_distance_x drop_distance_y
 

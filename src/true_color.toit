@@ -61,8 +61,8 @@ class Canvas:
     return get_rgb red_[idx] green_[idx] blue_[idx]
 
   /**
-   * Creates an blank texture with the same dimensions as this one.
-   */
+  Creates a blank texture with the same dimensions as this one.
+  */
   create_similar:
     return Canvas width height
 
@@ -94,7 +94,7 @@ class FilledRectangle extends FilledRectangle_:
     assert: color_ <= 0xff_ff_ff  // Not transparent.
     super x y w h transform
 
-  /// A line from x1,y1 to x2,y2.  The line must be horizontal or vertical.
+  /// A line from $x1,$y1 to $x2,$y2.  The line must be horizontal or vertical.
   constructor.line color x1/int y1/int x2/int y2/int transform/Transform:
     return FilledRectangle_.line_ x1 y1 x2 y2: | x y w h |
       FilledRectangle color x y w h transform
@@ -139,8 +139,10 @@ class IconTexture extends TextTexture:
     text = new_icon.stringify
     font = new_icon.font_
 
-// A texture that contains an uncompressed 2-color image.  Initially all pixels
-// are transparent, but pixels can be given the color with $set_pixel.
+/**
+A texture that contains an uncompressed 2-color image.  Initially all pixels
+  are transparent, but pixels can be given the color with $set_pixel.
+*/
 class BitmapTexture extends BitmapTexture_:
   color_ := 0
 
@@ -152,9 +154,13 @@ class BitmapTexture extends BitmapTexture_:
     bitmap_draw_bitmap bx by (green_component color_) orientation bytes_ 0 w canvas.green_ canvas.width true
     bitmap_draw_bitmap bx by (blue_component color_) orientation bytes_ 0 w canvas.blue_ canvas.width true
 
-// A two color bitmap texture.  Initially all pixels have the background color.
-// Use set_pixel to paint with the foreground, and clear_pixel to paint with
-// the background.
+/**
+A two color bitmap texture where foreground and background pixels in the
+  texture are both drawn.
+Initially all pixels have the background color.
+Use $set_pixel to paint with the foreground, and $clear_pixel to paint with
+  the background.
+*/
 class OpaqueBitmapTexture extends BitmapTexture:
   background_color_ := 0
 
@@ -193,14 +199,14 @@ class BarCodeEan13 extends BarCodeEan13_:
        bytemap_rectangle x y black width height canvas.green_ canvas.width
        bytemap_rectangle x y black width height canvas.blue_  canvas.width
 
+/**
+A rectangular window with a fixed width colored border.
+The border is subtracted from the visible area inside the window.
+*/
 class SimpleWindow extends SimpleWindow_:
   background_color := ?
   border_color := ?
 
-  /**
-   * A rectangular window with a fixed width colored border.  The border is
-   * subtracted from the visible area inside the window.
-   */
   constructor x y w h transform border_width .border_color .background_color:
     super x y w h transform border_width
 
@@ -253,6 +259,8 @@ class DropShadowWindow extends DropShadowWindow_:
   max_shadow_opacity_ := ?
 
   constructor x y w h transform .background_color --corner_radius=5 --blur_radius=5 --drop_distance_x=10 --drop_distance_y=10 --shadow_opacity_percent=25:
+    // Scale the 0-100% opacity percentage to cover the 8 bit unsigned integer
+    // range 0-255.
     max_shadow_opacity_ = (shadow_opacity_percent * 2.5500001).to_int
     super x y w h transform corner_radius blur_radius drop_distance_x drop_distance_y
 

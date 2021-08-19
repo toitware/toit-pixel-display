@@ -777,7 +777,7 @@ abstract class WindowTexture_ extends ResizableTexture:
     a bytemap with 0 for transparent and 0xff for opaque.  As a special case it
     may return a single-entry byte array, which means all pixels have the same
     transparency.
-   */
+  */
   abstract painting_map win_x/int win_y/int canvas -> ByteArray
 
   /**

@@ -46,8 +46,8 @@ class Canvas:
     return (pixels_[idx] & bit) == 0 ? 0 : 1
 
   /**
-   * Creates an blank texture with the same dimensions as this one.
-   */
+  Creates a blank texture with the same dimensions as this one.
+  */
   create_similar:
     return Canvas width height
 
@@ -77,7 +77,7 @@ class FilledRectangle extends FilledRectangle_:
     assert: color_ < 2  // Not transparent.
     super x y w h transform
 
-  /// A line from x1,y1 to x2,y2.  The line must be horizontal or vertical.
+  /// A line from $x1,$y1 to $x2,$y2.  The line must be horizontal or vertical.
   constructor.line color x1/int y1/int x2/int y2/int transform/Transform:
     return FilledRectangle_.line_ x1 y1 x2 y2: | x y w h |
       FilledRectangle color x y w h transform
@@ -118,8 +118,10 @@ class IconTexture extends TextTexture:
     text = new_icon.stringify
     font = new_icon.font_
 
-// A texture that contains an uncompressed 2-color image.  Initially all pixels
-// are transparent, but pixels can be given the color with $set_pixel.
+/**
+A texture that contains an uncompressed 2-color image.  Initially all pixels
+  are transparent, but pixels can be given the color with $set_pixel.
+*/
 class BitmapTexture extends BitmapTexture_:
   color_ := 0
 
@@ -132,6 +134,9 @@ class BitmapTexture extends BitmapTexture_:
 /**
 A two color bitmap texture where foreground and background pixels in the
   texture are both drawn.
+Initially all pixels have the background color.
+Use $set_pixel to paint with the foreground, and $clear_pixel to paint with
+  the background.
 */
 class OpaqueBitmapTexture extends BitmapTexture:
   foreground_color_/int := ?
@@ -164,14 +169,14 @@ class BarCodeEan13 extends BarCodeEan13_:
     black ::= 1
     bitmap_rectangle x y black width height canvas.pixels_ canvas.width
 
+/**
+A rectangular window with a fixed width colored border.
+The border is subtracted from the visible area inside the window.
+*/
 class SimpleWindow extends SimpleWindow_:
   background_color/int := ?
   border_color/int := ?
 
-  /**
-   * A rectangular window with a fixed width colored border.  The border is
-   * subtracted from the visible area inside the window.
-   */
   constructor x/int y/int w/int h/int transform/Transform border_width/int .border_color .background_color:
     super x y w h transform border_width
 
