@@ -2,12 +2,15 @@
 // Use of this source code is governed by an MIT-style license that can be
 // found in the LICENSE file.
 
-// Classes useful for three-color displays like red-white-black e-ink displays.
-// A canvas is a frame buffer that can be drawn on and sent to a display.
-// A texture is an object that can draw itself onto a canvas.
+/**
+Classes useful for $ThreeColorPixelDisplay.
+For use with e-paper black, white, and red displays.
+A texture is an object that can draw itself on a display.
+*/
 
 import font show Font
 import icons show Icon
+import .pixel_display show ThreeColorPixelDisplay  // For the doc comment.
 import .texture
 import .two_bit_texture
 

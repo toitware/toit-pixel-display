@@ -2,13 +2,16 @@
 // Use of this source code is governed by an MIT-style license that can be
 // found in the LICENSE file.
 
-// Classes useful for 256-shade displays.
-// A canvas is a frame buffer that can be drawn on and sent to a display.
-// A texture is an object that can draw itself onto a canvas.
+/**
+Classes useful for $GrayScalePixelDisplay.
+For use with monochrome displays with many tones of gray.
+A texture is an object that can draw itself on a display.
+*/
 
 import bitmap show *
 import font show Font
 import icons show Icon
+import .pixel_display show GrayScalePixelDisplay  // For the doc comment.
 import .texture
 
 WHITE ::= 255

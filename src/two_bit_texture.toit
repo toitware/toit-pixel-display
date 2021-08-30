@@ -116,7 +116,7 @@ class TwoBitBitmapTexture_ extends BitmapTexture_:
     super x y w h transform
 
   draw_ bx by orientation canvas:
-    bitmap_draw_bitmap bx by (color_ & 1) orientation bytes_ 0 w canvas.plane_0_ canvas.width false
+    bitmap_draw_bitmap bx by (color_ & 1)        orientation bytes_ 0 w canvas.plane_0_ canvas.width false
     bitmap_draw_bitmap bx by ((color_ & 2) >> 1) orientation bytes_ 0 w canvas.plane_1_ canvas.width false
 
 /**

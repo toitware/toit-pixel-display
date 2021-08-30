@@ -2,28 +2,30 @@
 // Use of this source code is governed by an MIT-style license that can be
 // found in the LICENSE file.
 
-// Classes useful for RGB displays.
-// A canvas is a frame buffer that can be drawn on and sent to a display.
-// A texture is an object that can draw itself onto a canvas.
+/**
+Classes useful for RGB $TrueColorPixelDisplay.
+A texture is an object that can draw itself on a display.
+*/
 
 import bitmap show *
 import font show Font
 import icons show Icon
+import .pixel_display show TrueColorPixelDisplay  // For the doc comment.
 import .texture
 
-get_rgb r g b:
+get_rgb r/int g/int b/int -> int:
   return (r << 16) | (g << 8) | b
 
 WHITE ::= 0xff_ff_ff
 BLACK ::= 0
 
-red_component pixel:
+red_component pixel/int -> int:
   return pixel >> 16
 
-green_component pixel:
+green_component pixel/int -> int:
   return (pixel >> 8) & 0xff
 
-blue_component pixel:
+blue_component pixel/int -> int:
   return pixel & 0xff
 
 // The canvas contains three ByteArrays, red, green, and blue.
