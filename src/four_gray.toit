@@ -2,14 +2,16 @@
 // Use of this source code is governed by an MIT-style license that can be
 // found in the LICENSE file.
 
-// Classes useful for 4-gray-scale displays like e-ink displays.
-// A canvas is a frame buffer that can be drawn on and sent to a display.
-// A texture is an object that can draw itself onto a canvas.
+/**
+Classes useful for $FourGrayPixelDisplay.
+For use with e-paper displays with four tones of gray.
+*/
 
 import .two_bit_texture
 import bitmap show *
 import font show Font
 import icons show Icon
+import .pixel_display show FourGrayPixelDisplay  // For the doc comment.
 import .texture
 
 WHITE ::= 0

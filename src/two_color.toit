@@ -2,14 +2,16 @@
 // Use of this source code is governed by an MIT-style license that can be
 // found in the LICENSE file.
 
-// Classes useful for two-color displays like the SSD1306 128x64 black and
-// white TFT display.
-// A canvas is a frame buffer that can be drawn on and sent to a display.
-// A texture is an object that can draw itself onto a canvas.
+/**
+Classes useful for black-and-white $TwoColorPixelDisplay.
+For use with e-paper displays and the SSD1306 128x64 display
+  (driver at https://pkg.toit.io/package/ssd1306&url=github.com%2Ftoitware%2Ftoit-ssd1306&index=latest)
+*/
 
 import bitmap show *
 import font show Font
 import icons show Icon
+import .pixel_display show TwoColorPixelDisplay  // For the doc comment.
 import .texture
 
 WHITE ::= 0

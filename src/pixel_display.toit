@@ -2,6 +2,11 @@
 // Use of this source code is governed by an MIT-style license that can be
 // found in the LICENSE file.
 
+/**
+A library for rendering on pixel-based displays attached to devices.
+See https://docs.toit.io/language/sdk/display
+*/
+
 import bitmap show *
 import .texture
 import .two_color as two_color
@@ -19,6 +24,13 @@ FLAG_GRAY_SCALE ::=      0b1000
 FLAG_TRUE_COLOR ::=      0b10000
 FLAG_PARTIAL_UPDATES ::= 0b100000
 
+/**
+Abstract superclass for all pixel display drivers.
+For example, implemented by the drivers in
+  https://pkg.toit.io/package/color_tft&url=github.com%2Ftoitware%2Ftoit-color-tft&index=latest
+  and
+  https://pkg.toit.io/package/ssd1306&url=github.com%2Ftoitware%2Ftoit-ssd1306&index=latest
+*/
 abstract class AbstractDriver:
   abstract width -> int
   abstract height -> int
@@ -37,6 +49,9 @@ abstract class AbstractDriver:
     throw "Not a true-color driver"
   close -> none:
 
+/**
+Current settings for adding textures to a display.
+*/
 class GraphicsContext:
   alignment/int ::= TEXT_TEXTURE_ALIGN_LEFT
   color/int ::= 0
@@ -61,10 +76,14 @@ class GraphicsContext:
       transform = transform.translate translate_x translate_y
     return GraphicsContext.private_ alignment color font transform background
 
-// Common code for pixel-based displays connected to devices.  Height and width
-// are 8-aligned, and this class keeps track of the list of things to draw, and
-// which areas need refreshing.  Add components with 'add' and render to
-// the display with 'draw'.
+/**
+Common code for pixel-based displays connected to devices.
+Height and width must be multiples of 8.
+This class keeps track of the list of things to draw, and
+  which areas need refreshing.  Add components with $add and render to
+  the display with $draw.
+See https://docs.toit.io/language/sdk/display
+*/
 abstract class PixelDisplay:
   // The image to display.
   textures_ := {}
@@ -350,6 +369,14 @@ abstract class PixelDisplay:
   close -> none:
     driver_.close
 
+/**
+Black-and-white pixel-based display connected to a device.
+Height and width must be multiples of 8.
+This class keeps track of the list of things to draw, and
+  which areas need refreshing.  Add components with $add and render to
+  the display with $draw.
+See https://docs.toit.io/language/sdk/display
+*/
 class TwoColorPixelDisplay extends PixelDisplay:
 
   constructor driver/AbstractDriver:
@@ -464,6 +491,14 @@ class TwoColorPixelDisplay extends PixelDisplay:
     textures_.do: it.write left top canvas
     driver_.draw_two_color left top right bottom canvas.pixels_
 
+/**
+Pixel-based display with four shades of gray, connected to a device.
+Height and width must be multiples of 8.
+This class keeps track of the list of things to draw, and
+  which areas need refreshing.  Add components with $add and render to
+  the display with $draw.
+See https://docs.toit.io/language/sdk/display
+*/
 class FourGrayPixelDisplay extends TwoBitPixelDisplay_:
   constructor driver/AbstractDriver:
     super driver
@@ -534,6 +569,14 @@ class FourGrayPixelDisplay extends TwoBitPixelDisplay_:
     add texture
     return texture
 
+/**
+Pixel-based display with black, white, and red, connected to a device.
+Height and width must be multiples of 8.
+This class keeps track of the list of things to draw, and
+  which areas need refreshing.  Add components with $add and render to
+  the display with $draw.
+See https://docs.toit.io/language/sdk/display
+*/
 class ThreeColorPixelDisplay extends TwoBitPixelDisplay_:
   constructor driver/AbstractDriver:
     super driver
@@ -629,6 +672,14 @@ abstract class TwoBitPixelDisplay_ extends PixelDisplay:
     textures_.do: it.write left top canvas
     driver_.draw_two_bit left top right bottom canvas.plane_0_ canvas.plane_1_
 
+/**
+Pixel-based display with up to 256 shades of gray, connected to a device.
+Height and width must be multiples of 8.
+This class keeps track of the list of things to draw, and
+  which areas need refreshing.  Add components with $add and render to
+  the display with $draw.
+See https://docs.toit.io/language/sdk/display
+*/
 class GrayScalePixelDisplay extends PixelDisplay:
   constructor driver/AbstractDriver:
     super driver
@@ -711,6 +762,14 @@ class GrayScalePixelDisplay extends PixelDisplay:
     textures_.do: it.write left top canvas
     driver_.draw_gray_scale left top right bottom canvas.pixels_
 
+/**
+Pixel-based display with up to 16 million colors, connected to a device.
+Height and width must be multiples of 8.
+This class keeps track of the list of things to draw, and
+  which areas need refreshing.  Add components with $add and render to
+  the display with $draw.
+See https://docs.toit.io/language/sdk/display
+*/
 class TrueColorPixelDisplay extends PixelDisplay:
   constructor driver/AbstractDriver:
     super driver
