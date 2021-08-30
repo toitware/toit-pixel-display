@@ -80,8 +80,8 @@ class GraphicsContext:
 Common code for pixel-based displays connected to devices.
 Height and width must be multiples of 8.
 This class keeps track of the list of things to draw, and
-  which areas need refreshing.  Add components with 'add' and render to
-  the display with 'draw'.
+  which areas need refreshing.  Add components with $add and render to
+  the display with $draw.
 See https://docs.toit.io/language/sdk/display
 */
 abstract class PixelDisplay:
@@ -373,8 +373,8 @@ abstract class PixelDisplay:
 Black-and-white pixel-based display connected to a device.
 Height and width must be multiples of 8.
 This class keeps track of the list of things to draw, and
-  which areas need refreshing.  Add components with 'add' and render to
-  the display with 'draw'.
+  which areas need refreshing.  Add components with $add and render to
+  the display with $draw.
 See https://docs.toit.io/language/sdk/display
 */
 class TwoColorPixelDisplay extends PixelDisplay:
@@ -495,8 +495,8 @@ class TwoColorPixelDisplay extends PixelDisplay:
 Pixel-based display with four shades of gray, connected to a device.
 Height and width must be multiples of 8.
 This class keeps track of the list of things to draw, and
-  which areas need refreshing.  Add components with 'add' and render to
-  the display with 'draw'.
+  which areas need refreshing.  Add components with $add and render to
+  the display with $draw.
 See https://docs.toit.io/language/sdk/display
 */
 class FourGrayPixelDisplay extends TwoBitPixelDisplay_:
@@ -573,8 +573,8 @@ class FourGrayPixelDisplay extends TwoBitPixelDisplay_:
 Pixel-based display with black, white, and red, connected to a device.
 Height and width must be multiples of 8.
 This class keeps track of the list of things to draw, and
-  which areas need refreshing.  Add components with 'add' and render to
-  the display with 'draw'.
+  which areas need refreshing.  Add components with $add and render to
+  the display with $draw.
 See https://docs.toit.io/language/sdk/display
 */
 class ThreeColorPixelDisplay extends TwoBitPixelDisplay_:
@@ -676,8 +676,8 @@ abstract class TwoBitPixelDisplay_ extends PixelDisplay:
 Pixel-based display with up to 256 shades of gray, connected to a device.
 Height and width must be multiples of 8.
 This class keeps track of the list of things to draw, and
-  which areas need refreshing.  Add components with 'add' and render to
-  the display with 'draw'.
+  which areas need refreshing.  Add components with $add and render to
+  the display with $draw.
 See https://docs.toit.io/language/sdk/display
 */
 class GrayScalePixelDisplay extends PixelDisplay:
@@ -766,8 +766,8 @@ class GrayScalePixelDisplay extends PixelDisplay:
 Pixel-based display with up to 16 million colors, connected to a device.
 Height and width must be multiples of 8.
 This class keeps track of the list of things to draw, and
-  which areas need refreshing.  Add components with 'add' and render to
-  the display with 'draw'.
+  which areas need refreshing.  Add components with $add and render to
+  the display with $draw.
 See https://docs.toit.io/language/sdk/display
 */
 class TrueColorPixelDisplay extends PixelDisplay:

@@ -5,7 +5,6 @@
 // Classes useful for three- or four-color displays like red-white-black e-ink
 // displays.
 // A canvas is a frame buffer that can be drawn on and sent to a display.
-// A texture is an object that can draw itself onto a canvas.
 
 import bitmap show *
 import font show Font

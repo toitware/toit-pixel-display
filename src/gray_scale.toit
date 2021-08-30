@@ -5,7 +5,6 @@
 /**
 Classes useful for $GrayScalePixelDisplay.
 For use with monochrome displays with many tones of gray.
-A texture is an object that can draw itself on a display.
 */
 
 import bitmap show *

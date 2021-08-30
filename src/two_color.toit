@@ -6,7 +6,6 @@
 Classes useful for black-and-white $TwoColorPixelDisplay.
 For use with e-paper displays and the SSD1306 128x64 display
   (driver at https://pkg.toit.io/package/ssd1306&url=github.com%2Ftoitware%2Ftoit-ssd1306&index=latest)
-A texture is an object that can draw itself on a display.
 */
 
 import bitmap show *

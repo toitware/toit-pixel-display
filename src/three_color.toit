@@ -5,7 +5,6 @@
 /**
 Classes useful for $ThreeColorPixelDisplay.
 For use with e-paper black, white, and red displays.
-A texture is an object that can draw itself on a display.
 */
 
 import font show Font

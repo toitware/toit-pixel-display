@@ -5,7 +5,6 @@
 /**
 Classes useful for $FourGrayPixelDisplay.
 For use with e-paper displays with four tones of gray.
-A texture is an object that can draw itself on a display.
 */
 
 import .two_bit_texture
