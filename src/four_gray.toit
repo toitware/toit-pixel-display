@@ -138,7 +138,7 @@ class OpaquePixmapTexture extends BitmapTextureBase_:
 // (zeros) are rendered transparent and the black areas (ones) are rendered in
 // an arbitrary color.
 class PbmTexture extends PbmTexture_:
-  // The byte array passed in should be a valid binary-mode (P4) PBM file.
+  // The byte array passed in must be a valid binary-mode (P4) PBM file.
   constructor x/int y/int transform/Transform color/int bytes/ByteArray:
     super x y transform color bytes
 

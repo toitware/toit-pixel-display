@@ -187,7 +187,7 @@ class PbmTexture extends BitmapTexture_:
   bytes_ := ?
   offset_ := 0
 
-  // The byte array passed in should be a valid binary-mode (P4) PBM file.
+  // The byte array passed in must be a valid binary-mode (P4) PBM file.
   constructor x/int y/int transform/Transform .color_/int bytes/ByteArray:
     bytes_ = bytes
     parser := PbmParser_ bytes_

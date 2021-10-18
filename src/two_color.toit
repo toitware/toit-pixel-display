@@ -283,7 +283,7 @@ class PbmTexture extends BitmapTexture_:
   bytes_ := ?
   offset_ := 0
 
-  // The byte array passed in should be a valid binary-mode (P4) PBM file.
+  // The byte array passed in must be a valid binary-mode (P4) PBM file.
   constructor x/int y/int transform/Transform .color_/int bytes/ByteArray:
     bytes_ = bytes
     parser := PbmParser_ bytes_
@@ -309,7 +309,7 @@ class PbmTexture extends BitmapTexture_:
 // A texture backed by a P4 (binary two-level) PBM file.  This is normally more
 // efficient than the Pbm class, but it cannot scale the image.
 class OpaquePbmTexture extends PbmTexture:
-  // The byte array passed in should be a valid binary-mode (P4) PBM file.
+  // The byte array passed in must be a valid binary-mode (P4) PBM file.
   constructor x/int y/int transform/Transform bytes/ByteArray:
     foreground ::= 1
     super x y transform foreground bytes
