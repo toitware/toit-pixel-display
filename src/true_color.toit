@@ -177,6 +177,41 @@ class OpaqueBitmapTexture extends BitmapTexture:
       bytemap_rectangle x y (blue_component background_color_) w2 h2 canvas.blue_ canvas.width
     super win_x win_y canvas  // Draw foreground.
 
+// A texture backed by a P4 (binary two-level) PBM file.  The white areas
+// (zeros) are rendered transparent and the black areas (ones) are rendered in
+// an arbitrary color.
+class PbmTexture extends BitmapTexture_:
+  width_ := 0
+  height_ := 0
+  color_ := 0
+  bytes_ := ?
+  offset_ := 0
+
+  // The byte array passed in should be a valid binary-mode (P4) PBM file.
+  constructor x/int y/int transform/Transform .color_/int bytes/ByteArray:
+    bytes_ = bytes
+    parser := PbmParser_ bytes_
+    parser.parse_
+    super.no_allocate_ x y parser.width parser.height transform
+    offset_ = parser.image_data_offset
+
+  set_pixel x y:
+    throw "READ_ONLY"
+
+  clear_pixel x y:
+    throw "READ_ONLY"
+
+  set_all_pixels:
+    throw "READ_ONLY"
+
+  clear_all_pixels:
+    throw "READ_ONLY"
+
+  draw_ bx by orientation canvas:
+    bitmap_draw_bitmap bx by (red_component color_)   orientation bytes_ offset_ w canvas.red_   canvas.width true
+    bitmap_draw_bitmap bx by (green_component color_) orientation bytes_ offset_ w canvas.green_ canvas.width true
+    bitmap_draw_bitmap bx by (blue_component color_)  orientation bytes_ offset_ w canvas.blue_  canvas.width true
+
 class BarCodeEan13 extends BarCodeEan13_:
   constructor code/string x/int y/int transform/Transform:
     super code x y transform

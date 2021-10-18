@@ -83,6 +83,15 @@ class OpaqueBitmapTexture extends TwoBitOpaqueBitmapTexture_:
     assert: background_color != 3   // Invalid color.
     super x y w h transform foreground_color background_color
 
+// A texture backed by a P4 (binary two-level) PBM file.  The white areas
+// (zeros) are rendered transparent and the black areas (ones) are rendered in
+// an arbitrary color.
+class PbmTexture extends PbmTexture_:
+  // The byte array passed in should be a valid binary-mode (P4) PBM file.
+  constructor x/int y/int transform/Transform color/int bytes/ByteArray:
+    assert: color != 3   // Invalid color.
+    super x y transform color bytes
+
 class BarCodeEan13 extends TwoBitBarCodeEan13_:
   constructor code/string x/int y/int transform/Transform:
     super code x y transform BLACK WHITE

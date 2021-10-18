@@ -1159,3 +1159,67 @@ abstract class BitmapTexture_ extends BitmapTextureBase_:
 abstract class InfiniteBackground_ extends Texture:
 
   abstract color -> int
+
+class PbmParser_:
+  INVALID_PBM_ ::= "INVALID PBM"
+  bytes_/ByteArray ::= ?
+  next_ := 0
+
+  width := 0
+  height := 0
+  rows_ := null
+  row_byte_length_ := 0
+  image_data_offset := 0
+
+  constructor bytes/ByteArray:
+    bytes_ = bytes
+
+  parse_:
+    parse_magic_number_
+    parse_multiple_whitespace_
+    width = parse_number_
+    parse_multiple_whitespace_ --at_least_one
+    height = parse_number_
+    parse_whitespace_
+    image_data_offset = next_
+    parse_bit_map_
+
+  parse_magic_number_:
+    if not (bytes_.size > next_ + 1 and bytes_[next_] == 'P' and bytes_[next_ + 1] == '4'): throw INVALID_PBM_
+    next_ += 2
+
+  parse_whitespace_:
+    if not (bytes_.size > next_ and is_pbm_whitespace_ bytes_[next_]): throw INVALID_PBM_
+    next_++
+
+  parse_multiple_whitespace_ --at_least_one=false:
+    start := next_
+    while bytes_.size > next_ and is_pbm_whitespace_ bytes_[next_]: next_++
+    if bytes_.size > next_ and bytes_[next_] == '#':  // Skip comment.
+      while bytes_.size > next_ and bytes_[next_] != '\n': next_++
+      if bytes_.size > next_: next_++
+    if at_least_one and start == next_: throw INVALID_PBM_
+
+  parse_number_ -> int:
+    next_ws := next_
+    while next_ws < bytes_.size and not is_pbm_whitespace_ bytes_[next_ws]: next_ws++
+    if not bytes_.is_valid_string_content next_ next_ws: throw INVALID_PBM_
+    number_string := bytes_.to_string next_ next_ws
+    number := int.parse number_string --on_error=: throw INVALID_PBM_
+    next_ = next_ws
+    return number
+
+  parse_bit_map_:
+    row_byte_length_ = width / 8 + (width % 8 == 0 ? 0 : 1)
+    if not bytes_.size > row_byte_length_ * height: throw INVALID_PBM_
+
+  rows:
+    if not rows_:
+      rows_ = List height:
+        from := next_
+        next_ = next_ + row_byte_length_
+        bytes_.copy from next_
+    return rows_
+
+  is_pbm_whitespace_ byte -> bool:
+    return byte == '\t' or byte == '\v' or byte == ' ' or byte == '\n' or byte == '\r' or byte == '\f'
