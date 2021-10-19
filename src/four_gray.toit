@@ -139,6 +139,10 @@ class OpaquePixmapTexture extends BitmapTextureBase_:
 // an arbitrary color.
 class PbmTexture extends PbmTexture_:
   // The byte array passed in must be a valid binary-mode (P4) PBM file.
+  // If $bytes is a literal containing constants then it is used directly
+  //   from flash.  However if the pixel drawing methods on this are used then
+  //   $bytes is moved to RAM and modified.  This could cause an out-of-memory
+  //   on very large PBM files.
   constructor x/int y/int transform/Transform color/int bytes/ByteArray:
     super x y transform color bytes
 
