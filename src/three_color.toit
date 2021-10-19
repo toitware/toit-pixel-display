@@ -88,9 +88,9 @@ class OpaqueBitmapTexture extends TwoBitOpaqueBitmapTexture_:
 // an arbitrary color.
 class PbmTexture extends PbmTexture_:
   // The byte array passed in must be a valid binary-mode (P4) PBM file.
-  // If $bytes is a literal then it will be used directly from flash unless the pixel
-  //   drawing methods on this are used, in which case the underlying byte
-  //   array is moved to RAM and modified.  This could cause an out-of-memory
+  // If $bytes is a literal containing constants then it is used directly
+  //   from flash.  However if the pixel drawing methods on this are used then
+  //   $bytes is moved to RAM and modified.  This could cause an out-of-memory
   //   on very large PBM files.
   constructor x/int y/int transform/Transform color/int bytes/ByteArray:
     assert: color != 3   // Invalid color.
