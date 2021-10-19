@@ -139,6 +139,40 @@ class TwoBitOpaqueBitmapTexture_ extends TwoBitBitmapTexture_:
       bitmap_rectangle x y ((background_color_ & 2) >> 1) w2 h2 canvas.plane_1_ canvas.width
     super win_x win_y canvas  // Draw foreground.
 
+// A texture backed by a P4 (binary two-level) PBM file.  The white areas
+// (zeros) are rendered transparent and the black areas (ones) are rendered in
+// an arbitrary color.
+class PbmTexture_ extends BitmapTexture_:
+  width_ := 0
+  height_ := 0
+  color_ := 0
+  bytes_ := ?
+  offset_ := 0
+
+  // The byte array passed in must be a valid binary-mode (P4) PBM file.
+  constructor x/int y/int transform/Transform .color_/int bytes/ByteArray:
+    bytes_ = bytes
+    parser := PbmParser_ bytes_
+    parser.parse_
+    super.no_allocate_ x y parser.width parser.height transform
+    offset_ = parser.image_data_offset
+
+  set_pixel x y:
+    throw "READ_ONLY"
+
+  clear_pixel x y:
+    throw "READ_ONLY"
+
+  set_all_pixels:
+    throw "READ_ONLY"
+
+  clear_all_pixels:
+    throw "READ_ONLY"
+
+  draw_ bx by orientation canvas:
+    bitmap_draw_bitmap bx by (color_ & 1)        orientation bytes_ offset_ w canvas.plane_0_ canvas.width false
+    bitmap_draw_bitmap bx by ((color_ & 2) >> 1) orientation bytes_ offset_ w canvas.plane_1_ canvas.width false
+
 class TwoBitBarCodeEan13_ extends BarCodeEan13_:
   plane_0_ := 0
   white_ := 0

@@ -134,8 +134,15 @@ class OpaquePixmapTexture extends BitmapTextureBase_:
     bitmap_draw_bitmap bx by 1 orientation bytes_ 0 w canvas.plane_0_ canvas.width false
     bitmap_draw_bitmap bx by 1 orientation bytes_2_ 0 w canvas.plane_1_ canvas.width false
 
-class BarCodeEan13 extends TwoBitBarCodeEan13_:
+// A texture backed by a P4 (binary two-level) PBM file.  The white areas
+// (zeros) are rendered transparent and the black areas (ones) are rendered in
+// an arbitrary color.
+class PbmTexture extends PbmTexture_:
+  // The byte array passed in must be a valid binary-mode (P4) PBM file.
+  constructor x/int y/int transform/Transform color/int bytes/ByteArray:
+    super x y transform color bytes
 
+class BarCodeEan13 extends TwoBitBarCodeEan13_:
   constructor code/string x/int y/int transform/Transform:
     super code x y transform BLACK WHITE
 
