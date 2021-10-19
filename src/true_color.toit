@@ -202,6 +202,108 @@ class PbmTexture extends BitmapTexture_:
     bitmap_draw_bitmap bx by (green_component color_) orientation bytes_ 0 w canvas.green_ canvas.width true
     bitmap_draw_bitmap bx by (blue_component color_)  orientation bytes_ 0 w canvas.blue_  canvas.width true
 
+/**
+A rectangular pixmap that can be drawn in any of 4 orientations on a canvas.
+Up to 255 different colors can be represented.  Each color to be used
+  is allocated and given an index by $allocate_color.  In addition there is
+  a transparent index, always index 0.
+*/
+class IndexedPixmapTexture extends PixmapTexture_:
+  bytes_/ByteArray ::= ?
+  palette_/ByteArray := ?
+  green_palette_/ByteArray? := null
+  blue_palette_/ByteArray? := null
+  used_indices_/int := 1
+
+  /**
+  Creates a pixmap. All pixels are initially transparent.
+  */
+  constructor x/int y/int w/int h/int transform/Transform:
+    bytes_ = ByteArray w * h
+    palette_ = #[0]
+    super x y w h transform
+
+  /**
+  Creates a pixmap with the given pixels and palette.
+  Transparent pixels are represented by zero bytes.
+  The palette byte array contains 3 bytes (r, g, b) for each
+    index in use.  The first three entries in the palette are
+    ignored since they correspond to the transparent index.
+  */
+  constructor x/int y/int w/int h/int transform/Transform .bytes_/ByteArray .palette_/ByteArray:
+    if bytes_.size != w * h: throw "INVALID_ARGUMENT"
+    if palette_.size % 3 != 0: throw "INVALID_ARGUMENT"
+    used_indices_ = palette_.size / 3
+    super x y w h transform
+
+  /**
+  Get the index in the palette for a given color, expressed with components from 0-255.
+  This can be quite slow if there are a lot of colors.
+  Throws an error if 255 colors have already been allocated.
+  */
+  allocate_color r/int g/int b/int -> int:
+    for i := 1; i < used_indices_; i++:
+      if r == (red_component i) and g == (green_component i) and b == (blue_component i): return i
+    if used_indices_ == 0x100: throw "No more colors available"
+    if palette_.size / 3 <= (round_up used_indices_ 16):
+      old := palette_
+      palette_ = ByteArray palette_.size + 48
+      palette_.replace 0 old
+      green_palette_ = null
+      blue_palette_ = null
+    palette_[used_indices_ * 3] = r
+    palette_[used_indices_ * 3 + 1] = g
+    palette_[used_indices_ * 3 + 2] = b
+    return used_indices_++
+
+  /**
+  Get the index in the palette for a given color, expressed as a 6 digit hex value 0xrrggbb.
+  This can be quite slow if there are a lot of colors.
+  Throws an error if 255 colors have already been allocated.
+  */
+  allocate_color color/int -> int:
+    return allocate_color
+      color >> 16
+      (color >> 8) & 0xff
+      color & 0xff
+
+  /// Look up the index in the palette.
+  red_component index/int -> int:
+    return palette_[index * 3]
+
+  /// Look up the index in the palette.
+  green_component index/int -> int:
+    return palette_[index * 3 + 1]
+
+  /// Look up the index in the palette.
+  blue_component index/int -> int:
+    return palette_[index * 3 + 2]
+
+  /// Index value of the color at the given coordinates.
+  get_pixel x/int y/int -> int:
+    return bytes_[x + y * w]
+
+  set_pixel x/int y/int index/int -> none:
+    bytes_[x + y * w] = index
+
+  /// Set pixel to transparent.
+  clear_pixel x/int y/int -> none:
+    set_pixel x y 0
+
+  set_all_pixels index/int -> none:
+    bitmap_zap bytes_ index
+
+  /// Set all pixels to transparent.
+  clear_all_pixels -> none:
+    bitmap_zap bytes_ 0
+
+  draw_ bx by orientation canvas:
+    if not green_palette_: green_palette_ = palette_[1..]
+    if not blue_palette_: blue_palette_ = palette_[2..]
+    bitmap_draw_bytemap bx by 0 orientation bytes_ w palette_       canvas.red_   canvas.width
+    bitmap_draw_bytemap bx by 0 orientation bytes_ w green_palette_ canvas.green_ canvas.width
+    bitmap_draw_bytemap bx by 0 orientation bytes_ w blue_palette_  canvas.blue_  canvas.width
+
 class BarCodeEan13 extends BarCodeEan13_:
   constructor code/string x/int y/int transform/Transform:
     super code x y transform

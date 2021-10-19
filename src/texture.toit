@@ -1157,6 +1157,26 @@ abstract class BitmapTexture_ extends BitmapTextureBase_:
   clear_all_pixels -> none:
     bitmap_zap bytes_ 0
 
+abstract class PixmapTexture_ extends SizedTexture:
+  w := 0
+  h := 0
+
+  constructor x/int y/int .w .h transform/Transform:
+    super x y w h transform
+
+  // After the textures under us have drawn themselves, we draw on top.
+  write2_ win_x win_y canvas:
+    if w == 0 or h == 0: return
+    x2 := transform_.x x_ y_
+    y2 := transform_.y x_ y_
+    draw_
+      x2 - win_x
+      y2 - win_y
+      transform_.orientation_
+      canvas
+
+  abstract draw_ bx by orientation canvas
+
 abstract class InfiniteBackground_ extends Texture:
 
   abstract color -> int
