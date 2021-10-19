@@ -3,7 +3,9 @@
 // found in the LICENSE file.
 
 import expect show *
-import pixel_display.two_color show *
+import pixel_display.two_color
+import pixel_display.gray_scale
+import pixel_display.texture show Transform PbmParser_
 
 toit_logo := #[
   'P', '4', '\n', '6', '2', ' ', '4', '0', '\n',
@@ -54,6 +56,7 @@ main:
   test_parse_whitespace
   test_parse_multiple_whitespace
   test_parse_toit_logo
+  test_draw_on_pbm
 
 test_parse_magic_number:
   incorrect_magic_number := ByteArray 2: ['O','4'][it]
@@ -123,7 +126,7 @@ test_parse_number:
 test_parse_toit_logo:
   logo_width ::= 62
   logo_height ::= 40
-  pbm := Pbm.parse toit_logo
+  pbm := two_color.Pbm.parse toit_logo
   expect_equals logo_width pbm.width
   expect_equals logo_height pbm.height
   expect_bytes_equal
@@ -132,3 +135,49 @@ test_parse_toit_logo:
   expect_bytes_equal
     pbm.row logo_height - 1
     ByteArray 8: [0x00, 0x07, 0xc0, 0x00, 0x00, 0x0f, 0x80, 0x00][it]
+
+test_draw_on_pbm:
+  texture := two_color.PbmTexture 0 0 Transform.identity 1 toit_logo
+  texture.set_all_pixels
+
+  // It still parses with all pixels overwritten.
+  texture2 := two_color.PbmTexture 0 0 Transform.identity 1 toit_logo
+
+  toit_logo[10..].do:
+    expect_equals 0xff it
+
+  texture.h.repeat:
+    texture.clear_pixel 0 it
+
+  toit_logo[10..].do:
+    expect
+      it == 0xff or it == 0x7f
+
+  expect_throw "OUT_OF_RANGE": texture.clear_pixel -1 5
+  expect_throw "OUT_OF_RANGE": texture.clear_pixel 5 -1
+  expect_throw "OUT_OF_RANGE": texture.set_pixel 62 5
+  expect_throw "OUT_OF_RANGE": texture.set_pixel 5 40
+
+  // We set all pixels including the ones that were on the right hand side and
+  // were only there because the backing was rounded up to the next multiple of
+  // 8.
+  texture.set_all_pixels
+
+  // Clear all the visible pixels in the 62x40 area.
+  62.repeat: | x |
+    40.repeat: | y |
+      texture.clear_pixel x y
+
+  canvas := two_color.Canvas 128 128
+
+  // Draw on a two color canvas.
+  texture.write 0 0 canvas
+
+  // Check that the rounded up pixels off the edge of the PBM are not drawn.
+  canvas.pixels_.do: expect_equals 0 it
+
+  // The same for a byte-oriented texture.
+  texture_gray := gray_scale.PbmTexture 0 0 Transform.identity 255 toit_logo
+  canvas_gray := gray_scale.Canvas 128 128
+  texture_gray.write 0 0 canvas_gray
+  canvas_gray.pixels_.do: expect_equals 0 it

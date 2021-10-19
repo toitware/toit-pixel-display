@@ -185,32 +185,22 @@ class PbmTexture extends BitmapTexture_:
   height_ := 0
   color_ := 0
   bytes_ := ?
-  offset_ := 0
 
   // The byte array passed in must be a valid binary-mode (P4) PBM file.
+  // If $bytes is a literal then it will be used directly from flash unless the pixel
+  //   drawing methods on this are used, in which case the underlying byte
+  //   array is moved to RAM and modified.  This could cause an out-of-memory
+  //   on very large PBM files.
   constructor x/int y/int transform/Transform .color_/int bytes/ByteArray:
-    bytes_ = bytes
-    parser := PbmParser_ bytes_
+    parser := PbmParser_ bytes
     parser.parse_
+    bytes_ = bytes[parser.image_data_offset..]
     super.no_allocate_ x y parser.width parser.height transform
-    offset_ = parser.image_data_offset
-
-  set_pixel x y:
-    throw "READ_ONLY"
-
-  clear_pixel x y:
-    throw "READ_ONLY"
-
-  set_all_pixels:
-    throw "READ_ONLY"
-
-  clear_all_pixels:
-    throw "READ_ONLY"
 
   draw_ bx by orientation canvas:
-    bitmap_draw_bitmap bx by (red_component color_)   orientation bytes_ offset_ w canvas.red_   canvas.width true
-    bitmap_draw_bitmap bx by (green_component color_) orientation bytes_ offset_ w canvas.green_ canvas.width true
-    bitmap_draw_bitmap bx by (blue_component color_)  orientation bytes_ offset_ w canvas.blue_  canvas.width true
+    bitmap_draw_bitmap bx by (red_component color_)   orientation bytes_ 0 w canvas.red_   canvas.width true
+    bitmap_draw_bitmap bx by (green_component color_) orientation bytes_ 0 w canvas.green_ canvas.width true
+    bitmap_draw_bitmap bx by (blue_component color_)  orientation bytes_ 0 w canvas.blue_  canvas.width true
 
 class BarCodeEan13 extends BarCodeEan13_:
   constructor code/string x/int y/int transform/Transform:

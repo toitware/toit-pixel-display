@@ -2,6 +2,7 @@
 // Use of this source code is governed by an MIT-style license that can be
 // found in the LICENSE file.
 
+import binary show LITTLE_ENDIAN
 import bitmap show *
 import font show Font
 
