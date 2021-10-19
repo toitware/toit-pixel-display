@@ -1160,6 +1160,95 @@ abstract class InfiniteBackground_ extends Texture:
 
   abstract color -> int
 
+class GifParser_:
+  INVALID_GIF_ ::= "INVALID GIF"
+  bytes_/ByteArray ::= ?
+  width/int ::= ?
+  height/int ::= ?
+  bits_per_pixel_/int ::= ?
+  palette_red_/ByteArray? ::= null
+  palette_green_/ByteArray? ::= null
+  palette_blue_/ByteArray? ::= null
+  compressed_data_/ByteArray ::= ?
+  initial_symbol_length_/int ::= ?
+  image_left/int ::= ?
+  image_top/int ::= ?
+  image_width/int ::= ?
+  image_height/int ::= ?
+  transparent_color_/int := -1
+
+  constructor .bytes_:
+    magic := bytes_[0..6].to_string
+    if magic != "GIF87a" and magic != "GIF89a": throw INVALID_GIF_
+    logical_screen_descriptor := bytes_[6..13]
+    width = LITTLE_ENDIAN.uint16 logical_screen_descriptor 0
+    height = LITTLE_ENDIAN.uint16 logical_screen_descriptor 2
+    packed := logical_screen_descriptor[4]
+    has_global_palette := packed & 0x80 != 0
+    bits_per_pixel_ = (packed & 0x7) + 1
+    position/int := ?
+    if has_global_palette:
+      palette_red_ = bytes_[13..]
+      palette_green_ = bytes_[14..]
+      palette_blue_ = bytes_[15..]
+      position = 13 + 3 * (1 << bits_per_pixel_)
+    else:
+      position = 13
+    while true:
+      label := bytes_[position]
+      if label == 0x21:
+        // Extension introducer.
+        extension_label := bytes_[position + 1]
+        if extension_label == 0xff:
+          // Application extension.
+          position += 12
+          // Search for block terminator.
+          while bytes_[position] != 0: position++
+          position++
+        else if extension_label == 0xfe:
+          // Comment extension.
+          position += 2
+          while true:
+            len := bytes_[position]
+            position += len + 1
+            if len == 0: break
+        else if extension_label == 0xf9:
+          // Graphic control extension.
+          packed = bytes_[position + 3]
+          if packed & 1 != 0:
+            transparent_color_ = bytes_[position + 6]
+          else:
+            transparent_color_ = -1
+          position += 8
+        else:
+          throw "Unknown extension label 0x(%02x extension_label)"
+      else if label == 0x2c:
+        image_descriptor := bytes_[position..position + 10]
+        position += 10
+        image_left = LITTLE_ENDIAN.uint16 image_descriptor 1
+        image_top = LITTLE_ENDIAN.uint16 image_descriptor 3
+        image_width = LITTLE_ENDIAN.uint16 image_descriptor 5
+        image_height = LITTLE_ENDIAN.uint16 image_descriptor 7
+        if not 0 <= image_left < image_left + image_width <= width: throw INVALID_GIF_
+        if not 0 <= image_top < image_top + image_height <= height: throw INVALID_GIF_
+        packed = image_descriptor[9]
+        has_local_palette := packed & 0x80 != 0
+        is_interleaved := packed & 0x40 != 0
+        if is_interleaved: throw "Interleaved GIFs not supported"
+        if has_local_palette:
+          bits_per_pixel_ = (packed & 0x7) + 1
+          palette_red_ = bytes_[position..]
+          palette_green_ = bytes_[position + 1..]
+          palette_blue_ = bytes_[position + 2..]
+          position += 3 * (1 << bits_per_pixel_)
+        if not (has_global_palette or has_local_palette): throw INVALID_GIF_
+        initial_symbol_length_ = bytes_[position]
+        compressed_data_ = bytes_[position + 1..]
+        // Done parsing - we found the first bit of compressed data.
+        break
+      else:
+        throw "Unknown byte at $position: 0x$(%02x label)"
+
 class PbmParser_:
   INVALID_PBM_ ::= "INVALID PBM"
   bytes_/ByteArray ::= ?
