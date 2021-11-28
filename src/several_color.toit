@@ -2,13 +2,15 @@
 // Use of this source code is governed by an MIT-style license that can be
 // found in the LICENSE file.
 
-// Classes useful for displays that have between 5 and 256 discrete colors.
-// A canvas is a frame buffer that can be drawn on and sent to a display.
-// A texture is an object that can draw itself onto a canvas.
+/**
+Classes useful for $SeveralColorPixelDisplay.
+For use with displays that have between 5 and 256 discrete colors.
+*/
 
 import bitmap show *
 import font show Font
 import icons show Icon
+import .pixel_display show SeveralColorPixelDisplay  // For the doc comment.
 import .texture
 import .one_byte
 
@@ -59,20 +61,37 @@ class IconTexture extends TextTexture:
     text = new_icon.stringify
     font = new_icon.font_
 
-// A texture that contains an uncompressed 2-color image.  Initially all pixels
-// are transparent, but pixels can be given the color with $set_pixel.
+/**
+A texture that contains an uncompressed 2-color image.  Initially all pixels
+  are transparent, but pixels can be given the color with $set_pixel.
+*/
 class BitmapTexture extends OneByteBitmapTexture_:
   constructor x/int y/int w/int h/int transform/Transform color/int:
     super x y w h transform color
 
-// A two color bitmap texture.  Initially all pixels have the background color.
-// Use set_pixel to paint with the foreground, and clear_pixel to paint with
-// the background.
+/**
+A two color bitmap texture.
+Initially all pixels have the background color.
+Use $set_pixel to paint with the foreground, and $clear_pixel to paint with
+  the background.
+*/
 class OpaqueBitmapTexture extends OneByteOpaqueBitmapTexture_:
   constructor x/int y/int w/int h/int transform/Transform foreground_color/int background_color/int:
     super x y w h transform foreground_color background_color
 
+/**
+A texture backed by a P4 (binary two-level) PBM file.
+The white areas (zeros) are rendered transparent and the black areas
+  (ones) are rendered in an arbitrary color.
+*/
 class PbmTexture extends OneBytePbmTexture_:
+  /**
+  The byte array passed in must be a valid binary-mode (P4) PBM file.
+  If $bytes is a literal containing constants then it is used directly
+    from flash.  However if the pixel drawing methods on this are used then
+    $bytes is moved to RAM and modified.  This could cause an out-of-memory
+    on very large PBM files.
+  */
   constructor x/int y/int transform/Transform color/int bytes/ByteArray:
     super x y transform color bytes
 
