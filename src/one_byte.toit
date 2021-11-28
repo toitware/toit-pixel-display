@@ -84,8 +84,10 @@ class OneByteTextTexture_ extends TextTexture_:
   draw_ bx by orientation canvas:
     bytemap_draw_text bx by color_ orientation string_ font_ canvas.pixels_ canvas.width
 
-// A texture that contains an uncompressed 2-color image.  Initially all pixels
-// are transparent, but pixels can be given the color with $set_pixel.
+/**
+A texture that contains an uncompressed 2-color image.  Initially all pixels
+  are transparent, but pixels can be given the color with $set_pixel.
+*/
 class OneByteBitmapTexture_ extends BitmapTexture_:
   color_ := 0
 
@@ -95,9 +97,13 @@ class OneByteBitmapTexture_ extends BitmapTexture_:
   draw_ bx by orientation canvas:
     bitmap_draw_bitmap bx by color_ orientation bytes_ 0 w canvas.pixels_ canvas.width true
 
-// A two color bitmap texture.  Initially all pixels have the background color.
-// Use set_pixel to paint with the foreground, and clear_pixel to paint with
-// the background.
+/**
+A two color bitmap texture where foreground and background pixels in the
+  texture are both drawn.
+Initially all pixels have the background color.
+Use $set_pixel to paint with the foreground, and $clear_pixel to paint with
+  the background.
+*/
 class OneByteOpaqueBitmapTexture_ extends OneByteBitmapTexture_:
   background_color_ := 0
 
@@ -111,20 +117,24 @@ class OneByteOpaqueBitmapTexture_ extends OneByteBitmapTexture_:
       bytemap_rectangle x y background_color_ w2 h2 canvas.pixels_ canvas.width
     super win_x win_y canvas  // Draw foreground.
 
-// A texture backed by a P4 (binary two-level) PBM file.  The white areas
-// (zeros) are rendered transparent and the black areas (ones) are rendered in
-// an arbitrary color.
+/**
+A texture backed by a P4 (binary two-level) PBM file.
+The white areas (zeros) are rendered transparent and the black areas
+  (ones) are rendered in an arbitrary color.
+*/
 class OneBytePbmTexture_ extends BitmapTexture_:
   width_ := 0
   height_ := 0
   color_ := 0
   bytes_ := ?
 
-  // The byte array passed in must be a valid binary-mode (P4) PBM file.
-  // If $bytes is a literal containing constants then it is used directly
-  //   from flash.  However if the pixel drawing methods on this are used then
-  //   $bytes is moved to RAM and modified.  This could cause an out-of-memory
-  //   on very large PBM files.
+  /**
+  The byte array passed in must be a valid binary-mode (P4) PBM file.
+  If $bytes is a literal containing constants then it is used directly
+    from flash.  However if the pixel drawing methods on this are used then
+    $bytes is moved to RAM and modified.  This could cause an out-of-memory
+    on very large PBM files.
+  */
   constructor x/int y/int transform/Transform .color_/int bytes/ByteArray:
     parser := PbmParser_ bytes
     parser.parse_

@@ -21,8 +21,8 @@ class Canvas extends OneByteCanvas_:
     super width height
 
   /**
-   * Creates an blank texture with the same dimensions as this one.
-   */
+  Creates a blank texture with the same dimensions as this one.
+  */
   create_similar:
     return Canvas width height
 
@@ -70,7 +70,8 @@ class BitmapTexture extends OneByteBitmapTexture_:
     super x y w h transform color
 
 /**
-A two color bitmap texture.
+A two color bitmap texture where foreground and background pixels in the
+  texture are both drawn.
 Initially all pixels have the background color.
 Use $set_pixel to paint with the foreground, and $clear_pixel to paint with
   the background.
