@@ -26,8 +26,8 @@ class Canvas extends OneByteCanvas_:
     super width height
 
   /**
-   * Creates a blank texture with the same dimensions as this one.
-   */
+  Creates a blank texture with the same dimensions as this one.
+  */
   create_similar:
     return Canvas width height
 
