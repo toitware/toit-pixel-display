@@ -16,13 +16,16 @@ import icons show Icon
 import .four_gray as four_gray
 import .true_color as true_color
 import .gray_scale as gray_scale
+import .several_color as several_color
+import .one_byte as one_byte
 
 FLAG_2_COLOR ::=         0b1
 FLAG_3_COLOR ::=         0b10
 FLAG_4_COLOR ::=         0b100
 FLAG_GRAY_SCALE ::=      0b1000
-FLAG_TRUE_COLOR ::=      0b10000
-FLAG_PARTIAL_UPDATES ::= 0b100000
+FLAG_SEVERAL_COLOR ::=   0b10000
+FLAG_TRUE_COLOR ::=      0b100000
+FLAG_PARTIAL_UPDATES ::= 0b1000000
 
 /**
 Abstract superclass for all pixel display drivers.
@@ -45,6 +48,8 @@ abstract class AbstractDriver:
     throw "Not a two-bit driver"
   draw_gray_scale x/int y/int w/int h/int pixels/ByteArray:
     throw "Not a gray-scale driver"
+  draw_several_color x/int y/int w/int h/int pixels/ByteArray:
+    throw "Not a several-color driver"
   draw_true_color x/int y/int w/int h/int red/ByteArray green/ByteArray blue/ByteArray:
     throw "Not a true-color driver"
   close -> none:
@@ -743,17 +748,18 @@ class GrayScalePixelDisplay extends PixelDisplay:
     height := 0
     // Keep each color component under 2k so you can fit two on a page.
     height = round_down (2000 / width) 8
-    // We can't work well with canvases that are less than 8 pixels tall.
-    return max 8 height
+    // We can't work well with canvases that are less than 4 pixels tall.
+    return height < 8 ? 4 : height
 
   draw_entire_display_:
     driver_.start_full_update speed_
     w := width_
-    canvas := gray_scale.Canvas w 8
-    for y := 0; y < height_; y += 8:
+    step := max_canvas_height_ w
+    canvas := gray_scale.Canvas w step
+    List.chunk_up 0 height_ step: | y y_end |
       background_.write 0 y canvas
       textures_.do: it.write 0 y canvas
-      driver_.draw_gray_scale 0 y width_ 8 canvas.pixels_
+      driver_.draw_gray_scale 0 y width_ step canvas.pixels_
     driver_.commit 0 0 width_ height_
 
   redraw_rect_ left/int top/int right/int bottom/int -> none:
@@ -761,6 +767,97 @@ class GrayScalePixelDisplay extends PixelDisplay:
     background_.write left top canvas
     textures_.do: it.write left top canvas
     driver_.draw_gray_scale left top right bottom canvas.pixels_
+
+/**
+Pixel-based display with up to 256 colors, connected to a device.
+Height and width must be multiples of 8.
+This class keeps track of the list of things to draw, and
+  which areas need refreshing.  Add components with $add and render to
+  the display with $draw.
+See https://docs.toit.io/language/sdk/display
+*/
+class SeveralColorPixelDisplay extends PixelDisplay:
+  constructor driver/AbstractDriver:
+    super driver
+    background_ = several_color.InfiniteBackground 0
+
+  background= color/int -> none:
+    if not background_ or background_.color != color:
+      background_ = several_color.InfiniteBackground color
+      invalidate 0 0 width_ height_
+
+  text context/GraphicsContext x/int y/int text/string -> several_color.TextTexture:
+    if context.font == null: throw "NO_FONT_GIVEN"
+    texture := several_color.TextTexture x y context.transform context.alignment text context.font context.color
+    add texture
+    return texture
+
+  icon context/GraphicsContext x/int y/int icon/Icon -> several_color.IconTexture:
+    texture := several_color.IconTexture x y context.transform context.alignment icon icon.font_ context.color
+    add texture
+    return texture
+
+  filled_rectangle context/GraphicsContext x/int y/int width/int height/int -> several_color.FilledRectangle:
+    texture := several_color.FilledRectangle context.color x y width height context.transform
+    add texture
+    return texture
+
+  /// A line from x1,y1 to x2,y2.  The line must be horizontal or vertical.
+  line context/GraphicsContext x1/int y1/int x2/int y2/int -> several_color.FilledRectangle:
+    texture := several_color.FilledRectangle.line context.color x1 y1 x2 y2 context.transform
+    add texture
+    return texture
+
+  /**
+  A texture that contains an uncompressed 2-color image.  Initially all
+    pixels are transparent, but pixels can be given the color from the context
+    with set_pixel.
+  */
+  bitmap context/GraphicsContext x/int y/int width/int height/int -> several_color.BitmapTexture:
+    texture := several_color.BitmapTexture x y width height context.transform context.color
+    add texture
+    return texture
+
+  /**
+  A texture that contains an uncompressed 2-color image.  Initially all
+    pixels have the background color from the context.  Pixels can be set to
+    the context color with set_pixel, or set to the context background color
+    with clear_pixel.
+  */
+  opaque_bitmap context/GraphicsContext x/int y/int width/int height/int -> several_color.OpaqueBitmapTexture:
+    texture := several_color.OpaqueBitmapTexture x y width height context.transform context.color context.background
+    add texture
+    return texture
+
+  default_draw_color_ -> int:
+    return 1
+
+  default_background_color_ -> int:
+    return 0
+
+  max_canvas_height_ width:
+    height := 0
+    // Keep each color component under 2k so you can fit two on a page.
+    height = round_down (2000 / width) 8
+    // We can't work well with canvases that are less than 4 pixels tall.
+    return height < 8 ? 4 : height
+
+  draw_entire_display_:
+    driver_.start_full_update speed_
+    w := width_
+    step := max_canvas_height_ w
+    canvas := several_color.Canvas w step
+    List.chunk_up 0 height_ step: | y y_end |
+      background_.write 0 y canvas
+      textures_.do: it.write 0 y canvas
+      driver_.draw_several_color 0 y width_ step canvas.pixels_
+    driver_.commit 0 0 width_ height_
+
+  redraw_rect_ left/int top/int right/int bottom/int -> none:
+    canvas := several_color.Canvas (right - left) (bottom - top)
+    background_.write left top canvas
+    textures_.do: it.write left top canvas
+    driver_.draw_several_color left top right bottom canvas.pixels_
 
 /**
 Pixel-based display with up to 16 million colors, connected to a device.

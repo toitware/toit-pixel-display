@@ -2,7 +2,7 @@
 // Use of this source code is governed by an MIT-style license that can be
 // found in the LICENSE file.
 
-// Classes useful for 256-shade displays.
+// Classes useful for displays that have between 5 and 256 discrete colors.
 // A canvas is a frame buffer that can be drawn on and sent to a display.
 // A texture is an object that can draw itself onto a canvas.
 
@@ -11,11 +11,6 @@ import font show Font
 import icons show Icon
 import .texture
 import .one_byte
-
-WHITE ::= 255
-LIGHT_GRAY ::= 170
-DARK_GRAY ::= 85
-BLACK ::= 0
 
 // The canvas contains a ByteArray.
 // Initially all pixels have the 0 color.
@@ -85,7 +80,7 @@ class BarCodeEan13 extends OneByteBarCodeEan13_:
   constructor code/string x/int y/int transform/Transform:
     super code x y transform
 
-  white_ -> int: return 0xff
+  white_ -> int: return 1
   black_ -> int: return 0
 
 class SimpleWindow extends OneByteSimpleWindow_:
@@ -96,42 +91,23 @@ class SimpleWindow extends OneByteSimpleWindow_:
   constructor x y w h transform border_width border_color/int background_color/int:
     super x y w h transform border_width border_color background_color
 
+  draw_frame win_x win_y canvas:
+    bytemap_zap canvas.pixels_ border_color
+
+  draw_background win_x win_y canvas:
+    bytemap_zap canvas.pixels_ background_color
+
 class RoundedCornerWindow extends OneByteRoundedCornerWindow_:
   constructor x y w h transform corner_radius background_color/int:
     super x y w h transform corner_radius background_color
 
   set_opacity_ x y opacity map map_width --frame/bool:
+    if opacity < 0x80:
+      opacity = 0
+    else:
+      opacity = 0xff
     assert: not frame
     if 0 <= x < map_width:
       y_offset := y * map_width
       if 0 <= y_offset < map.size:
         map[x + y_offset] = opacity
-
-class DropShadowWindow extends DropShadowWindow_:
-  background_color := ?
-  max_shadow_opacity_ := ?
-
-  constructor x y w h transform .background_color --corner_radius=5 --blur_radius=5 --drop_distance_x=10 --drop_distance_y=10 --shadow_opacity_percent=25:
-    max_shadow_opacity_ = (shadow_opacity_percent * 2.5500001).to_int
-    super x y w h transform corner_radius blur_radius drop_distance_x drop_distance_y
-
-  make_alpha_map_ canvas padding:
-    return ByteArray (canvas.width + padding) * (canvas.height + padding)
-
-  make_opaque_ x y w h map map_width --frame/bool:
-    bytemap_rectangle x y (frame ? max_shadow_opacity_ : 255) w h map map_width
-
-  set_opacity_ x y opacity map map_width --frame/bool:
-    if 0 <= x < map_width:
-      y_offset := y * map_width
-      if 0 <= y_offset < map.size:
-        if frame:
-          map[x + y_offset] = (opacity * max_shadow_opacity_) >> 8
-        else:
-          map[x + y_offset] = opacity
-
-  draw_background win_x win_y canvas:
-    bytemap_zap canvas.pixels_ background_color
-
-  draw_frame win_x win_y canvas:
-    bytemap_zap canvas.pixels_ 0

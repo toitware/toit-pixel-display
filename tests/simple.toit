@@ -37,6 +37,12 @@ class GrayScaleDriver extends AbstractDriver:
   flags ::= FLAG_GRAY_SCALE
   draw_gray_scale x/int y/int w/int h/int pixels/ByteArray -> none:
 
+class SeveralColorDriver extends AbstractDriver:
+  width ::= 128
+  height ::= 64
+  flags ::= FLAG_SEVERAL_COLOR
+  draw_several_color x/int y/int w/int h/int pixels/ByteArray -> none:
+
 main:
   driver2 := TwoColorDriver
   display2 := TwoColorPixelDisplay driver2
@@ -53,9 +59,12 @@ main:
   driver_gray := GrayScaleDriver
   display_gray := GrayScalePixelDisplay driver_gray
 
+  driver_several := SeveralColorDriver
+  display_several := SeveralColorPixelDisplay driver_several
+
   sans10 := Font.get "sans10"
 
-  [display2, display3, display4, display_true, display_gray].do: | display |
+  [display2, display3, display4, display_true, display_gray, display_several].do: | display |
     ctx := display.context --landscape --font=sans10
     display.filled_rectangle ctx 10 20 30 40
     display.text ctx 50 20 "Testing"
