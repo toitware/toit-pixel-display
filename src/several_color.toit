@@ -3,21 +3,16 @@
 // found in the LICENSE file.
 
 /**
-Classes useful for $GrayScalePixelDisplay.
-For use with monochrome displays with many tones of gray.
+Classes useful for $SeveralColorPixelDisplay.
+For use with displays that have between 5 and 256 discrete colors.
 */
 
 import bitmap show *
 import font show Font
 import icons show Icon
-import .pixel_display show GrayScalePixelDisplay  // For the doc comment.
+import .pixel_display show SeveralColorPixelDisplay  // For the doc comment.
 import .texture
 import .one_byte
-
-WHITE ::= 255
-LIGHT_GRAY ::= 170
-DARK_GRAY ::= 85
-BLACK ::= 0
 
 // The canvas contains a ByteArray.
 // Initially all pixels have the 0 color.
@@ -101,102 +96,11 @@ class PbmTexture extends OneBytePbmTexture_:
   constructor x/int y/int transform/Transform color/int bytes/ByteArray:
     super x y transform color bytes
 
-/**
-A rectangular pixmap that can be drawn in any of 4 orientations on a canvas.
-*/
-class PixmapTexture extends PixmapTexture_:
-  bytes_/ByteArray
-  palette_/ByteArray ::= #[]
-  transparency_/bool
-
-  /**
-  Creates a pixmap. All pixels are initially transparent.
-  */
-  constructor x/int y/int w/int h/int transform/Transform:
-    transparency_ = true
-    bytes_ = ByteArray w * h: 42
-    super x y w h transform
-
-  /**
-  Creates a pixmap with the given pixels.  No transparency is supported.
-  The pixel byte array should have the size $w * $h.
-  */
-  constructor x/int y/int w/int h/int transform/Transform .bytes_:
-    if bytes_.size != w * h: throw "INVALID_ARGUMENT"
-    transparency_ = false
-    super x y w h transform
-
-  /**
-  Returns the brightness value of the gray shade at the given coordinates.
-  Returns -1 if the pixel is transparent at that coordinate.
-  */
-  get_pixel x/int y/int -> int:
-    result := bytes_[x + y * w]
-    if not transparency_:
-      return result
-    return result == 42 ? -1 : result
-
-  /**
-  Sets the brightness value of the gray shade at the given coordinates
-    between 0 and 255.
-  Setting the brightness to -1 makes the pixel transparent for a pixmap
-    that supports transparency.  For transparency-supporting pixmaps,
-    one value cannot be set because it is reserved, so if you set the
-    pixel to a brightness of 42 it will silently use 41 instead.
-  */
-  set_pixel x/int y/int brightness/int -> none:
-    if not transparency_:
-      if brightness == 42:
-        brightness = 41
-      else if brightness == -1:
-        brightness = 42
-    if not 0 <= brightness <= 0xff: throw "Invalid pixel"
-    bytes_[x + y * w] = brightness
-
-  /**
-  Sets a pixel to transparent.
-  This instance must have been created with transparency.
-  */
-  clear_pixel x/int y/int -> none:
-    if not transparency_: throw "No transparency"
-    set_pixel x y 42
-
-  /**
-  Sets the brightness value of the gray shade on the entire pixmap
-    between 0 and 255.
-  Setting the brightness to -1 makes the pixmap transparent for a pixmap
-    that supports transparency.  For transparency-supporting pixmaps,
-    one value cannot be set because it is reserved, so if you set the
-    pixmap to a brightness of 42 it will silently use 41 instead.
-  */
-  set_all_pixels brightness/int -> none:
-    if not transparency_:
-      if brightness == 42:
-        brightness = 41
-      else if brightness == -1:
-        brightness = 42
-    if not 0 <= brightness <= 0xff: throw "Invalid pixel"
-    bitmap_zap bytes_ brightness
-
-  /**
-  Sets all pixels to transparent.
-  This instance must have been created with transparency.
-  */
-  clear_all_pixels -> none:
-    if not transparency_: throw "No transparency"
-    bitmap_zap bytes_ 42
-
-  draw_ bx by orientation canvas:
-    if transparency_:
-      bitmap_draw_bytemap bx by 42 orientation bytes_ w palette_ canvas.pixels_ canvas.width
-    else:
-      bitmap_draw_bytemap bx by -1 orientation bytes_ w palette_ canvas.pixels_ canvas.width
-
 class BarCodeEan13 extends OneByteBarCodeEan13_:
   constructor code/string x/int y/int transform/Transform:
     super code x y transform
 
-  white_ -> int: return 0xff
+  white_ -> int: return 1
   black_ -> int: return 0
 
 class SimpleWindow extends OneByteSimpleWindow_:
@@ -207,42 +111,23 @@ class SimpleWindow extends OneByteSimpleWindow_:
   constructor x y w h transform border_width border_color/int background_color/int:
     super x y w h transform border_width border_color background_color
 
+  draw_frame win_x win_y canvas:
+    bytemap_zap canvas.pixels_ border_color
+
+  draw_background win_x win_y canvas:
+    bytemap_zap canvas.pixels_ background_color
+
 class RoundedCornerWindow extends OneByteRoundedCornerWindow_:
   constructor x y w h transform corner_radius background_color/int:
     super x y w h transform corner_radius background_color
 
   set_opacity_ x y opacity map map_width --frame/bool:
+    if opacity < 0x80:
+      opacity = 0
+    else:
+      opacity = 0xff
     assert: not frame
     if 0 <= x < map_width:
       y_offset := y * map_width
       if 0 <= y_offset < map.size:
         map[x + y_offset] = opacity
-
-class DropShadowWindow extends DropShadowWindow_:
-  background_color := ?
-  max_shadow_opacity_ := ?
-
-  constructor x y w h transform .background_color --corner_radius=5 --blur_radius=5 --drop_distance_x=10 --drop_distance_y=10 --shadow_opacity_percent=25:
-    max_shadow_opacity_ = (shadow_opacity_percent * 2.5500001).to_int
-    super x y w h transform corner_radius blur_radius drop_distance_x drop_distance_y
-
-  make_alpha_map_ canvas padding:
-    return ByteArray (canvas.width + padding) * (canvas.height + padding)
-
-  make_opaque_ x y w h map map_width --frame/bool:
-    bytemap_rectangle x y (frame ? max_shadow_opacity_ : 255) w h map map_width
-
-  set_opacity_ x y opacity map map_width --frame/bool:
-    if 0 <= x < map_width:
-      y_offset := y * map_width
-      if 0 <= y_offset < map.size:
-        if frame:
-          map[x + y_offset] = (opacity * max_shadow_opacity_) >> 8
-        else:
-          map[x + y_offset] = opacity
-
-  draw_background win_x win_y canvas:
-    bytemap_zap canvas.pixels_ background_color
-
-  draw_frame win_x win_y canvas:
-    bytemap_zap canvas.pixels_ 0
