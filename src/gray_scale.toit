@@ -202,7 +202,7 @@ class PixmapTexture extends PixmapTexture_:
     result := bytes_[x + y * w]
     if not transparency_:
       return result
-    return result = 42 ? -1 : result
+    return result == 42 ? -1 : result
 
   /**
   Set the brightness value of the gray shade at the given coordinates
