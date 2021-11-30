@@ -167,9 +167,9 @@ class OneByteSimpleWindow_ extends SimpleWindow_:
   border_color := ?
 
   /**
-   * A rectangular window with a fixed width colored border.  The border is
-   * subtracted from the visible area inside the window.
-   */
+  A rectangular window with a fixed width colored border.  The border is
+    subtracted from the visible area inside the window.
+  */
   constructor x y w h transform border_width .border_color .background_color:
     super x y w h transform border_width
 
