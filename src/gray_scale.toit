@@ -169,6 +169,97 @@ class PbmTexture extends BitmapTexture_:
   draw_ bx by orientation canvas:
     bitmap_draw_bitmap bx by color_ orientation bytes_ 0 w canvas.pixels_ canvas.width true
 
+/**
+A rectangular pixmap that can be drawn in any of 4 orientations on a canvas.
+*/
+class PixmapTexture extends PixmapTexture_:
+  bytes_/ByteArray
+  palette_/ByteArray ::= #[]
+  transparency_/bool
+
+  /**
+  Creates a pixmap. All pixels are initially transparent.
+  */
+  constructor x/int y/int w/int h/int transform/Transform:
+    transparency_ = true
+    bytes_ = ByteArray w * h: 42
+    super x y w h transform
+
+  /**
+  Creates a pixmap with the given pixels.  No transparency is supported.
+  The pixel byte array should have the size $w * $h.
+  */
+  constructor x/int y/int w/int h/int transform/Transform .bytes_:
+    if bytes_.size != w * h: throw "INVALID_ARGUMENT"
+    transparency_ = false
+    super x y w h transform
+
+  /**
+  Returns the brightness value of the gray shade at the given coordinates.
+  Returns -1 if the pixel is transparent at that coordinate.
+  */
+  get_pixel x/int y/int -> int:
+    result := bytes_[x + y * w]
+    if not transparency_:
+      return result
+    return result == 42 ? -1 : result
+
+  /**
+  Sets the brightness value of the gray shade at the given coordinates
+    between 0 and 255.
+  Setting the brightness to -1 makes the pixel transparent for a pixmap
+    that supports transparency.  For transparency-supporting pixmaps,
+    one value cannot be set because it is reserved, so if you set the
+    pixel to a brightness of 42 it will silently use 41 instead.
+  */
+  set_pixel x/int y/int brightness/int -> none:
+    if not transparency_:
+      if brightness == 42:
+        brightness = 41
+      else if brightness == -1:
+        brightness = 42
+    if not 0 <= brightness <= 0xff: throw "Invalid pixel"
+    bytes_[x + y * w] = brightness
+
+  /**
+  Sets a pixel to transparent.
+  This instance must have been created with transparency.
+  */
+  clear_pixel x/int y/int -> none:
+    if not transparency_: throw "No transparency"
+    set_pixel x y 42
+
+  /**
+  Sets the brightness value of the gray shade on the entire pixmap
+    between 0 and 255.
+  Setting the brightness to -1 makes the pixmap transparent for a pixmap
+    that supports transparency.  For transparency-supporting pixmaps,
+    one value cannot be set because it is reserved, so if you set the
+    pixmap to a brightness of 42 it will silently use 41 instead.
+  */
+  set_all_pixels brightness/int -> none:
+    if not transparency_:
+      if brightness == 42:
+        brightness = 41
+      else if brightness == -1:
+        brightness = 42
+    if not 0 <= brightness <= 0xff: throw "Invalid pixel"
+    bitmap_zap bytes_ brightness
+
+  /**
+  Sets all pixels to transparent.
+  This instance must have been created with transparency.
+  */
+  clear_all_pixels -> none:
+    if not transparency_: throw "No transparency"
+    bitmap_zap bytes_ 42
+
+  draw_ bx by orientation canvas:
+    if transparency_:
+      bitmap_draw_bytemap bx by 42 orientation bytes_ w palette_ canvas.pixels_ canvas.width
+    else:
+      bitmap_draw_bytemap bx by -1 orientation bytes_ w palette_ canvas.pixels_ canvas.width
+
 class BarCodeEan13 extends BarCodeEan13_:
   constructor code/string x/int y/int transform/Transform:
     super code x y transform
