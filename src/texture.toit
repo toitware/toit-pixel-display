@@ -1101,7 +1101,7 @@ abstract class DropShadowWindow_ extends RoundedCornerWindow_:
 abstract class BitmapTextureBase_ extends SizedTexture:
   w := 0
   h := 0
-  bytes_per_line_/int ::= ?
+  bytes_per_line_ /int
 
   constructor x/int y/int .w .h transform/Transform:
     bytes_per_line_ = (w + 7) >> 3  // Divide by 8, rounding up.
@@ -1158,8 +1158,8 @@ abstract class BitmapTexture_ extends BitmapTextureBase_:
     bitmap_zap bytes_ 0
 
 abstract class PixmapTexture_ extends SizedTexture:
-  w := 0
-  h := 0
+  w /int
+  h /int
 
   constructor x/int y/int .w .h transform/Transform:
     super x y w h transform
@@ -1183,7 +1183,7 @@ abstract class InfiniteBackground_ extends Texture:
 
 class PbmParser_:
   INVALID_PBM_ ::= "INVALID PBM"
-  bytes_/ByteArray ::= ?
+  bytes_/ByteArray
   next_ := 0
 
   width := 0

@@ -173,9 +173,9 @@ class PbmTexture extends BitmapTexture_:
 A rectangular pixmap that can be drawn in any of 4 orientations on a canvas.
 */
 class PixmapTexture extends PixmapTexture_:
-  bytes_/ByteArray ::= ?
+  bytes_/ByteArray
   palette_/ByteArray ::= #[]
-  transparency_/bool ::= ?
+  transparency_/bool
 
   /**
   Creates a pixmap. All pixels are initially transparent.
@@ -189,13 +189,13 @@ class PixmapTexture extends PixmapTexture_:
   Creates a pixmap with the given pixels.  No transparency is supported.
   The pixel byte array should have the size $w * $h.
   */
-  constructor x/int y/int w/int h/int transform/Transform .bytes_/ByteArray:
+  constructor x/int y/int w/int h/int transform/Transform .bytes_:
     if bytes_.size != w * h: throw "INVALID_ARGUMENT"
     transparency_ = false
     super x y w h transform
 
   /**
-  Brightness value of the gray shade at the given coordinates.
+  Returns the brightness value of the gray shade at the given coordinates.
   Returns -1 if the pixel is transparent at that coordinate.
   */
   get_pixel x/int y/int -> int:
@@ -205,50 +205,50 @@ class PixmapTexture extends PixmapTexture_:
     return result == 42 ? -1 : result
 
   /**
-  Set the brightness value of the gray shade at the given coordinates
+  Sets the brightness value of the gray shade at the given coordinates
     between 0 and 255.
   Setting the brightness to -1 makes the pixel transparent for a pixmap
     that supports transparency.  For transparency-supporting pixmaps,
     one value cannot be set because it is reserved, so if you set the
     pixel to a brightness of 42 it will silently use 41 instead.
   */
-  set_pixel x/int y/int index/int -> none:
+  set_pixel x/int y/int brightness/int -> none:
     if not transparency_:
-      if index == 42:
-        index = 41
-      else if index == -1:
-        index = 42
-    if not 0 <= index <= 0xff: throw "Invalid pixel"
-    bytes_[x + y * w] = index
+      if brightness == 42:
+        brightness = 41
+      else if brightness == -1:
+        brightness = 42
+    if not 0 <= brightness <= 0xff: throw "Invalid pixel"
+    bytes_[x + y * w] = brightness
 
   /**
-  Set pixel to transparent.
-  Throws an error if the pixmap was created without transparency.
+  Sets a pixel to transparent.
+  This instance must have been created with transparency.
   */
   clear_pixel x/int y/int -> none:
     if not transparency_: throw "No transparency"
     set_pixel x y 42
 
   /**
-  Set the brightness value of the gray shade on the entire pixmap
+  Sets the brightness value of the gray shade on the entire pixmap
     between 0 and 255.
   Setting the brightness to -1 makes the pixmap transparent for a pixmap
     that supports transparency.  For transparency-supporting pixmaps,
     one value cannot be set because it is reserved, so if you set the
     pixmap to a brightness of 42 it will silently use 41 instead.
   */
-  set_all_pixels index/int -> none:
+  set_all_pixels brightness/int -> none:
     if not transparency_:
-      if index == 42:
-        index = 41
-      else if index == -1:
-        index = 42
-    if not 0 <= index <= 0xff: throw "Invalid pixel"
-    bitmap_zap bytes_ index
+      if brightness == 42:
+        brightness = 41
+      else if brightness == -1:
+        brightness = 42
+    if not 0 <= brightness <= 0xff: throw "Invalid pixel"
+    bitmap_zap bytes_ brightness
 
   /**
-  Set all pixels to transparent.
-  Throws an error if the pixmap was created without transparency.
+  Sets all pixels to transparent.
+  This instance must have been created with transparency.
   */
   clear_all_pixels -> none:
     if not transparency_: throw "No transparency"

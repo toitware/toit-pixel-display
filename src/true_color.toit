@@ -237,9 +237,9 @@ class IndexedPixmapTexture extends PixmapTexture_:
     super x y w h transform
 
   /**
-  Get the index in the palette for a given color, expressed with components from 0-255.
+  Gets the index in the palette for a given color, expressed with components from 0-255.
   This can be quite slow if there are a lot of colors.
-  Throws an error if 255 colors have already been allocated.
+  At most 255 colors can be allocated.
   */
   allocate_color r/int g/int b/int -> int:
     for i := 1; i < used_indices_; i++:
@@ -257,9 +257,9 @@ class IndexedPixmapTexture extends PixmapTexture_:
     return used_indices_++
 
   /**
-  Get the index in the palette for a given color, expressed as a 6 digit hex value 0xrrggbb.
+  Gets the index in the palette for a given color, expressed as a 6 digit hex value 0xrrggbb.
   This can be quite slow if there are a lot of colors.
-  Throws an error if 255 colors have already been allocated.
+  At most 255 colors can be allocated.
   */
   allocate_color color/int -> int:
     return allocate_color
@@ -267,33 +267,33 @@ class IndexedPixmapTexture extends PixmapTexture_:
       (color >> 8) & 0xff
       color & 0xff
 
-  /// Look up the index in the palette.
+  /// Looks up the index in the palette.
   red_component index/int -> int:
     return palette_[index * 3]
 
-  /// Look up the index in the palette.
+  /// Looks up the index in the palette.
   green_component index/int -> int:
     return palette_[index * 3 + 1]
 
-  /// Look up the index in the palette.
+  /// Looks up the index in the palette.
   blue_component index/int -> int:
     return palette_[index * 3 + 2]
 
-  /// Index value of the color at the given coordinates.
+  /// Returns the index value of the color at the given coordinates.
   get_pixel x/int y/int -> int:
     return bytes_[x + y * w]
 
   set_pixel x/int y/int index/int -> none:
     bytes_[x + y * w] = index
 
-  /// Set pixel to transparent.
+  /// Sets the pixel at the given coordinates to transparent.
   clear_pixel x/int y/int -> none:
     set_pixel x y 0
 
   set_all_pixels index/int -> none:
     bitmap_zap bytes_ index
 
-  /// Set all pixels to transparent.
+  /// Sets all pixels to transparent.
   clear_all_pixels -> none:
     bitmap_zap bytes_ 0
 

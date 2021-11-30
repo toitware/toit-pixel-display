@@ -78,7 +78,6 @@ main:
     image2.set_pixel x y+1 c
 
   for x := 11; x < 50; x++:
-
     display.draw
     p driver
 
