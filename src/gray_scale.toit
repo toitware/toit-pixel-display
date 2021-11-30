@@ -86,6 +86,22 @@ class OpaqueBitmapTexture extends OneByteOpaqueBitmapTexture_:
     super x y w h transform foreground_color background_color
 
 /**
+A texture backed by a P4 (binary two-level) PBM file.
+The white areas (zeros) are rendered transparent and the black areas
+  (ones) are rendered in an arbitrary color.
+*/
+class PbmTexture extends OneBytePbmTexture_:
+  /**
+  The byte array passed in must be a valid binary-mode (P4) PBM file.
+  If $bytes is a literal containing constants then it is used directly
+    from flash.  However if the pixel drawing methods on this are used then
+    $bytes is moved to RAM and modified.  This could cause an out-of-memory
+    on very large PBM files.
+  */
+  constructor x/int y/int transform/Transform color/int bytes/ByteArray:
+    super x y transform color bytes
+
+/**
 A rectangular pixmap that can be drawn in any of 4 orientations on a canvas.
 */
 class PixmapTexture extends PixmapTexture_:
@@ -175,22 +191,6 @@ class PixmapTexture extends PixmapTexture_:
       bitmap_draw_bytemap bx by 42 orientation bytes_ w palette_ canvas.pixels_ canvas.width
     else:
       bitmap_draw_bytemap bx by -1 orientation bytes_ w palette_ canvas.pixels_ canvas.width
-
-/**
-A texture backed by a P4 (binary two-level) PBM file.
-The white areas (zeros) are rendered transparent and the black areas
-  (ones) are rendered in an arbitrary color.
-*/
-class PbmTexture extends OneBytePbmTexture_:
-  /**
-  The byte array passed in must be a valid binary-mode (P4) PBM file.
-  If $bytes is a literal containing constants then it is used directly
-    from flash.  However if the pixel drawing methods on this are used then
-    $bytes is moved to RAM and modified.  This could cause an out-of-memory
-    on very large PBM files.
-  */
-  constructor x/int y/int transform/Transform color/int bytes/ByteArray:
-    super x y transform color bytes
 
 class BarCodeEan13 extends OneByteBarCodeEan13_:
   constructor code/string x/int y/int transform/Transform:
