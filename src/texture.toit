@@ -2,7 +2,7 @@
 // Use of this source code is governed by an MIT-style license that can be
 // found in the LICENSE file.
 
-import binary show LITTLE_ENDIAN
+import binary show LITTLE_ENDIAN BIG_ENDIAN
 import bitmap show *
 import font show Font
 
@@ -1180,6 +1180,19 @@ abstract class PixmapTexture_ extends SizedTexture:
 abstract class InfiniteBackground_ extends Texture:
 
   abstract color -> int
+
+class QoiParser_:
+  INVALID_QOI_ ::= "INVALID QOI"
+
+  width /int
+  height /int
+
+  constructor bytes/ByteArray:
+    if bytes.size < 15: throw INVALID_QOI_
+    if bytes[0..4].to_string != "qoif": throw INVALID_QOI_
+
+    width = BIG_ENDIAN.uint32 bytes 4
+    height = BIG_ENDIAN.uint32 bytes 8
 
 class PbmParser_:
   INVALID_PBM_ ::= "INVALID PBM"

@@ -202,6 +202,21 @@ class PbmTexture extends BitmapTexture_:
     bitmap_draw_bitmap bx by (green_component color_) orientation bytes_ 0 w canvas.green_ canvas.width true
     bitmap_draw_bitmap bx by (blue_component color_)  orientation bytes_ 0 w canvas.blue_  canvas.width true
 
+class QoiTexture extends PixmapTexture_:
+  bytes_/ByteArray ::= ?
+
+  constructor x/int y/int transform/Transform .bytes_/ByteArray:
+    parser := QoiParser_ bytes_
+    super x y parser.width parser.height transform
+
+  draw_ bx by orientation canvas:
+    draw_qoi_ bx by orientation bytes_ 0 canvas.red_   canvas.width
+    draw_qoi_ bx by orientation bytes_ 1 canvas.green_ canvas.width
+    draw_qoi_ bx by orientation bytes_ 2 canvas.blue_  canvas.width
+
+draw_qoi_ x/int y/int orientation/int bytes/ByteArray component/int canvas/ByteArray canvas_width/int -> none:
+  #primitive.bitmap.draw_qoi
+
 /**
 A rectangular pixmap that can be drawn in any of 4 orientations on a canvas.
 Up to 255 different colors can be represented.  Each color to be used
