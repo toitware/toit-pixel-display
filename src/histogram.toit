@@ -18,26 +18,39 @@ abstract class Histogram extends SizedTexture:
   add sample -> none:
     if values_.size == 0: return
     if fullness_ == values_.size:
-      first_inval := 10000000
-      last_inval := -1
-      top_inval := 10000000
-      bottom_inval := -1
-      (values_.size).repeat:
-        coord_old := sample_to_coordinate_ values_[it]
-        new := (it + 1 < values_.size) ? values_[it + 1] : sample
-        values_[it] = new
-        coord_new := sample_to_coordinate_ new
-        if coord_old != coord_new:
-          top_inval = min top_inval (min coord_old coord_new)
-          bottom_inval = max bottom_inval (max coord_old coord_new)
-          first_inval = min first_inval it
-          last_inval = max last_inval it
-      if first_inval <= last_inval and top_inval <= bottom_inval:
-        invalidate (x + first_inval) (y + top_inval) (last_inval + 1 - first_inval) (bottom_inval + 1 - top_inval)
+      update_: | x |
+        (x + 1 < values_.size) ? values_[x + 1] : sample
     else:
       coord := sample_to_coordinate_ sample
       invalidate (x + fullness_) (y + coord) 1 (h_ - coord)
       values_[fullness_++] = sample
+
+  update_ [new_value_block] -> none:
+    List.chunk_up 0 values_.size 16: | from to size |
+      first_inval := 10000000
+      last_inval := -1
+      top_inval := 10000000
+      bottom_inval := -1
+      for x := from; x < to; x++:
+        coord_old := sample_to_coordinate_ values_[x]
+        new := new_value_block.call x
+        values_[x] = new
+        coord_new := sample_to_coordinate_ new
+        if coord_old != coord_new:
+          top_inval = min top_inval (min coord_old coord_new)
+          bottom_inval = max bottom_inval (max coord_old coord_new)
+          first_inval = min first_inval x
+          last_inval = max last_inval x
+      if first_inval <= last_inval and top_inval <= bottom_inval:
+        invalidate (x + first_inval) (y + top_inval) (last_inval + 1 - first_inval) (bottom_inval + 1 - top_inval)
+
+  /**
+  Adjust all samples up or down by a fixed amount.  This allows you
+    to change the Y axis without redrawing the whole histogram.
+  */
+  adjust_all adjustment/int -> none:
+    if adjustment == 0: return
+    update_: | x | values_[x] + adjustment
 
   sample_to_coordinate_ sample:
     scaled := (scale_ * sample).to_int
@@ -45,19 +58,25 @@ abstract class Histogram extends SizedTexture:
     return h_ - clamped
 
   write2_ win_x win_y canvas:
-    fullness_.repeat:
-      wx := x + it
-      coord := y + (sample_to_coordinate_ values_[it])
-      wy1 := coord
-      wy2 := y + h_
-      get_transform.xywh wx wy1 1 (wy2 - wy1): | x2 y2 w2 h2 |
-        if w2 > 0 and h2 > 0:
-          draw_rectangle
-            x2 - win_x
-            y2 - win_y
-            w2
-            h2
-            canvas
+    List.chunk_up 0 fullness_ 16: | from to size |
+      worth_plotting := false
+      get_transform.xywh (x + from) y size h_: | x2 y2 w2 h2 |
+        if w2 > 0 and h2 > 0 and x2 - win_x + w2 > 0 and x2 - win_x < canvas.width:
+          worth_plotting = true
+      if worth_plotting:
+        for hx := from; hx < to; hx++:
+          wx := x + hx
+          coord := y + (sample_to_coordinate_ values_[hx])
+          wy1 := coord
+          wy2 := y + h_
+          get_transform.xywh wx wy1 1 (wy2 - wy1): | x2 y2 w2 h2 |
+            if w2 > 0 and h2 > 0:
+              draw_rectangle
+                x2 - win_x
+                y2 - win_y
+                w2
+                h2
+                canvas
 
   abstract draw_rectangle x y w h canvas
 
