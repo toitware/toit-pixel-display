@@ -125,14 +125,14 @@ Something you can draw on a canvas.  It could be a text string, a pixmap or
   front, with transparency.
 */
 abstract class Texture:
-  hash_code/int ::= random 0 0x10000000
+  hash_code /int ::= random 0 0x10000000
 
   /**
   Writes the image data to a canvas window which is positioned at ($x, $y) in the global
     coordinate space.
   $pixels: Some sort of canvas.  The precise type depends on the depth of the display.
   */
-  write x/int y/int pixels:
+  write x/int y/int pixels -> none:
     assert: y & 7 == 0
     write_ x y pixels
 
@@ -146,11 +146,11 @@ Most $Texture s have a size and know their own position in the scene, and are
   and height of the texture with the current transform.
 */
 abstract class SizedTexture extends Texture:
-  x_/int := 0
-  y_/int := 0
-  w_/int := 0
-  h_/int := 0
-  transform_/Transform := Transform.identity
+  x_ /int := 0
+  y_ /int := 0
+  w_ /int := 0
+  h_ /int := 0
+  transform_ /Transform := Transform.identity
   change_tracker := null
 
   // Get the coordinate system of the texture.
@@ -223,7 +223,7 @@ abstract class SizedTexture extends Texture:
   /**
   Sets a new coordinate system for the texture.  This can cause it to move or rotate.
   */
-  set_transform new_transform/Transform:
+  set_transform new_transform/Transform -> none:
     invalidate
     transform_ = new_transform
     invalidate
@@ -236,7 +236,7 @@ abstract class SizedTexture extends Texture:
   $w: The width of the area to redraw.
   $h: The height of the area to redraw.
   */
-  invalidate x/int y/int w/int h/int:
+  invalidate x/int y/int w/int h/int -> none:
     if change_tracker:
       transform_.xywh x y w h: | x2 y2 w2 h2 |
         change_tracker.invalidate x2 y2 w2 h2
@@ -246,7 +246,7 @@ abstract class SizedTexture extends Texture:
   $new_x: New left edge in the texture's own coordinate system.
   $new_y: New top edge in the texture's own coordinate system.
   */
-  move_to new_x/int new_y/int:
+  move_to new_x/int new_y/int -> none:
     if new_x != x_ or new_y != y_:
       invalidate
       x_ = new_x
@@ -688,55 +688,96 @@ class TextureGroup extends Texture:
   change_tracker:
     return change_tracker_
 
-  change_tracker= value:
-    elements_.do: change_tracker = value
+  change_tracker= value -> none:
+    elements_.do: it.change_tracker = value
     change_tracker_ = value
 
-  add element:
+  add element -> none:
     elements_.add element
     element.change_tracker = change_tracker
     element.invalidate
 
-  remove element:
+  remove element -> none:
     element.invalidate
     elements_.remove element
     element.change_tracker = null
 
-  remove_all:
+  remove_all -> none:
     elements_.do:
       it.invalidate
       it.change_tracker = null
     elements_ = []
 
-  transform := null
-
   // After the textures under us have drawn themselves, we draw on top.
-  write_ x/int y/int canvas:
+  write_ x/int y/int canvas -> none:
     elements_.do: it.write x y canvas
 
 /**
-A window is a collections of textures.  It is modeled like a painting hung on
+A display or a window within a display.
+You can add and remove texture objects to a Window.  They will be drawn
+  in the order they were added, where the first textures are at the back
+  and are overwritten by textures added later.
+*/
+interface Window:
+  add element /SizedTexture -> none
+  remove element /SizedTexture -> none
+  remove_all -> none
+
+abstract class BorderlessWindow_ extends ResizableTexture implements Window:
+  constructor x/int y/int w/int h/int transform:
+    this.transform = transform.translate x y
+    super x y w h transform
+
+  add element/SizedTexture -> none:
+    elements_.add element
+    element.change_tracker = this
+    invalidate
+
+  remove element/SizedTexture -> none:
+    elements_.remove element
+    element.change_tracker = null
+    invalidate
+
+  remove_all -> none:
+    elements_.do: it.change_tracker = null
+    elements_.remove_all
+    invalidate
+
+  transform /Transform := ?
+  elements_ := {}
+
+/**
+A WindowTexture_ is a collections of textures.  It is modeled like a painting hung on
   a wall.  It consists (from back to front) of a wall, a frame and the painting
   itself. The optional frame extends around and behind the picture, and can be
   partially transparent on true-color displays, which enables drop shadows.  The
   painting can also be partially transparent.
 */
-abstract class WindowTexture_ extends ResizableTexture:
-  inner_x_/int := ?
-  inner_y_/int := ?
-  inner_w_/int := ?
-  inner_h_/int := ?
+abstract class WindowTexture_ extends BorderlessWindow_ implements Window:
+  inner_x_ /int := ?
+  inner_y_ /int := ?
+  inner_w_ /int := ?
+  inner_h_ /int := ?
 
+  /**
+  Changes the inner width (without any borders) of the window.
+  */
   width= new_width/int:
-    if new_width != w_:
-      w_ = new_width
+    if new_width != inner_w_:
+      inner_w_ = new_width
       update_
 
+  /**
+  Changes the inner height (without any borders) of the window.
+  */
   height= new_height/int:
-    if new_height != h_:
-      h_ = new_height
+    if new_height != inner_h_:
+      inner_h_ = new_height
       update_
 
+  /**
+  Changes the top left corner (without any borders) of the window.
+  */
   move_to new_x/int new_y/int -> none:
     if new_x != inner_x_ or new_y != inner_y_:
       inner_x_ = new_x
@@ -797,26 +838,7 @@ abstract class WindowTexture_ extends ResizableTexture:
   abstract draw_frame win_x win_y canvas
 
   constructor .inner_x_ .inner_y_ .inner_w_ .inner_h_ x/int y/int w/int h/int transform:
-    this.transform = transform.translate x y
     super x y w h transform
-
-  add element:
-    elements_.add element
-    element.change_tracker = this
-    invalidate
-
-  remove element:
-    elements_.remove element
-    element.change_tracker = null
-    invalidate
-
-  remove_all:
-    elements_.do: it.change_tracker = null
-    elements_.remove_all
-    invalidate
-
-  transform/Transform := ?
-  elements_ := {}
 
   // After the textures under us have drawn themselves, we draw on top.
   write2_ win_x win_y canvas:
@@ -858,7 +880,8 @@ abstract class SimpleWindow_ extends WindowTexture_:
   abstract make_opaque_ x y w h map map_width
 
   constructor x y w h transform .border_width_:
-    super x y w h
+    super x y w h  // Inner dimensions.
+        // Actual dimensions.
         x - border_width_
         y - border_width_
         w + border_width_ * 2
@@ -882,7 +905,7 @@ abstract class SimpleWindow_ extends WindowTexture_:
   // Draws 100% opacity for the frame shape, a filled rectangle.
   // (The frame is behind the painting, so this doesn't mean we only
   // see the frame.)
-  frame_map win_x win_y canvas:
+  frame_map win_x/int win_y/int canvas:
     if border_width_ == 0: return WindowTexture_.ALL_TRANSPARENT  // The frame is not visible anywhere.
     // Transform inner dimensions not including border
     transform_.xywh inner_x_ inner_y_ inner_w_ inner_h_: | x y w2 h2 |
@@ -983,7 +1006,7 @@ abstract class RoundedCornerWindow_ extends WindowTexture_:
               total += extent - a
           opacities_[idx] = (0xff * total) / (downsample * downsample)
 
-  frame_map win_x win_y canvas:
+  frame_map win_x/int win_y/int canvas:
     return WindowTexture_.ALL_TRANSPARENT  // No frame on these windows.
 
   static TABLE_SIZE_ ::= 256
@@ -998,7 +1021,7 @@ abstract class RoundedCornerWindow_ extends WindowTexture_:
     return array
 
   // Draws 100% opacity for the window content, a filled rounded-corner rectangle.
-  painting_map win_x win_y canvas:
+  painting_map win_x/int win_y/int canvas:
     transform_.xywh inner_x_ inner_y_ inner_w_ inner_h_: | x y w2 h2 |
       x2 := x - win_x
       y2 := y - win_y
@@ -1053,7 +1076,7 @@ abstract class DropShadowWindow_ extends RoundedCornerWindow_:
       transform
       corner_radius
 
-  frame_map win_x win_y canvas:
+  frame_map win_x/int win_y/int canvas:
     // Transform inner dimensions excluding shadow to determine if the canvas
     // is wholly inside the window.
     transform_.xywh inner_x_ inner_y_ inner_w_ inner_h_: | x y w2 h2 |
@@ -1128,7 +1151,7 @@ abstract class BitmapTextureBase_ extends SizedTexture:
   abstract draw_ bx by orientation canvas
 
 abstract class BitmapTexture_ extends BitmapTextureBase_:
-  bytes_/ByteArray? ::= null
+  bytes_ /ByteArray? ::= null
 
   constructor x/int y/int w/int h/int transform/Transform:
     bytes_per_line := (w + 7) >> 3  // Divide by 8, rounding up.
@@ -1183,7 +1206,7 @@ abstract class InfiniteBackground_ extends Texture:
 
 class PbmParser_:
   INVALID_PBM_ ::= "INVALID PBM"
-  bytes_/ByteArray
+  bytes_ /ByteArray
   next_ := 0
 
   width := 0
