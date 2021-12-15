@@ -42,15 +42,15 @@ abstract class AbstractDriver:
   start_full_update speed/int -> none:
   clean left/int top/int right/int bottom/int -> none:
   commit left/int top/int right/int bottom/int -> none:
-  draw_two_color x/int y/int w/int h/int pixels/ByteArray:
+  draw_two_color x/int y/int w/int h/int pixels/ByteArray -> none:
     throw "Not a two-color driver"
-  draw_two_bit x/int y/int w/int h/int plane0/ByteArray plane1/ByteArray:
+  draw_two_bit x/int y/int w/int h/int plane0/ByteArray plane1/ByteArray -> none:
     throw "Not a two-bit driver"
-  draw_gray_scale x/int y/int w/int h/int pixels/ByteArray:
+  draw_gray_scale x/int y/int w/int h/int pixels/ByteArray -> none:
     throw "Not a gray-scale driver"
-  draw_several_color x/int y/int w/int h/int pixels/ByteArray:
+  draw_several_color x/int y/int w/int h/int pixels/ByteArray -> none:
     throw "Not a several-color driver"
-  draw_true_color x/int y/int w/int h/int red/ByteArray green/ByteArray blue/ByteArray:
+  draw_true_color x/int y/int w/int h/int red/ByteArray green/ByteArray blue/ByteArray -> none:
     throw "Not a true-color driver"
   close -> none:
 
@@ -58,18 +58,26 @@ abstract class AbstractDriver:
 Current settings for adding textures to a display.
 */
 class GraphicsContext:
-  alignment/int ::= TEXT_TEXTURE_ALIGN_LEFT
-  color/int ::= 0
-  background/int ::= 0
-  font/Font? ::= null
-  transform/Transform ::= Transform.identity
+  alignment /int ::= TEXT_TEXTURE_ALIGN_LEFT
+  color /int ::= 0
+  background /int ::= 0
+  font /Font? ::= null
+  transform /Transform ::= Transform.identity
 
   constructor:
 
   constructor.private_ .alignment .color .font .transform .background:
 
   /// Returns a copy of this GraphicsContext, but with the given changes.
-  with --alignment/int=alignment --font/Font?=font --color/int=color --transform/Transform?=transform --translate_x/int=0 --translate_y/int=0 --rotation/int=0 --background/int=background:
+  with -> GraphicsContext
+      --alignment/int=alignment
+      --font/Font?=font
+      --color/int=color
+      --transform/Transform?=transform
+      --translate_x/int=0
+      --translate_y/int=0
+      --rotation/int=0
+      --background/int=background:
     if rotation != 0:
       rotation %= 360
       if rotation < 0: rotation += 360
@@ -89,14 +97,13 @@ This class keeps track of the list of things to draw, and
   the display with $draw.
 See https://docs.toit.io/language/sdk/display
 */
-abstract class PixelDisplay:
+abstract class PixelDisplay implements Window:
   // The image to display.
   textures_ := {}
   background_ := null
-  handle_ := null
-  width_ := 0
-  height_ := 0
-  flags_ := 0
+  width_ /int := 0
+  height_  /int:= 0
+  flags_  /int:= 0
 
   // Need-to-redraw is tracked as a bit array of dirty bits, arranged in
   // SSD1306 layout so we can use bitmap_rectangle to invalidate areas.
@@ -108,7 +115,7 @@ abstract class PixelDisplay:
 
   dirty_accumulator_ := ByteArray 1
 
-  driver_/AbstractDriver := ?
+  driver_ /AbstractDriver := ?
   speed_ := 50  // Speed-quality of current screen update.
   default_color_ := 0
   default_transform_ := Transform.identity
@@ -214,7 +221,7 @@ abstract class PixelDisplay:
     texture.  This is deprecated: The preferred method is to set the background
     color with $background=.
   */
-  add texture:
+  add texture/SizedTexture -> none:
     if texture is InfiniteBackground_:
       background_ = texture
       invalidate 0 0 width_ height_
@@ -230,7 +237,7 @@ abstract class PixelDisplay:
   Removes a texture that was previously added.  You cannot remove a background
     texture.  Instead you should set a new background with @background=.
   */
-  remove texture:
+  remove texture/SizedTexture -> none:
     if texture == background_:
       throw "BACKGROUND_REMOVED"
     textures_.remove texture
@@ -243,7 +250,7 @@ abstract class PixelDisplay:
     if textures_.size != 0: invalidate 0 0 width_ height_
     textures_ = {}
 
-  invalidate x y w h:
+  invalidate x/int y/int w/int h/int -> none:
     if not dirty_: return  // Some devices don't use the dirty array to track changes.
 
     // Round up the invalidated area.
@@ -304,7 +311,7 @@ abstract class PixelDisplay:
     bitmap_zap dirty_ CLEAN_
 
   // Clean determines if we should clean or draw the dirty area.
-  update_frame_buffer clean/bool refresh_dimensions:
+  update_frame_buffer clean/bool refresh_dimensions -> none:
     width := min width_ 120
     max_height := round_down (max_canvas_height_ width) 8
 
@@ -449,7 +456,7 @@ class TwoColorPixelDisplay extends PixelDisplay:
     an the color from the context.  This is normally more efficient than the
     Pbm class, but it cannot scale the image.
   */
-  pbm context/GraphicsContext x/int y/int bytes/ByteArray:
+  pbm context/GraphicsContext x/int y/int bytes/ByteArray -> two_color.PbmTexture:
     texture := two_color.PbmTexture x y context.transform context.color bytes
     add texture
     return texture
@@ -460,7 +467,7 @@ class TwoColorPixelDisplay extends PixelDisplay:
     the file.  This is normally more efficient than the Pbm class, but it
     cannot scale the image.
   */
-  opaque_pbm context/GraphicsContext x/int y/int bytes/ByteArray:
+  opaque_pbm context/GraphicsContext x/int y/int bytes/ByteArray -> two_color.OpaquePbmTexture:
     texture := two_color.OpaquePbmTexture x y context.transform bytes
     add texture
     return texture
