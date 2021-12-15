@@ -42,15 +42,15 @@ abstract class AbstractDriver:
   start_full_update speed/int -> none:
   clean left/int top/int right/int bottom/int -> none:
   commit left/int top/int right/int bottom/int -> none:
-  draw_two_color x/int y/int w/int h/int pixels/ByteArray -> none:
+  draw_two_color l/int t/int r/int b/int pixels/ByteArray -> none:
     throw "Not a two-color driver"
-  draw_two_bit x/int y/int w/int h/int plane0/ByteArray plane1/ByteArray -> none:
+  draw_two_bit l/int t/int r/int b/int plane0/ByteArray plane1/ByteArray -> none:
     throw "Not a two-bit driver"
-  draw_gray_scale x/int y/int w/int h/int pixels/ByteArray -> none:
+  draw_gray_scale l/int t/int r/int b/int pixels/ByteArray -> none:
     throw "Not a gray-scale driver"
-  draw_several_color x/int y/int w/int h/int pixels/ByteArray -> none:
+  draw_several_color l/int t/int r/int b/int pixels/ByteArray -> none:
     throw "Not a several-color driver"
-  draw_true_color x/int y/int w/int h/int red/ByteArray green/ByteArray blue/ByteArray -> none:
+  draw_true_color l/int t/int r/int b/int red/ByteArray green/ByteArray blue/ByteArray -> none:
     throw "Not a true-color driver"
   close -> none:
 
@@ -224,14 +224,14 @@ abstract class PixelDisplay implements Window:
   add texture/SizedTexture -> none:
     if texture is InfiniteBackground_:
       background_ = texture
-      invalidate 0 0 width_ height_
+      child_invalidated 0 0 width_ height_
     else:
       textures_.add texture
       if texture is SizedTexture:
         texture.change_tracker = this
         texture.invalidate
       else:
-        invalidate 0 0 width_ height_
+        child_invalidated 0 0 width_ height_
 
   /**
   Removes a texture that was previously added.  You cannot remove a background
@@ -247,10 +247,10 @@ abstract class PixelDisplay implements Window:
   /** Removes all textures.  */
   remove_all:
     textures_.do: it.change_tracker = null
-    if textures_.size != 0: invalidate 0 0 width_ height_
+    if textures_.size != 0: child_invalidated 0 0 width_ height_
     textures_ = {}
 
-  invalidate x/int y/int w/int h/int -> none:
+  child_invalidated x/int y/int w/int h/int -> none:
     if not dirty_: return  // Some devices don't use the dirty array to track changes.
 
     // Round up the invalidated area.
@@ -319,7 +319,7 @@ abstract class PixelDisplay implements Window:
     // update patches.
     for y:= 0; y < height_; y += max_height:
       while line_is_clean_ y:
-        y += 8
+        y = (y + 8) & ~7  // Move on to next factor of 8.
         if y >= height_: break
       if y >= height_: break
       for x := 0; x < width_; x += width:
@@ -404,7 +404,7 @@ class TwoColorPixelDisplay extends PixelDisplay:
   background= color/int -> none:
     if not background_ or background_.color != color:
       background_ = two_color.InfiniteBackground color
-      invalidate 0 0 width_ height_
+      child_invalidated 0 0 width_ height_
 
   text context/GraphicsContext x/int y/int text/string -> two_color.TextTexture:
     if context.font == null: throw "NO_FONT_GIVEN"
@@ -519,7 +519,7 @@ class FourGrayPixelDisplay extends TwoBitPixelDisplay_:
   background= color/int -> none:
     if not background_ or background_.color != color:
       background_ = four_gray.InfiniteBackground color
-      invalidate 0 0 width_ height_
+      child_invalidated 0 0 width_ height_
 
   default_draw_color_ -> int:
     return four_gray.BLACK
@@ -597,7 +597,7 @@ class ThreeColorPixelDisplay extends TwoBitPixelDisplay_:
   background= color/int -> none:
     if not background_ or background_.color != color:
       background_ = three_color.InfiniteBackground color
-      invalidate 0 0 width_ height_
+      child_invalidated 0 0 width_ height_
 
   default_draw_color_ -> int:
     return three_color.BLACK
@@ -700,7 +700,7 @@ class GrayScalePixelDisplay extends PixelDisplay:
   background= color/int -> none:
     if not background_ or background_.color != color:
       background_ = gray_scale.InfiniteBackground color
-      invalidate 0 0 width_ height_
+      child_invalidated 0 0 width_ height_
 
   text context/GraphicsContext x/int y/int text/string -> gray_scale.TextTexture:
     if context.font == null: throw "NO_FONT_GIVEN"
@@ -791,7 +791,7 @@ class SeveralColorPixelDisplay extends PixelDisplay:
   background= color/int -> none:
     if not background_ or background_.color != color:
       background_ = several_color.InfiniteBackground color
-      invalidate 0 0 width_ height_
+      child_invalidated 0 0 width_ height_
 
   text context/GraphicsContext x/int y/int text/string -> several_color.TextTexture:
     if context.font == null: throw "NO_FONT_GIVEN"
@@ -882,7 +882,7 @@ class TrueColorPixelDisplay extends PixelDisplay:
   background= color/int -> none:
     if not background_ or background_.color != color:
       background_ = true_color.InfiniteBackground color
-      invalidate 0 0 width_ height_
+      child_invalidated 0 0 width_ height_
 
   text context/GraphicsContext x/int y/int text/string -> true_color.TextTexture:
     if context.font == null: throw "NO_FONT_GIVEN"
