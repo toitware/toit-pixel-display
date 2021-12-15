@@ -60,7 +60,7 @@ abstract class Histogram extends SizedTexture:
   write2_ win_x win_y canvas:
     List.chunk_up 0 fullness_ 16: | from to size |
       worth_plotting := false
-      get_transform.xywh (x + from) y size h_: | x2 y2 w2 h2 |
+      transform.xywh (x + from) y size h_: | x2 y2 w2 h2 |
         if w2 > 0 and h2 > 0 and x2 - win_x + w2 > 0 and x2 - win_x < canvas.width:
           worth_plotting = true
       if worth_plotting:
@@ -69,7 +69,7 @@ abstract class Histogram extends SizedTexture:
           coord := y + (sample_to_coordinate_ values_[hx])
           wy1 := coord
           wy2 := y + h_
-          get_transform.xywh wx wy1 1 (wy2 - wy1): | x2 y2 w2 h2 |
+          transform.xywh wx wy1 1 (wy2 - wy1): | x2 y2 w2 h2 |
             if w2 > 0 and h2 > 0:
               draw_rectangle
                 x2 - win_x

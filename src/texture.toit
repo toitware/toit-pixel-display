@@ -43,17 +43,17 @@ class Transform:
 
   /**
   Finds the extent of a rectangle after it has been transformed with the transform.
-    $x_untransformed: The left edge before the transformation is applied.
-    $y_untransformed: The top edge before the transformation is applied.
-    $w: The width before the transformation is applied.
-    $h: The height before the transformation is applied.
+    $x_in: The left edge before the transformation is applied.
+    $y_in: The top edge before the transformation is applied.
+    $w_in: The width before the transformation is applied.
+    $h_in: The height before the transformation is applied.
     $block: A block that is called with arguments left top width height in the transformed coordinate space.
   */
-  xywh x_untransformed/int y_untransformed/int w/int h/int [block]:
-    x_transformed := x x_untransformed y_untransformed
-    y_transformed := y x_untransformed y_untransformed
-    w_transformed := width w h
-    h_transformed := height w h
+  xywh x_in/int y_in/int w_in/int h_in/int [block]:
+    x_transformed := x x_in y_in
+    y_transformed := y x_in y_in
+    w_transformed := width w_in h_in
+    h_transformed := height w_in h_in
     x2 := min
       x_transformed
       x_transformed + w_transformed
@@ -126,6 +126,7 @@ Something you can draw on a canvas.  It could be a text string, a pixmap or
 */
 abstract class Texture:
   hash_code /int ::= random 0 0x10000000
+  change_tracker /Window? := null
 
   /**
   Writes the image data to a canvas window which is positioned at ($x, $y) in the global
@@ -137,6 +138,8 @@ abstract class Texture:
     write_ x y pixels
 
   abstract write_ win_x win_y canvas
+
+  abstract invalidate -> none
 
 /**
 Most $Texture s have a size and know their own position in the scene, and are
@@ -151,11 +154,8 @@ abstract class SizedTexture extends Texture:
   w_ /int := 0
   h_ /int := 0
   transform_ /Transform := Transform.identity
-  change_tracker := null
 
-  // Get the coordinate system of the texture.
-  get_transform -> Transform:
-    return transform_
+  transform -> Transform: return transform_
 
   /**
   Create a new SizedTexture with the given position and size in the
@@ -218,7 +218,7 @@ abstract class SizedTexture extends Texture:
   invalidate:
     if change_tracker:
       transform_.xywh x_ y_ w_ h_: | x2 y2 w2 h2 |
-        change_tracker.invalidate x2 y2 w2 h2
+        change_tracker.child_invalidated x2 y2 w2 h2
 
   /**
   Sets a new coordinate system for the texture.  This can cause it to move or rotate.
@@ -239,7 +239,7 @@ abstract class SizedTexture extends Texture:
   invalidate x/int y/int w/int h/int -> none:
     if change_tracker:
       transform_.xywh x y w h: | x2 y2 w2 h2 |
-        change_tracker.invalidate x2 y2 w2 h2
+        change_tracker.child_invalidated x2 y2 w2 h2
 
   /**
   Moves to a new position in the coordinate system of the texture's transform.
@@ -345,21 +345,21 @@ abstract class BarCodeEan13_ extends SizedTexture:
           h2
           canvas
 
-    text_orientation := get_transform.orientation_
+    text_orientation := transform_.orientation_
 
     // Bar code coordinates.
     text_x := x + EAN_13_QUIET_ZONE_WIDTH + EAN_13_START_WIDTH
     text_y := y + EAN_13_HEIGHT + number_height_ - EAN_13_BOTTOM_SPACE + 1
 
     // Canvas coordinates.
-    canvas_x := (get_transform.x x + 1 text_y) - win_x
-    canvas_y := (get_transform.y x + 1 text_y) - win_y
+    canvas_x := (transform_.x x + 1 text_y) - win_x
+    canvas_y := (transform_.y x + 1 text_y) - win_y
     digit_ (code_.copy 0 1) canvas_x canvas_y canvas text_orientation
 
-    canvas_x = (get_transform.x text_x text_y) - win_x
-    canvas_y = (get_transform.y text_x text_y) - win_y
-    step_x := (get_transform.width 1 0)
-    step_y := (get_transform.height 1 0)
+    canvas_x = (transform_.x text_x text_y) - win_x
+    canvas_y = (transform_.y text_x text_y) - win_y
+    step_x := (transform_.width 1 0)
+    step_y := (transform_.height 1 0)
     (code_.copy 1 7).split "":
       if it != "":
         digit_ it canvas_x canvas_y canvas text_orientation
@@ -403,8 +403,8 @@ abstract class BarCodeEan13_ extends SizedTexture:
     bottom := y_ + EAN_13_HEIGHT
     y := bottom - EAN_13_BOTTOM_SPACE
     // Start bars: 101.
-    line_ x     top bottom canvas get_transform win_x win_y
-    line_ x + 2 top bottom canvas get_transform win_x win_y
+    line_ x     top bottom canvas transform_ win_x win_y
+    line_ x + 2 top bottom canvas transform_ win_x win_y
     x += 3
     first_code := EAN_13_FIRST_CODES_[code_[0] & 0xf]
     // Left digits using the L or G mapping.
@@ -413,11 +413,11 @@ abstract class BarCodeEan13_ extends SizedTexture:
       code := ((first_code >> (6 - i)) & 1) == 0 ? (l_ digit) : (g_ digit)
       for b := 6; b >= 0; b--:
         if ((1 << b) & code) != 0:
-          line_ x top y canvas get_transform win_x win_y
+          line_ x top y canvas transform_ win_x win_y
         x++
     // Middle bars: 01010
-    line_ x + 1 top bottom canvas get_transform win_x win_y
-    line_ x + 3 top bottom canvas get_transform win_x win_y
+    line_ x + 1 top bottom canvas transform_ win_x win_y
+    line_ x + 3 top bottom canvas transform_ win_x win_y
     x += 5
     // Left digits using the R mapping.
     for i := 7; i < 13; i++:
@@ -425,11 +425,11 @@ abstract class BarCodeEan13_ extends SizedTexture:
       code := r_ digit
       for b := 6; b >= 0; b--:
         if ((1 << b) & code) != 0:
-          line_ x top y canvas get_transform win_x win_y
+          line_ x top y canvas transform_ win_x win_y
         x++
     // End bars: 101.
-    line_ x     top bottom canvas get_transform win_x win_y
-    line_ x + 2 top bottom canvas get_transform win_x win_y
+    line_ x     top bottom canvas transform_ win_x win_y
+    line_ x + 2 top bottom canvas transform_ win_x win_y
 
 TEXT_TEXTURE_ALIGN_LEFT ::= 0
 TEXT_TEXTURE_ALIGN_CENTER ::= 1
@@ -681,20 +681,12 @@ A collections of textures which can be added to a display as a single texture.
   added, so the first-added textures are at the back and the last-added are
   at the front.
 */
-class TextureGroup extends Texture:
+class TextureGroup extends Texture implements Window:
   elements_ := []
-  change_tracker_ := null
-
-  change_tracker:
-    return change_tracker_
-
-  change_tracker= value -> none:
-    elements_.do: it.change_tracker = value
-    change_tracker_ = value
 
   add element -> none:
     elements_.add element
-    element.change_tracker = change_tracker
+    element.change_tracker = this
     element.invalidate
 
   remove element -> none:
@@ -712,6 +704,13 @@ class TextureGroup extends Texture:
   write_ x/int y/int canvas -> none:
     elements_.do: it.write x y canvas
 
+  // We don't crop anything, just pass on the invalidation to the next higher Window.
+  child_invalidated x/int y/int w/int h/int -> none:
+    change_tracker.child_invalidated x y w h
+
+  invalidate -> none:
+    elements_.do: it.invalidate
+
 /**
 A display or a window within a display.
 You can add and remove texture objects to a Window.  They will be drawn
@@ -719,32 +718,50 @@ You can add and remove texture objects to a Window.  They will be drawn
   and are overwritten by textures added later.
 */
 interface Window:
-  add element /SizedTexture -> none
-  remove element /SizedTexture -> none
+  add element /Texture -> none
+  remove element /Texture -> none
   remove_all -> none
+
+  // Called by elements that have been added to this.
+  child_invalidated x/int y/int w/int h/int ->none
 
 abstract class BorderlessWindow_ extends ResizableTexture implements Window:
   constructor x/int y/int w/int h/int transform:
     this.transform = transform.translate x y
     super x y w h transform
 
-  add element/SizedTexture -> none:
+  add element/Texture -> none:
     elements_.add element
     element.change_tracker = this
-    invalidate
+    element.invalidate
 
-  remove element/SizedTexture -> none:
+  remove element/Texture -> none:
     elements_.remove element
+    element.invalidate
     element.change_tracker = null
-    invalidate
 
   remove_all -> none:
-    elements_.do: it.change_tracker = null
+    elements_.do:
+      it.invalidate
+      it.change_tracker = null
     elements_.remove_all
-    invalidate
 
   transform /Transform := ?
   elements_ := {}
+
+  child_invalidated x/int y/int w/int h/int -> none:
+    right := x + w
+    bottom := y + h
+    // We got the dimensions of the invalidation in driver frame of reference.
+    // We must trim them to fit the window, and pass them on.
+    transform_.xywh x_ y_ w_ h_: | x2 y2 w2 h2 |
+      // Now we have our own coordinates in driver frame of reference.
+      left2 := max x x2
+      top2 := max y y2
+      right2 := min right (x2 + w2)
+      bottom2 := min bottom (y2 + h2)
+      if right2 > left2 and bottom2 > top2:
+        change_tracker.child_invalidated left2 top2 (right2 - left2) (bottom2 - top2)
 
 /**
 A WindowTexture_ is a collections of textures.  It is modeled like a painting hung on
@@ -965,10 +982,10 @@ abstract class RoundedCornerWindow_ extends WindowTexture_:
       invalid_radius := max corner_radius_ new_radius
       corner_radius_ = new_radius
       transform_.xywh x_ y_ w_ h_: | x2 y2 w2 h2 |
-        change_tracker.invalidate x2                       y2                       invalid_radius invalid_radius
-        change_tracker.invalidate x2 + w2 - invalid_radius y2                       invalid_radius invalid_radius
-        change_tracker.invalidate x2                       y2 + h2 - invalid_radius invalid_radius invalid_radius
-        change_tracker.invalidate x2 + w2 + invalid_radius y2 + h2 - invalid_radius invalid_radius invalid_radius
+        change_tracker.child_invalidated x2                       y2                       invalid_radius invalid_radius
+        change_tracker.child_invalidated x2 + w2 - invalid_radius y2                       invalid_radius invalid_radius
+        change_tracker.child_invalidated x2                       y2 + h2 - invalid_radius invalid_radius invalid_radius
+        change_tracker.child_invalidated x2 + w2 + invalid_radius y2 + h2 - invalid_radius invalid_radius invalid_radius
 
   fix_bounding_box_ -> none:
     // There's no border outside the drawable area.
@@ -1203,6 +1220,8 @@ abstract class PixmapTexture_ extends SizedTexture:
 abstract class InfiniteBackground_ extends Texture:
 
   abstract color -> int
+
+  invalidate -> none:
 
 class PbmParser_:
   INVALID_PBM_ ::= "INVALID PBM"
