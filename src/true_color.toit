@@ -38,7 +38,6 @@ class Canvas:
 
   constructor .width .height:
     size := width * height
-    assert: size <= 4000
     red_ = ByteArray size
     green_ = ByteArray size
     blue_ = ByteArray size

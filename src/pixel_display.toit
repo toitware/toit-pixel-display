@@ -124,7 +124,6 @@ abstract class PixelDisplay implements Window:
     width_ = driver_.width
     height_ = driver_.height
     flags_ = driver_.flags
-    if width_ & 7 != 0: throw "Width must be multiple of 8"
     height := round_up height_ 8
     if flags_ & FLAG_PARTIAL_UPDATES != 0:
       dirty_bytes_per_line_ = (width_ >> 3) + 1
@@ -313,7 +312,9 @@ abstract class PixelDisplay implements Window:
   // Clean determines if we should clean or draw the dirty area.
   update_frame_buffer clean/bool refresh_dimensions -> none:
     width := min width_ 120
-    max_height := round_down (max_canvas_height_ width) 8
+    max_height := max
+        round_down (max_canvas_height_ width) 8
+        8
 
     // Outer loop - the coarse rectangles that are the max size of
     // update patches.
@@ -488,13 +489,15 @@ class TwoColorPixelDisplay extends PixelDisplay:
   draw_entire_display_:
     driver_.start_full_update speed_
     w := width_
-    step := max_canvas_height_ width_
-    canvas := two_color.Canvas w (min step (round_up height_ 8))
+    step := round_up
+        max_canvas_height_ width_
+        8
+    canvas := two_color.Canvas w step
     pixels := canvas.pixels_
-    for y := 0; y < height_; y += step:
-      background_.write 0 y canvas
-      textures_.do: it.write 0 y canvas
-      driver_.draw_two_color 0 y width_ (min (y + step) height_) pixels
+    List.chunk_up 0 (round_up height_ 8) step: | top bottom |
+      background_.write 0 top canvas
+      textures_.do: it.write 0 top canvas
+      driver_.draw_two_color 0 top width_ bottom pixels
     driver_.commit 0 0 width_ height_
 
   redraw_rect_ left/int top/int right/int bottom/int -> none:
@@ -672,7 +675,7 @@ abstract class TwoBitPixelDisplay_ extends PixelDisplay:
     w := width_
     step := max_canvas_height_ width_
     canvas := three_color.Canvas w (min step (round_up height_ 8))
-    List.chunk_up 0 height_ step: | y y_end |
+    List.chunk_up 0 (round_up height_ 8) step: | y y_end |
       background_.write 0 y canvas
       textures_.do: it.write 0 y canvas
       driver_.draw_two_bit 0 y width_ y_end canvas.plane_0_ canvas.plane_1_
@@ -763,10 +766,10 @@ class GrayScalePixelDisplay extends PixelDisplay:
     w := width_
     step := max_canvas_height_ w
     canvas := gray_scale.Canvas w step
-    List.chunk_up 0 height_ step: | y y_end |
-      background_.write 0 y canvas
-      textures_.do: it.write 0 y canvas
-      driver_.draw_gray_scale 0 y width_ step canvas.pixels_
+    List.chunk_up 0 height_ step: | top bottom |
+      background_.write 0 top canvas
+      textures_.do: it.write 0 top canvas
+      driver_.draw_gray_scale 0 top width_ bottom canvas.pixels_
     driver_.commit 0 0 width_ height_
 
   redraw_rect_ left/int top/int right/int bottom/int -> none:
@@ -854,10 +857,10 @@ class SeveralColorPixelDisplay extends PixelDisplay:
     w := width_
     step := max_canvas_height_ w
     canvas := several_color.Canvas w step
-    List.chunk_up 0 height_ step: | y y_end |
-      background_.write 0 y canvas
-      textures_.do: it.write 0 y canvas
-      driver_.draw_several_color 0 y width_ step canvas.pixels_
+    List.chunk_up 0 height_ step: | top bottom |
+      background_.write 0 top canvas
+      textures_.do: it.write 0 top canvas
+      driver_.draw_several_color 0 top width_ bottom canvas.pixels_
     driver_.commit 0 0 width_ height_
 
   redraw_rect_ left/int top/int right/int bottom/int -> none:
@@ -938,17 +941,18 @@ class TrueColorPixelDisplay extends PixelDisplay:
     // Keep each color component under 2k then the packed 3-colors-in-2-bytes
     // format is still less than a page.
     height = round_down (2000 / width) 8
-    // We can't work well with canvases that are less than 8 pixels tall.
-    return max 8 height
+    // We can't work well with canvases that are less than 4 pixels tall.
+    return max 4 height
 
   draw_entire_display_:
     driver_.start_full_update speed_
     w := width_
-    canvas := true_color.Canvas w 8
-    for y := 0; y < height_; y += 8:
-      background_.write 0 y canvas
-      textures_.do: it.write 0 y canvas
-      driver_.draw_true_color 0 y width_ 8 canvas.red_ canvas.green_ canvas.blue_
+    step := max_canvas_height_ width_
+    canvas := true_color.Canvas w step
+    List.chunk_up 0 height_ step: | top bottom h |
+      background_.write 0 top canvas
+      textures_.do: it.write 0 top canvas
+      driver_.draw_true_color 0 top width_ bottom canvas.red_ canvas.green_ canvas.blue_
     driver_.commit 0 0 width_ height_
 
   redraw_rect_ left/int top/int right/int bottom/int -> none:
