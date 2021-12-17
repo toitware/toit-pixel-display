@@ -134,7 +134,6 @@ abstract class Texture:
   $pixels: Some sort of canvas.  The precise type depends on the depth of the display.
   */
   write x/int y/int pixels -> none:
-    assert: y & 7 == 0
     write_ x y pixels
 
   abstract write_ win_x win_y canvas

@@ -20,7 +20,6 @@ class OneByteCanvas_:
 
   constructor .width .height:
     size := width * height
-    assert: size <= 4000
     pixels_ = ByteArray size
 
   set_all_pixels color:
