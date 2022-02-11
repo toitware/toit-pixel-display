@@ -132,14 +132,15 @@ barcode_factory version code x y orientation:
 histogram_factory version x y w h color orientation:
   orientation_to_transform x y orientation: | x y transform |
     texture := null
+    reflected := (random 2) == 0 ? false : true
     if version == THREE_COLOR:
-      texture = ThreeColorHistogram x y w h transform 0.4 color
+      texture = ThreeColorHistogram --x=x --y=y --width=w --height=h --transform=transform --scale=0.4 --color=color --reflected=reflected
     else if version == TWO_COLOR:
-      texture = TwoColorHistogram x y w h transform 0.4 color
+      texture = TwoColorHistogram --x=x --y=y --width=w --height=h --transform=transform --scale=0.4 --color=color --reflected=reflected
     else if version == FOUR_GRAY:
-      texture = FourGrayHistogram x y w h transform 0.4 color
+      texture = FourGrayHistogram --x=x --y=y --width=w --height=h --transform=transform --scale=0.4 --color=color --reflected=reflected
     else if version == TRUE_COLOR:
-      texture = TrueColorHistogram x y w h transform 0.4 color
+      texture = TrueColorHistogram --x=x --y=y --width=w --height=h --transform=transform --scale=0.4 --color=color --reflected=reflected
     40.repeat:
       texture.add (random 0 100) - 20
     return texture

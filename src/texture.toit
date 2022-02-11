@@ -85,6 +85,27 @@ class Transform:
   translate x/int y/int -> Transform:
     return Transform.with_ [array_[0], array_[1], array_[2], array_[3], array_[4] + (width x y), array_[5] + (height x y)]
 
+  /**
+  Returns a new transform.  The new transform is reflected around either
+    a horizontal line (if you specify the $y coordinate) or a vertical line
+    (if you specify the $x coordinate).
+
+  You cannot specify both $x and $y.  Note that not all textures support
+    reflected transforms.  In particular, text and icons cannot be reflected.
+
+  Most of this library is integer-only, but for this operation you may need
+    to use a half-pixel line depending on whether the thing you want to reflect
+    is an even or odd number of pixels high/wide.
+  */
+  reflect_around --x/num?=null --y/num?=null:
+    if x:
+      if y: throw "INVALID_ARGUMENT"
+      return apply (Transform.with_ [-1, 0, 0, 1, (x * 2).to_int, 0])
+    else if y:
+      return apply (Transform.with_ [1, 0, 0, -1, 0, (y * 2).to_int])
+    else:
+      return this
+
   // Does not handle reflections or scaling.  Used for font rendering which
   // currently has no support for scaled or reflected text.
   orientation_:
