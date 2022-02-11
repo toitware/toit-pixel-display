@@ -9,10 +9,11 @@ abstract class Histogram extends SizedTexture:
   h_ := 0
 
   /**
+  Constructs a new histogram.
   All samples are multiplied by the scale.
   The histogram is plotted in the color with one pixel of width per sample.
-  When you have added <width> samples, the histogram starts scrolling.
-  If you set $reflected to true the histogram is plotted with the Y axis
+  After $width samples have been added, the histogram starts scrolling.
+  If $reflected is true then the histogram is plotted with the Y axis
     at the top and the bars projecting downwards.
   */
   constructor x/int y/int width/int .h_/int transform/Transform .scale_/num reflected/bool=false:
@@ -94,10 +95,11 @@ class TwoColorHistogram extends Histogram:
     super x y width height transform scale
 
   /**
+  Constructs a new histogram.
   All samples are multiplied by the scale.
   The histogram is plotted in the color with one pixel of width per sample.
-  When you have added <width> samples, the histogram starts scrolling.
-  If you set $reflected to true the histogram is plotted with the Y axis
+  After $width samples have been added, the histogram starts scrolling.
+  If $reflected is true then the histogram is plotted with the Y axis
     at the top and the bars projecting downwards.
   */
   constructor --x/int --y/int --width/int --height/int --transform/Transform --scale/num=1 --color/int --reflected/bool=false:
@@ -144,10 +146,11 @@ class ThreeColorHistogram extends TwoBitColorHistogram_:
     super x y width height transform scale color
 
   /**
+  Constructs a new histogram.
   All samples are multiplied by the scale.
   The histogram is plotted in the color with one pixel of width per sample.
-  When you have added <width> samples, the histogram starts scrolling.
-  If you set $reflected to true the histogram is plotted with the Y axis
+  After $width samples have been added, the histogram starts scrolling.
+  If $reflected is true then the histogram is plotted with the Y axis
     at the top and the bars projecting downwards.
   */
   constructor --x/int --y/int --width/int --height/int --transform/Transform --scale/num=1 --color/int --reflected/bool=false:
@@ -159,10 +162,11 @@ class FourGrayHistogram extends TwoBitColorHistogram_:
     super x y width height transform scale color
 
   /**
+  Constructs a new histogram.
   All samples are multiplied by the scale.
   The histogram is plotted in the color with one pixel of width per sample.
-  When you have added <width> samples, the histogram starts scrolling.
-  If you set $reflected to true the histogram is plotted with the Y axis
+  After $width samples have been added, the histogram starts scrolling.
+  If $reflected is true then the histogram is plotted with the Y axis
     at the top and the bars projecting downwards.
   */
   constructor --x/int --y/int --width/int --height/int --transform/Transform --scale/num=1 --color/int --reflected/bool=false:
@@ -175,10 +179,11 @@ class TrueColorHistogram extends Histogram:
     super x y width height transform scale
 
   /**
+  Constructs a new histogram.
   All samples are multiplied by the scale.
   The histogram is plotted in the color with one pixel of width per sample.
-  When you have added <width> samples, the histogram starts scrolling.
-  If you set $reflected to true the histogram is plotted with the Y axis
+  After $width samples have been added, the histogram starts scrolling.
+  If $reflected is true then the histogram is plotted with the Y axis
     at the top and the bars projecting downwards.
   */
   constructor --x/int --y/int --width/int --height/int --transform/Transform --scale/num=1 --color/int --reflected/bool=false:

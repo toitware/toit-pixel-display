@@ -90,7 +90,7 @@ class Transform:
     a horizontal line (if you specify the $y coordinate) or a vertical line
     (if you specify the $x coordinate).
 
-  You cannot specify both $x and $y.  Note that not all textures support
+  You cannot specify both $x and $y.  Not all textures support
     reflected transforms.  In particular, text and icons cannot be reflected.
 
   Most of this library is integer-only, but for this operation you may need
