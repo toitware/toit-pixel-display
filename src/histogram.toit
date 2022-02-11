@@ -8,12 +8,20 @@ abstract class Histogram extends SizedTexture:
   scale_ := 0
   h_ := 0
 
-  // All samples are multiplied by the scale.
-  // The histogram is plotted in the color with one pixel of width per sample.
-  // When you have added <width> samples, the histogram starts scrolling.
-  constructor x/int y/int width/int .h_/int transform/Transform .scale_/num:
+  /**
+  Constructs a new histogram.
+  All samples are multiplied by the scale.
+  The histogram is plotted in the color with one pixel of width per sample.
+  After $width samples have been added, the histogram starts scrolling.
+  If $reflected is true then the histogram is plotted with the Y axis
+    at the top and the bars projecting downwards.
+  */
+  constructor x/int y/int width/int .h_/int transform/Transform .scale_/num reflected/bool=false:
     values_ = List width 0
-    super x y width h_ transform
+    tr := transform
+    if reflected:
+      tr = transform.reflect_around --y=(y + h_ / 2.0)
+    super x y width h_ tr
 
   add sample -> none:
     if values_.size == 0: return
@@ -86,6 +94,18 @@ class TwoColorHistogram extends Histogram:
   constructor x/int y/int width/int height/int transform/Transform scale/num .color_:
     super x y width height transform scale
 
+  /**
+  Constructs a new histogram.
+  All samples are multiplied by the scale.
+  The histogram is plotted in the color with one pixel of width per sample.
+  After $width samples have been added, the histogram starts scrolling.
+  If $reflected is true then the histogram is plotted with the Y axis
+    at the top and the bars projecting downwards.
+  */
+  constructor --x/int --y/int --width/int --height/int --transform/Transform --scale/num=1 --color/int --reflected/bool=false:
+    color_ = color
+    super x y width height transform scale reflected
+
   draw_rectangle x y w h canvas:
     bitmap_rectangle
       x
@@ -99,8 +119,8 @@ class TwoColorHistogram extends Histogram:
 class TwoBitColorHistogram_ extends Histogram:
   color_ := 0
 
-  constructor x/int y/int width/int height/int transform/Transform scale/num .color_:
-    super x y width height transform scale
+  constructor x/int y/int width/int height/int transform/Transform scale/num .color_ reflected/bool=false:
+    super x y width height transform scale reflected
 
   draw_rectangle x y w h canvas:
     bitmap_rectangle
@@ -125,15 +145,50 @@ class ThreeColorHistogram extends TwoBitColorHistogram_:
     assert: color != 3
     super x y width height transform scale color
 
+  /**
+  Constructs a new histogram.
+  All samples are multiplied by the scale.
+  The histogram is plotted in the color with one pixel of width per sample.
+  After $width samples have been added, the histogram starts scrolling.
+  If $reflected is true then the histogram is plotted with the Y axis
+    at the top and the bars projecting downwards.
+  */
+  constructor --x/int --y/int --width/int --height/int --transform/Transform --scale/num=1 --color/int --reflected/bool=false:
+    assert: color != 3
+    super x y width height transform scale color reflected
+
 class FourGrayHistogram extends TwoBitColorHistogram_:
   constructor x/int y/int width/int height/int transform/Transform scale/num color/int:
     super x y width height transform scale color
+
+  /**
+  Constructs a new histogram.
+  All samples are multiplied by the scale.
+  The histogram is plotted in the color with one pixel of width per sample.
+  After $width samples have been added, the histogram starts scrolling.
+  If $reflected is true then the histogram is plotted with the Y axis
+    at the top and the bars projecting downwards.
+  */
+  constructor --x/int --y/int --width/int --height/int --transform/Transform --scale/num=1 --color/int --reflected/bool=false:
+    super x y width height transform scale color reflected
 
 class TrueColorHistogram extends Histogram:
   color_ := 0
 
   constructor x/int y/int width/int height/int transform/Transform scale/num .color_:
     super x y width height transform scale
+
+  /**
+  Constructs a new histogram.
+  All samples are multiplied by the scale.
+  The histogram is plotted in the color with one pixel of width per sample.
+  After $width samples have been added, the histogram starts scrolling.
+  If $reflected is true then the histogram is plotted with the Y axis
+    at the top and the bars projecting downwards.
+  */
+  constructor --x/int --y/int --width/int --height/int --transform/Transform --scale/num=1 --color/int --reflected/bool=false:
+    color_ = color
+    super x y width height transform scale reflected
 
   draw_rectangle x y w h canvas:
     c := color_
