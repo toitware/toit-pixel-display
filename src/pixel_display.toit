@@ -220,7 +220,7 @@ abstract class PixelDisplay implements Window:
     texture.  This is deprecated: The preferred method is to set the background
     color with $background=.
   */
-  add texture/SizedTexture -> none:
+  add texture/Texture -> none:
     if texture is InfiniteBackground_:
       background_ = texture
       child_invalidated 0 0 width_ height_
@@ -236,7 +236,7 @@ abstract class PixelDisplay implements Window:
   Removes a texture that was previously added.  You cannot remove a background
     texture.  Instead you should set a new background with @background=.
   */
-  remove texture/SizedTexture -> none:
+  remove texture/Texture -> none:
     if texture == background_:
       throw "BACKGROUND_REMOVED"
     textures_.remove texture
@@ -377,7 +377,7 @@ abstract class PixelDisplay implements Window:
   refresh_ left/int top/int right/int bottom/int -> none:
     driver_.commit left top right bottom
 
-  /// Frees up the display so other process groups can use it.  
+  /// Frees up the display so other process groups can use it.
   /// This happens automatically when the process group exits.
   close -> none:
     driver_.close

@@ -726,7 +726,8 @@ class TextureGroup extends Texture implements Window:
 
   // We don't crop anything, just pass on the invalidation to the next higher Window.
   child_invalidated x/int y/int w/int h/int -> none:
-    change_tracker.child_invalidated x y w h
+    if change_tracker:
+      change_tracker.child_invalidated x y w h
 
   invalidate -> none:
     elements_.do: it.invalidate
