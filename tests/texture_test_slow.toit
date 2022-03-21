@@ -146,24 +146,24 @@ histogram_factory version x y w h color orientation:
     return texture
   unreachable
 
-canvas_factory version w h:
+canvas_factory version w h x y:
   if version == THREE_COLOR:
-    return three_color.Canvas w h
+    return three_color.Canvas w h x y
   else if version == TWO_COLOR:
-    return two_color.Canvas w h
+    return two_color.Canvas w h x y
   else if version == FOUR_GRAY:
-    return four_gray.Canvas w h
+    return four_gray.Canvas w h x y
   else:
-    return true_color.Canvas w h
+    return true_color.Canvas w h x y
 
 test_simple_three_color:
   red_bg := three_color.InfiniteBackground three_color.RED
 
   // A little 8x8 canvas to draw on.
-  canvas := three_color.Canvas 8 8
+  canvas := three_color.Canvas 8 8 0 0
 
   // Fill the canvas with red.
-  red_bg.write 0 0 canvas
+  red_bg.write canvas
 
   8.repeat: | x | 8.repeat: | y |
     expect (canvas.get_pixel x y) == three_color.RED
@@ -172,10 +172,10 @@ test_simple_four_gray:
   gray_bg := four_gray.InfiniteBackground four_gray.LIGHT_GRAY
 
   // A little 8x8 canvas to draw on.
-  canvas := four_gray.Canvas 8 8
+  canvas := four_gray.Canvas 8 8 0 0
 
   // Fill the canvas with light gray.
-  gray_bg.write 0 0 canvas
+  gray_bg.write canvas
 
   8.repeat: | x | 8.repeat: | y |
     expect (canvas.get_pixel x y) == four_gray.LIGHT_GRAY
@@ -184,13 +184,13 @@ test_simple_two_color:
   black_bg := two_color.InfiniteBackground two_color.BLACK
 
   // A little 8x8 canvas to draw on.
-  canvas := two_color.Canvas 8 8
+  canvas := two_color.Canvas 8 8 0 0
 
   8.repeat: | x | 8.repeat: | y |
     expect (canvas.get_pixel x y) == two_color.WHITE
 
   // Fill the canvas with red.
-  black_bg.write 0 0 canvas
+  black_bg.write canvas
 
   8.repeat: | x | 8.repeat: | y |
     expect (canvas.get_pixel x y) == two_color.BLACK
@@ -200,7 +200,7 @@ test_simple_true_color:
   bluish_bg := true_color.InfiniteBackground bluish
 
   // A little 8x8 canvas to draw on.
-  canvas := true_color.Canvas 8 8
+  canvas := true_color.Canvas 8 8 0 0
 
   black := true_color.get_rgb 0 0 0
 
@@ -208,7 +208,7 @@ test_simple_true_color:
     expect (canvas.get_pixel x y) == black
 
   // Fill the canvas with red.
-  bluish_bg.write 0 0 canvas
+  bluish_bg.write canvas
 
   8.repeat: | x | 8.repeat: | y |
     expect (canvas.get_pixel x y) == bluish
@@ -228,9 +228,9 @@ test_simple_scene:
       3.repeat: | xi | 3.repeat: | yi |
         x := (xi - 1) * 8
         y := (yi - 1) * 8
-        canvas := canvas_factory version 16 16
+        canvas := canvas_factory version 16 16 (x - 8) (y - 8)
         // The canvas is placed in various places and we render our scene onto it.
-        red_square.write (x - 8) (y - 8) canvas
+        red_square.write canvas
         // Check there is a red square on the canvas from 8-x,8-y to 16-x,16-y
         16.repeat: | x2 | 16.repeat: | y2 |
           if 8 - x + square_x <= x2 < 16 - x + square_x and 8 - y + square_y <= y2 < 16 - y + square_y:
@@ -274,10 +274,10 @@ test_with_transparency:
     3.repeat: | xi | 3.repeat: | yi |
       x := (xi - 1) * 8
       y := (yi - 1) * 8
-      canvas := three_color.Canvas 16 16  // Starts off white.
+      canvas := three_color.Canvas 16 16 x y  // Starts off white.
       // The canvas is placed in various places (8-aligned) and we render our scene onto it.
-      red_circle.write x y canvas
-      prime_image.write x y canvas
+      red_circle.write canvas
+      prime_image.write canvas
 
       // Check the scene rendered right onto the canvas.
       16.repeat: | x2 | 16.repeat: | y2 |
@@ -396,15 +396,15 @@ composite_test:
       else if order == 4: seq = [letter_j, box, red_dot]
       else if order == 5: seq = [letter_j, red_dot, box]
 
-      // Draw onto a window that is positioned at a random aligned place in the scene.
-      canvas := canvas_factory version 24 24
-
       x_offset := (random 0 3) * 8
       y_offset := (random 0 3) * 8
 
-      seq[2].write x_offset y_offset canvas
-      seq[1].write x_offset y_offset canvas
-      seq[0].write x_offset y_offset canvas
+      // Draw onto a window that is positioned at a random aligned place in the scene.
+      canvas := canvas_factory version 24 24 x_offset y_offset
+
+      seq[2].write canvas
+      seq[1].write canvas
+      seq[0].write canvas
 
       24.repeat: | x | 24.repeat: | y |
         actual_pixel := canvas.get_pixel x y
@@ -437,23 +437,23 @@ barcode_test:
   if not bitmap_primitives_present:
     return
   barcode := three_color.BarCodeEan13 "5017239191589" 10 10 Transform.identity
-  canvas := three_color.Canvas 128 104 // Starts off white.
-  barcode.write 0 0 canvas
+  canvas := three_color.Canvas 128 104 0 0  // Starts off white.
+  barcode.write canvas
 
   expect (barcode.l_ 0) == 0x0d
   expect (barcode.g_ 0) == 0x27
   expect (barcode.r_ 0) == 0x72
 
   line := ""
-  canvas.width.repeat: | x |
+  canvas.width_.repeat: | x |
     line += (canvas.get_pixel x 60) == 0 ? " " : "*"
 
   expect line == "                   * *   ** * **  **  *   *  *  ** **** *  * *** * * **  ** *** *  **  ** *  *** *  *   *** *  * *              "
 
-  canvas.height.repeat: | y |
+  canvas.height_.repeat: | y |
     if y > 80:
       str := ""
-      canvas.width.repeat: | x |
+      canvas.width_.repeat: | x |
         str += (canvas.get_pixel x y) == 0 ? " " : "*"
       print str
 
@@ -467,7 +467,6 @@ test_bounding_box:
     if skip_version version: continue.repeat
     WIDTH ::= version == TRUE_COLOR ? 48 : 128
     HEIGHT ::= version == TRUE_COLOR ? 48 : 128
-    canvas := canvas_factory version WIDTH HEIGHT
     noisy_background := opaque_bitmap_texture_factory version 0 0 WIDTH HEIGHT (get_red version) (get_white version)
     white_background := null
     if version == THREE_COLOR:
@@ -533,14 +532,18 @@ test_bounding_box:
 
       canvas_x_offset := (random 0 16) << 3
       canvas_y_offset := (random 0 16) << 3
-      white_background.write 0 0 canvas
-      noisy_background.write 0 0 canvas
-      texture.write canvas_x_offset canvas_y_offset canvas
+      canvas := canvas_factory version WIDTH HEIGHT 0 0
+      white_background.write canvas
+      noisy_background.write canvas
+      canvas.x_offset_ = canvas_x_offset
+      canvas.y_offset_ = canvas_y_offset
+      texture.write canvas
 
       // Sample some random points to see if they are OK.
       50.repeat:
         i := random 0 WIDTH
         j := random 0 HEIGHT
+
         scene_x := i + canvas_x_offset
         scene_y := j + canvas_y_offset
         noisy_pixel := (random_pixel_ version i j) ? (get_red version) : (get_white version)

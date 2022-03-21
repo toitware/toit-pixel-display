@@ -21,11 +21,11 @@ main:
   gray_scale_test
 
 true_color_test -> none:
-  canvas := true_color.Canvas 64 48
+  canvas := true_color.Canvas 64 48 0 0
   tr := Transform.identity
   window := true_color.DropShadowWindow 30 20 140 100 tr (true_color.get_rgb 255 255 153) --corner_radius=7 --blur_radius=4 --drop_distance_x=-10 --drop_distance_y=-10
   canvas.set_all_pixels (true_color.get_rgb 23 200 230)
-  window.write 0 0 canvas
+  window.write canvas
   48.repeat: | y |
     line := ""
     64.repeat: | x |
@@ -34,11 +34,11 @@ true_color_test -> none:
     print line
 
 gray_scale_test -> none:
-  canvas := gray_scale.Canvas 64 48
+  canvas := gray_scale.Canvas 64 48 0 0
   tr := Transform.identity
   window := gray_scale.DropShadowWindow 30 20 140 100 tr gray_scale.DARK_GRAY --corner_radius=7 --blur_radius=4 --drop_distance_x=-10 --drop_distance_y=-10
   canvas.set_all_pixels gray_scale.LIGHT_GRAY
-  window.write 0 0 canvas
+  window.write canvas
   48.repeat: | y |
     line := ""
     64.repeat: | x |

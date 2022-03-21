@@ -12,18 +12,17 @@ import .texture
 
 // The canvas contains two bitmapped ByteArrays, for up to 4 colors or gray
 // scales per pixel.  Starts off with all pixels 0, 0.
-class TwoBitCanvas_:
-  width := 0
-  height := 0
+class TwoBitCanvas_ extends AbstractCanvas:
   plane_0_ := ?
   plane_1_ := ?
 
-  constructor .width .height:
+  constructor width/int height/int x_offset/int y_offset/int:
     assert: height & 7 == 0
     size := (width * height) >> 3
     assert: size <= 4000
     plane_0_ = ByteArray size
     plane_1_ = ByteArray size
+    super width height x_offset y_offset
 
   set_all_pixels color:
     bitmap_zap plane_0_ (color & 1)
@@ -31,7 +30,7 @@ class TwoBitCanvas_:
 
   set_pixel color x y:
     bit := 1 << (y & 7)
-    idx := x + width * (y >> 3)
+    idx := x + width_ * (y >> 3)
     if (color & 1) == 0:
       plane_0_[idx] &= ~bit
     else:
@@ -43,7 +42,7 @@ class TwoBitCanvas_:
 
   get_pixel x y:
     bit := 1 << (y & 7)
-    idx := x + width * (y >> 3)
+    idx := x + width_ * (y >> 3)
     bit0 := (plane_0_[idx] & bit) == 0 ? 0 : 1
     bit1 := (plane_1_[idx] & bit) == 0 ? 0 : 1
     return bit0 + (bit1 << 1)
@@ -52,9 +51,9 @@ class TwoBitCanvas_:
   Creates a blank texture with the same dimensions as this one.
   */
   create_similar:
-    return TwoBitCanvas_ width height
+    return TwoBitCanvas_ width_ height_ x_offset_ y_offset_
 
-  composit frame_opacity frame_canvas painting_opacity painting_canvas:
+  composit frame_opacity frame_canvas painting_opacity painting_canvas/TwoBitCanvas_:
     composit_bytes plane_0_ frame_opacity (frame_canvas ? frame_canvas.plane_0_ : null) painting_opacity painting_canvas.plane_0_ true
     composit_bytes plane_1_ frame_opacity (frame_canvas ? frame_canvas.plane_1_ : null) painting_opacity painting_canvas.plane_1_ true
 
@@ -66,11 +65,11 @@ class TwoBitInfiniteBackground_ extends InfiniteBackground_:
   color -> int:
     return color_
 
-  write x y canvas:
+  write canvas/TwoBitCanvas_:
     bitmap_zap canvas.plane_0_ (color_ & 1)
     bitmap_zap canvas.plane_1_ (color_ & 2) >> 1
 
-  write_ win_x win_y canvas:
+  write_ canvas/TwoBitCanvas_:
     throw "Not used"
 
 class TwoBitFilledRectangle_ extends FilledRectangle_:
@@ -79,9 +78,9 @@ class TwoBitFilledRectangle_ extends FilledRectangle_:
   constructor .color_ x/int y/int w/int h/int transform/Transform:
     super x y w h transform
 
-  translated_write_ x y w h canvas:
-    bitmap_rectangle x y (color_ & 1)        w h canvas.plane_0_ canvas.width
-    bitmap_rectangle x y ((color_ & 2) >> 1) w h canvas.plane_1_   canvas.width
+  translated_write_ x y w h canvas/TwoBitCanvas_:
+    bitmap_rectangle x y (color_ & 1)        w h canvas.plane_0_ canvas.width_
+    bitmap_rectangle x y ((color_ & 2) >> 1) w h canvas.plane_1_   canvas.width_
 
 class TwoBitTextTexture_ extends TextTexture_:
   color_ := 0
@@ -100,9 +99,9 @@ class TwoBitTextTexture_ extends TextTexture_:
     color_ = new_color
     invalidate
 
-  draw_ bx by orientation canvas:
-    bitmap_draw_text bx by color_&1        orientation string_ font_ canvas.plane_0_ canvas.width
-    bitmap_draw_text bx by (color_&2) >> 1 orientation string_ font_ canvas.plane_1_ canvas.width
+  draw_ bx by orientation canvas/TwoBitCanvas_:
+    bitmap_draw_text bx by color_&1        orientation string_ font_ canvas.plane_0_ canvas.width_
+    bitmap_draw_text bx by (color_&2) >> 1 orientation string_ font_ canvas.plane_1_ canvas.width_
 
 /**
 A texture that contains an uncompressed 2-color image.  Initially all pixels
@@ -114,9 +113,9 @@ class TwoBitBitmapTexture_ extends BitmapTexture_:
   constructor x/int y/int w/int h/int transform/Transform .color_/int:
     super x y w h transform
 
-  draw_ bx by orientation canvas:
-    bitmap_draw_bitmap bx by (color_ & 1)        orientation bytes_ 0 w canvas.plane_0_ canvas.width false
-    bitmap_draw_bitmap bx by ((color_ & 2) >> 1) orientation bytes_ 0 w canvas.plane_1_ canvas.width false
+  draw_ bx by orientation canvas/TwoBitCanvas_:
+    bitmap_draw_bitmap bx by (color_ & 1)        orientation bytes_ 0 w canvas.plane_0_ canvas.width_ false
+    bitmap_draw_bitmap bx by ((color_ & 2) >> 1) orientation bytes_ 0 w canvas.plane_1_ canvas.width_ false
 
 /**
 A two color bitmap texture where foreground and background pixels in the
@@ -131,13 +130,13 @@ class TwoBitOpaqueBitmapTexture_ extends TwoBitBitmapTexture_:
   constructor x/int y/int w/int h/int transform/Transform foreground_color/int .background_color_:
     super x y w h transform foreground_color
 
-  write2_ win_x win_y canvas:
+  write2_ canvas/TwoBitCanvas_:
     transform_.xywh x_ y_ w_ h_: | x2 y2 w2 h2 |
-      x := x2 - win_x
-      y := y2 - win_y
-      bitmap_rectangle x y (background_color_ & 1) w2 h2 canvas.plane_0_ canvas.width
-      bitmap_rectangle x y ((background_color_ & 2) >> 1) w2 h2 canvas.plane_1_ canvas.width
-    super win_x win_y canvas  // Draw foreground.
+      x := x2 - canvas.x_offset_
+      y := y2 - canvas.y_offset_
+      bitmap_rectangle x y (background_color_ & 1) w2 h2 canvas.plane_0_ canvas.width_
+      bitmap_rectangle x y ((background_color_ & 2) >> 1) w2 h2 canvas.plane_1_ canvas.width_
+    super canvas  // Draw foreground.
 
 // A texture backed by a P4 (binary two-level) PBM file.  The white areas
 // (zeros) are rendered transparent and the black areas (ones) are rendered in
@@ -159,29 +158,29 @@ class PbmTexture_ extends BitmapTexture_:
     bytes_ = bytes[parser.image_data_offset..]
     super.no_allocate_ x y parser.width parser.height transform
 
-  draw_ bx by orientation canvas:
-    bitmap_draw_bitmap bx by (color_ & 1)        orientation bytes_ 0 w canvas.plane_0_ canvas.width false
-    bitmap_draw_bitmap bx by ((color_ & 2) >> 1) orientation bytes_ 0 w canvas.plane_1_ canvas.width false
+  draw_ bx by orientation canvas/TwoBitCanvas_:
+    bitmap_draw_bitmap bx by (color_ & 1)        orientation bytes_ 0 w canvas.plane_0_ canvas.width_ false
+    bitmap_draw_bitmap bx by ((color_ & 2) >> 1) orientation bytes_ 0 w canvas.plane_1_ canvas.width_ false
 
 class TwoBitBarCodeEan13_ extends BarCodeEan13_:
-  plane_0_ := 0
+  black_ := 0
   white_ := 0
 
-  constructor code/string x/int y/int transform/Transform .plane_0_/int .white_/int:
+  constructor code/string x/int y/int transform/Transform .black_/int .white_/int:
     super code x y transform
 
-  white_square_ x y w h canvas:
-    bitmap_rectangle x y (white_ & 1) w h canvas.plane_0_ canvas.width
-    bitmap_rectangle x y ((white_ & 2) >> 1) w h canvas.plane_1_ canvas.width
+  white_square_ x y w h canvas/TwoBitCanvas_:
+    bitmap_rectangle x y (white_ & 1) w h canvas.plane_0_ canvas.width_
+    bitmap_rectangle x y ((white_ & 2) >> 1) w h canvas.plane_1_ canvas.width_
 
   digit_ digit x y canvas orientation -> none:
     if digit == "": return
-    bitmap_draw_text x y (plane_0_ & 1) orientation digit sans10_ canvas.plane_0_ canvas.width
-    bitmap_draw_text x y ((plane_0_ & 2) >> 1) orientation digit sans10_ canvas.plane_1_ canvas.width
+    bitmap_draw_text x y (black_ & 1) orientation digit sans10_ canvas.plane_0_ canvas.width_
+    bitmap_draw_text x y ((black_ & 2) >> 1) orientation digit sans10_ canvas.plane_1_ canvas.width_
 
-  block_ x y width height canvas:
-    bitmap_rectangle x y (plane_0_ & 1) width height canvas.plane_0_ canvas.width
-    bitmap_rectangle x y ((plane_0_ & 2) >> 1) width height canvas.plane_1_ canvas.width
+  block_ x y width height canvas/TwoBitCanvas_:
+    bitmap_rectangle x y (black_ & 1) width height canvas.plane_0_ canvas.width_
+    bitmap_rectangle x y ((black_ & 2) >> 1) width height canvas.plane_1_ canvas.width_
 
 /**
 A rectangular window with a fixed width colored border.
@@ -194,16 +193,16 @@ class TwoBitSimpleWindow_ extends SimpleWindow_:
   constructor x y w h transform border_width .border_color .background_color:
     super x y w h transform border_width
 
-  draw_frame win_x win_y canvas:
+  draw_frame canvas/TwoBitCanvas_:
     bitmap_zap canvas.plane_0_ (border_color & 1)
     bitmap_zap canvas.plane_1_ (border_color & 2) >> 1
 
-  draw_background win_x win_y canvas:
+  draw_background canvas/TwoBitCanvas_:
     bitmap_zap canvas.plane_0_ (background_color & 1)
     bitmap_zap canvas.plane_1_ (background_color & 2) >> 1
 
-  make_alpha_map_ canvas:
-    return ByteArray (canvas.width * canvas.height) >> 3
+  make_alpha_map_ canvas/TwoBitCanvas_:
+    return ByteArray (canvas.width_ * canvas.height_) >> 3
 
   make_opaque_ x y w h map map_width:
     // Paint the border mask with 1's.
@@ -216,7 +215,7 @@ class TwoBitRoundedCornerWindow_ extends RoundedCornerWindow_:
     super x y w h transform corner_radius
 
   make_alpha_map_ canvas padding:
-    return ByteArray (canvas.width + padding) * ((canvas.height + padding + 7) >> 3)
+    return ByteArray (canvas.width_ + padding) * ((canvas.height_ + padding + 7) >> 3)
 
   make_opaque_ x y w h map map_width --frame/bool:
     assert: not frame
@@ -232,9 +231,9 @@ class TwoBitRoundedCornerWindow_ extends RoundedCornerWindow_:
         else:
           map[x + y_offset] |= 1 << (y & 7)
 
-  draw_background win_x win_y canvas:
+  draw_background canvas/TwoBitCanvas_:
     bitmap_zap canvas.plane_0_ (background_color & 1)
     bitmap_zap canvas.plane_1_ (background_color & 2) >> 1
 
-  draw_frame win_x win_y canvas:
+  draw_frame canvas/TwoBitCanvas_:
     throw "UNREACHABLE"

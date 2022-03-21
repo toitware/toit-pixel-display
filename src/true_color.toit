@@ -29,21 +29,20 @@ blue_component pixel/int -> int:
 
 // The canvas contains three ByteArrays, red, green, and blue.
 // 0 is black, 255 is max intensity.  Initially all pixels are black.
-class Canvas:
-  width := 0
-  height := 0
+class Canvas extends AbstractCanvas:
   red_ := ?
   green_ := ?
   blue_ := ?
 
-  constructor .width .height:
+  constructor width/int height/int x_offset/int y_offset/int:
     size := width * height
     red_ = ByteArray size
     green_ = ByteArray size
     blue_ = ByteArray size
+    super width height x_offset y_offset
 
   stringify:
-    return "true_color.Canvas $(width)x$height"
+    return "true_color.Canvas $(width_)x$height_"
 
   set_all_pixels color:
     bytemap_zap red_ (red_component color)
@@ -51,22 +50,22 @@ class Canvas:
     bytemap_zap blue_ (blue_component color)
 
   set_pixel color x y:
-    idx := x + width * y
+    idx := x + width_ * y
     red_[idx] = (red_component color)
     green_[idx] = (green_component color)
     blue_[idx] = (blue_component color)
 
   get_pixel x y:
-    idx := x + width * y
+    idx := x + width_ * y
     return get_rgb red_[idx] green_[idx] blue_[idx]
 
   /**
   Creates a blank texture with the same dimensions as this one.
   */
   create_similar:
-    return Canvas width height
+    return Canvas width_ height_ x_offset_ y_offset_
 
-  composit frame_opacity frame_canvas painting_opacity painting_canvas:
+  composit frame_opacity frame_canvas/Canvas? painting_opacity painting_canvas/Canvas:
     composit_bytes red_ frame_opacity (frame_canvas ? frame_canvas.red_ : null) painting_opacity painting_canvas.red_ false
     composit_bytes green_ frame_opacity (frame_canvas ? frame_canvas.green_ : null) painting_opacity painting_canvas.green_ false
     composit_bytes blue_ frame_opacity (frame_canvas ? frame_canvas.blue_ : null) painting_opacity painting_canvas.blue_ false
@@ -79,12 +78,12 @@ class InfiniteBackground extends InfiniteBackground_:
   color -> int:
     return color_
 
-  write x y canvas:
+  write canvas/Canvas:
     bytemap_zap canvas.red_ (red_component color_)
     bytemap_zap canvas.green_ (green_component color_)
     bytemap_zap canvas.blue_ (blue_component color_)
 
-  write_ win_x win_y canvas:
+  write_ canvas/Canvas:
     throw "Not used"
 
 class FilledRectangle extends FilledRectangle_:
@@ -99,10 +98,10 @@ class FilledRectangle extends FilledRectangle_:
     return FilledRectangle_.line_ x1 y1 x2 y2: | x y w h |
       FilledRectangle color x y w h transform
 
-  translated_write_ x y w h canvas:
-    if bytemap_rectangle x y (red_component color_)   w h canvas.red_   canvas.width:
-       bytemap_rectangle x y (green_component color_) w h canvas.green_ canvas.width
-       bytemap_rectangle x y (blue_component color_)  w h canvas.blue_  canvas.width
+  translated_write_ x y w h canvas/Canvas:
+    if bytemap_rectangle x y (red_component color_)   w h canvas.red_   canvas.width_:
+       bytemap_rectangle x y (green_component color_) w h canvas.green_ canvas.width_
+       bytemap_rectangle x y (blue_component color_)  w h canvas.blue_  canvas.width_
 
 class TextTexture extends TextTexture_:
   color_ := 0
@@ -126,10 +125,10 @@ class TextTexture extends TextTexture_:
     color_ = new_color
     invalidate
 
-  draw_ bx by orientation canvas:
-    bytemap_draw_text bx by (red_component color_) orientation string_ font_ canvas.red_ canvas.width
-    bytemap_draw_text bx by (green_component color_) orientation string_ font_ canvas.green_ canvas.width
-    bytemap_draw_text bx by (blue_component color_) orientation string_ font_ canvas.blue_ canvas.width
+  draw_ bx by orientation canvas/Canvas:
+    bytemap_draw_text bx by (red_component color_) orientation string_ font_ canvas.red_ canvas.width_
+    bytemap_draw_text bx by (green_component color_) orientation string_ font_ canvas.green_ canvas.width_
+    bytemap_draw_text bx by (blue_component color_) orientation string_ font_ canvas.blue_ canvas.width_
 
 class IconTexture extends TextTexture:
   constructor icon_x/int icon_y/int transform/Transform alignment/int icon/Icon font/Font color/int:
@@ -149,10 +148,10 @@ class BitmapTexture extends BitmapTexture_:
   constructor x/int y/int w/int h/int transform/Transform .color_/int:
     super x y w h transform
 
-  draw_ bx by orientation canvas:
-    bitmap_draw_bitmap bx by (red_component color_) orientation bytes_ 0 w canvas.red_ canvas.width true
-    bitmap_draw_bitmap bx by (green_component color_) orientation bytes_ 0 w canvas.green_ canvas.width true
-    bitmap_draw_bitmap bx by (blue_component color_) orientation bytes_ 0 w canvas.blue_ canvas.width true
+  draw_ bx by orientation canvas/Canvas:
+    bitmap_draw_bitmap bx by (red_component color_) orientation bytes_ 0 w canvas.red_ canvas.width_ true
+    bitmap_draw_bitmap bx by (green_component color_) orientation bytes_ 0 w canvas.green_ canvas.width_ true
+    bitmap_draw_bitmap bx by (blue_component color_) orientation bytes_ 0 w canvas.blue_ canvas.width_ true
 
 /**
 A two color bitmap texture where foreground and background pixels in the
@@ -167,14 +166,14 @@ class OpaqueBitmapTexture extends BitmapTexture:
   constructor x/int y/int w/int h/int transform/Transform foreground_color/int .background_color_:
     super x y w h transform foreground_color
 
-  write2_ win_x win_y canvas:
+  write2_ canvas/Canvas:
     transform_.xywh x_ y_ w_ h_: | x2 y2 w2 h2 |
-      x := x2 - win_x
-      y := y2 - win_y
-      bytemap_rectangle x y (red_component background_color_) w2 h2 canvas.red_ canvas.width
-      bytemap_rectangle x y (green_component background_color_) w2 h2 canvas.green_ canvas.width
-      bytemap_rectangle x y (blue_component background_color_) w2 h2 canvas.blue_ canvas.width
-    super win_x win_y canvas  // Draw foreground.
+      x := x2 - canvas.x_offset_
+      y := y2 - canvas.y_offset_
+      bytemap_rectangle x y (red_component background_color_) w2 h2 canvas.red_ canvas.width_
+      bytemap_rectangle x y (green_component background_color_) w2 h2 canvas.green_ canvas.width_
+      bytemap_rectangle x y (blue_component background_color_) w2 h2 canvas.blue_ canvas.width_
+    super canvas  // Draw foreground.
 
 // A texture backed by a P4 (binary two-level) PBM file.  The white areas
 // (zeros) are rendered transparent and the black areas (ones) are rendered in
@@ -196,10 +195,10 @@ class PbmTexture extends BitmapTexture_:
     bytes_ = bytes[parser.image_data_offset..]
     super.no_allocate_ x y parser.width parser.height transform
 
-  draw_ bx by orientation canvas:
-    bitmap_draw_bitmap bx by (red_component color_)   orientation bytes_ 0 w canvas.red_   canvas.width true
-    bitmap_draw_bitmap bx by (green_component color_) orientation bytes_ 0 w canvas.green_ canvas.width true
-    bitmap_draw_bitmap bx by (blue_component color_)  orientation bytes_ 0 w canvas.blue_  canvas.width true
+  draw_ bx by orientation canvas/Canvas:
+    bitmap_draw_bitmap bx by (red_component color_)   orientation bytes_ 0 w canvas.red_   canvas.width_ true
+    bitmap_draw_bitmap bx by (green_component color_) orientation bytes_ 0 w canvas.green_ canvas.width_ true
+    bitmap_draw_bitmap bx by (blue_component color_)  orientation bytes_ 0 w canvas.blue_  canvas.width_ true
 
 /**
 A rectangular pixmap that can be drawn in any of 4 orientations on a canvas.
@@ -296,35 +295,35 @@ class IndexedPixmapTexture extends PixmapTexture_:
   clear_all_pixels -> none:
     bitmap_zap bytes_ 0
 
-  draw_ bx by orientation canvas:
+  draw_ bx by orientation canvas/Canvas:
     if not green_palette_: green_palette_ = palette_[1..]
     if not blue_palette_: blue_palette_ = palette_[2..]
-    bitmap_draw_bytemap bx by 0 orientation bytes_ w palette_       canvas.red_   canvas.width
-    bitmap_draw_bytemap bx by 0 orientation bytes_ w green_palette_ canvas.green_ canvas.width
-    bitmap_draw_bytemap bx by 0 orientation bytes_ w blue_palette_  canvas.blue_  canvas.width
+    bitmap_draw_bytemap bx by 0 orientation bytes_ w palette_       canvas.red_   canvas.width_
+    bitmap_draw_bytemap bx by 0 orientation bytes_ w green_palette_ canvas.green_ canvas.width_
+    bitmap_draw_bytemap bx by 0 orientation bytes_ w blue_palette_  canvas.blue_  canvas.width_
 
 class BarCodeEan13 extends BarCodeEan13_:
   constructor code/string x/int y/int transform/Transform:
     super code x y transform
 
-  white_square_ x y w h canvas:
+  white_square_ x y w h canvas/Canvas:
     white ::= 0xff
-    if bytemap_rectangle x y white w h canvas.red_   canvas.width:
-       bytemap_rectangle x y white w h canvas.green_ canvas.width
-       bytemap_rectangle x y white w h canvas.blue_ canvas.width
+    if bytemap_rectangle x y white w h canvas.red_   canvas.width_:
+       bytemap_rectangle x y white w h canvas.green_ canvas.width_
+       bytemap_rectangle x y white w h canvas.blue_ canvas.width_
 
   digit_ digit x y canvas orientation -> none:
     if digit == "": return
     black ::= 0
-    bytemap_draw_text x y black orientation digit sans10_ canvas.red_   canvas.width
-    bytemap_draw_text x y black orientation digit sans10_ canvas.green_ canvas.width
-    bytemap_draw_text x y black orientation digit sans10_ canvas.blue_  canvas.width
+    bytemap_draw_text x y black orientation digit sans10_ canvas.red_   canvas.width_
+    bytemap_draw_text x y black orientation digit sans10_ canvas.green_ canvas.width_
+    bytemap_draw_text x y black orientation digit sans10_ canvas.blue_  canvas.width_
 
-  block_ x y width height canvas:
+  block_ x y width height canvas/Canvas:
     black ::= 0
-    if bytemap_rectangle x y black width height canvas.red_   canvas.width:
-       bytemap_rectangle x y black width height canvas.green_ canvas.width
-       bytemap_rectangle x y black width height canvas.blue_  canvas.width
+    if bytemap_rectangle x y black width height canvas.red_   canvas.width_:
+       bytemap_rectangle x y black width height canvas.green_ canvas.width_
+       bytemap_rectangle x y black width height canvas.blue_  canvas.width_
 
 /**
 A rectangular window with a fixed width colored border.
@@ -337,18 +336,18 @@ class SimpleWindow extends SimpleWindow_:
   constructor x y w h transform border_width .border_color .background_color:
     super x y w h transform border_width
 
-  draw_frame win_x win_y canvas:
+  draw_frame canvas/Canvas:
     bytemap_zap canvas.red_ (red_component border_color)
     bytemap_zap canvas.green_ (green_component border_color)
     bytemap_zap canvas.blue_ (blue_component border_color)
 
-  draw_background win_x win_y canvas:
+  draw_background canvas/Canvas:
     bytemap_zap canvas.red_ (red_component background_color)
     bytemap_zap canvas.green_ (green_component background_color)
     bytemap_zap canvas.blue_ (blue_component background_color)
 
-  make_alpha_map_ canvas:
-    return ByteArray canvas.width * canvas.height
+  make_alpha_map_ canvas/Canvas:
+    return ByteArray canvas.width_ * canvas.height_
 
   make_opaque_ x y w h map map_width:
     bytemap_rectangle x y 0xff w h map map_width
@@ -360,7 +359,7 @@ class RoundedCornerWindow extends RoundedCornerWindow_:
     super x y w h transform corner_radius
 
   make_alpha_map_ canvas padding:
-    return ByteArray (canvas.width + padding) * (canvas.height + padding)
+    return ByteArray (canvas.width_ + padding) * (canvas.height_ + padding)
 
   make_opaque_ x y w h map map_width --frame/bool:
     assert: not frame
@@ -373,12 +372,12 @@ class RoundedCornerWindow extends RoundedCornerWindow_:
       if 0 <= y_offset < map.size:
         map[x + y_offset] = opacity
 
-  draw_background win_x win_y canvas:
+  draw_background canvas/Canvas:
     bytemap_zap canvas.red_ (red_component background_color)
     bytemap_zap canvas.green_ (green_component background_color)
     bytemap_zap canvas.blue_ (blue_component background_color)
 
-  draw_frame win_x win_y canvas:
+  draw_frame canvas/Canvas:
     throw "UNREACHABLE"
 
 class DropShadowWindow extends DropShadowWindow_:
@@ -392,7 +391,7 @@ class DropShadowWindow extends DropShadowWindow_:
     super x y w h transform corner_radius blur_radius drop_distance_x drop_distance_y
 
   make_alpha_map_ canvas padding:
-    return ByteArray (canvas.width + padding) * (canvas.height + padding)
+    return ByteArray (canvas.width_ + padding) * (canvas.height_ + padding)
 
   make_opaque_ x y w h map map_width --frame/bool:
     bytemap_rectangle x y (frame ? max_shadow_opacity_ : 255) w h map map_width
@@ -406,12 +405,12 @@ class DropShadowWindow extends DropShadowWindow_:
         else:
           map[x + y_offset] = opacity
 
-  draw_background win_x win_y canvas:
+  draw_background canvas/Canvas:
     bytemap_zap canvas.red_ (red_component background_color)
     bytemap_zap canvas.green_ (green_component background_color)
     bytemap_zap canvas.blue_ (blue_component background_color)
 
-  draw_frame win_x win_y canvas:
+  draw_frame canvas/Canvas:
     bytemap_zap canvas.red_ 0
     bytemap_zap canvas.green_ 0
     bytemap_zap canvas.blue_ 0

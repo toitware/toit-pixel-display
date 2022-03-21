@@ -492,18 +492,19 @@ class TwoColorPixelDisplay extends PixelDisplay:
     step := round_up
         max_canvas_height_ width_
         8
-    canvas := two_color.Canvas w step
+    canvas := two_color.Canvas w step 0 0
     pixels := canvas.pixels_
     List.chunk_up 0 (round_up height_ 8) step: | top bottom |
-      background_.write 0 top canvas
-      textures_.do: it.write 0 top canvas
+      canvas.y_offset_ = top
+      background_.write canvas
+      textures_.do: it.write canvas
       driver_.draw_two_color 0 top width_ bottom pixels
     driver_.commit 0 0 width_ height_
 
   redraw_rect_ left/int top/int right/int bottom/int -> none:
-    canvas := two_color.Canvas (right - left) (bottom - top)
-    background_.write left top canvas
-    textures_.do: it.write left top canvas
+    canvas := two_color.Canvas (right - left) (bottom - top) left top
+    background_.write canvas
+    textures_.do: it.write canvas
     driver_.draw_two_color left top right bottom canvas.pixels_
 
 /**
@@ -674,17 +675,18 @@ abstract class TwoBitPixelDisplay_ extends PixelDisplay:
     driver_.start_full_update speed_
     w := width_
     step := max_canvas_height_ width_
-    canvas := three_color.Canvas w (min step (round_up height_ 8))
+    canvas := three_color.Canvas w (min step (round_up height_ 8)) 0 0
     List.chunk_up 0 (round_up height_ 8) step: | y y_end |
-      background_.write 0 y canvas
-      textures_.do: it.write 0 y canvas
+      canvas.y_offset_ = y
+      background_.write canvas
+      textures_.do: it.write canvas
       driver_.draw_two_bit 0 y width_ y_end canvas.plane_0_ canvas.plane_1_
     driver_.commit 0 0 width_ height_
 
   redraw_rect_ left/int top/int right/int bottom/int -> none:
-    canvas := three_color.Canvas (right - left) (bottom - top)
-    background_.write left top canvas
-    textures_.do: it.write left top canvas
+    canvas := three_color.Canvas (right - left) (bottom - top) left top
+    background_.write canvas
+    textures_.do: it.write canvas
     driver_.draw_two_bit left top right bottom canvas.plane_0_ canvas.plane_1_
 
 /**
@@ -765,17 +767,18 @@ class GrayScalePixelDisplay extends PixelDisplay:
     driver_.start_full_update speed_
     w := width_
     step := max_canvas_height_ w
-    canvas := gray_scale.Canvas w step
+    canvas := gray_scale.Canvas w step 0 0
     List.chunk_up 0 height_ step: | top bottom |
-      background_.write 0 top canvas
-      textures_.do: it.write 0 top canvas
+      canvas.y_offset_ = top
+      background_.write canvas
+      textures_.do: it.write canvas
       driver_.draw_gray_scale 0 top width_ bottom canvas.pixels_
     driver_.commit 0 0 width_ height_
 
   redraw_rect_ left/int top/int right/int bottom/int -> none:
-    canvas := gray_scale.Canvas (right - left) (bottom - top)
-    background_.write left top canvas
-    textures_.do: it.write left top canvas
+    canvas := gray_scale.Canvas (right - left) (bottom - top) left top
+    background_.write canvas
+    textures_.do: it.write canvas
     driver_.draw_gray_scale left top right bottom canvas.pixels_
 
 /**
@@ -856,17 +859,18 @@ class SeveralColorPixelDisplay extends PixelDisplay:
     driver_.start_full_update speed_
     w := width_
     step := max_canvas_height_ w
-    canvas := several_color.Canvas w step
+    canvas := several_color.Canvas w step 0 0
     List.chunk_up 0 height_ step: | top bottom |
-      background_.write 0 top canvas
-      textures_.do: it.write 0 top canvas
+      canvas.y_offset_ = top
+      background_.write canvas
+      textures_.do: it.write canvas
       driver_.draw_several_color 0 top width_ bottom canvas.pixels_
     driver_.commit 0 0 width_ height_
 
   redraw_rect_ left/int top/int right/int bottom/int -> none:
-    canvas := several_color.Canvas (right - left) (bottom - top)
-    background_.write left top canvas
-    textures_.do: it.write left top canvas
+    canvas := several_color.Canvas (right - left) (bottom - top) left top
+    background_.write canvas
+    textures_.do: it.write canvas
     driver_.draw_several_color left top right bottom canvas.pixels_
 
 /**
@@ -948,15 +952,16 @@ class TrueColorPixelDisplay extends PixelDisplay:
     driver_.start_full_update speed_
     w := width_
     step := max_canvas_height_ width_
-    canvas := true_color.Canvas w step
+    canvas := true_color.Canvas w step 0 0
     List.chunk_up 0 height_ step: | top bottom h |
-      background_.write 0 top canvas
-      textures_.do: it.write 0 top canvas
+      canvas.y_offset_ = top
+      background_.write canvas
+      textures_.do: it.write canvas
       driver_.draw_true_color 0 top width_ bottom canvas.red_ canvas.green_ canvas.blue_
     driver_.commit 0 0 width_ height_
 
   redraw_rect_ left/int top/int right/int bottom/int -> none:
-    canvas := true_color.Canvas (right - left) (bottom - top)
-    background_.write left top canvas
-    textures_.do: it.write left top canvas
+    canvas := true_color.Canvas (right - left) (bottom - top) left top
+    background_.write canvas
+    textures_.do: it.write canvas
     driver_.draw_true_color left top right bottom canvas.red_ canvas.green_ canvas.blue_

@@ -25,8 +25,8 @@ RED ::= 2
 //   1    1   Invalid
 // Starts off with all pixels white.
 class Canvas extends TwoBitCanvas_:
-  constructor width height:
-    super width height
+  constructor width height x_offset y_offset:
+    super width height x_offset y_offset
 
 class InfiniteBackground extends TwoBitInfiniteBackground_:
   constructor color:
