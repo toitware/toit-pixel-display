@@ -162,12 +162,11 @@ abstract class Texture:
   change_tracker /Window? := null
 
   /**
-  Writes the image data to a canvas window which is positioned at ($x, $y) in the global
-    coordinate space.
+  Writes the image data to a canvas window.
   $canvas: Some sort of canvas.  The precise type depends on the depth of the display.
   */
-  write pixels/AbstractCanvas -> none:
-    write_ pixels
+  write canvas/AbstractCanvas -> none:
+    write_ canvas
 
   abstract write_ canvas
 
