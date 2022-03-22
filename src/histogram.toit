@@ -65,11 +65,11 @@ abstract class Histogram extends SizedTexture:
     clamped := max 0 (min h_ scaled)
     return h_ - clamped
 
-  write2_ win_x win_y canvas:
+  write2_ canvas:
     List.chunk_up 0 fullness_ 16: | from to size |
       worth_plotting := false
       transform.xywh (x + from) y size h_: | x2 y2 w2 h2 |
-        if w2 > 0 and h2 > 0 and x2 - win_x + w2 > 0 and x2 - win_x < canvas.width:
+        if w2 > 0 and h2 > 0 and x2 - canvas.x_offset_ + w2 > 0 and x2 - canvas.x_offset_ < canvas.width_:
           worth_plotting = true
       if worth_plotting:
         for hx := from; hx < to; hx++:
@@ -80,8 +80,8 @@ abstract class Histogram extends SizedTexture:
           transform.xywh wx wy1 1 (wy2 - wy1): | x2 y2 w2 h2 |
             if w2 > 0 and h2 > 0:
               draw_rectangle
-                x2 - win_x
-                y2 - win_y
+                x2 - canvas.x_offset_
+                y2 - canvas.y_offset_
                 w2
                 h2
                 canvas
@@ -114,7 +114,7 @@ class TwoColorHistogram extends Histogram:
       w
       h
       canvas.pixels_
-      canvas.width
+      canvas.width_
 
 class TwoBitColorHistogram_ extends Histogram:
   color_ := 0
@@ -130,7 +130,7 @@ class TwoBitColorHistogram_ extends Histogram:
       w
       h
       canvas.plane_0_
-      canvas.width
+      canvas.width_
     bitmap_rectangle
       x
       y
@@ -138,7 +138,7 @@ class TwoBitColorHistogram_ extends Histogram:
       w
       h
       canvas.plane_1_
-      canvas.width
+      canvas.width_
 
 class ThreeColorHistogram extends TwoBitColorHistogram_:
   constructor x/int y/int width/int height/int transform/Transform scale/num color/int:
@@ -192,6 +192,6 @@ class TrueColorHistogram extends Histogram:
 
   draw_rectangle x y w h canvas:
     c := color_
-    if bytemap_rectangle x y (true_color.red_component c)   w h canvas.red_   canvas.width:
-       bytemap_rectangle x y (true_color.green_component c) w h canvas.green_ canvas.width
-       bytemap_rectangle x y (true_color.blue_component c)  w h canvas.blue_  canvas.width
+    if bytemap_rectangle x y (true_color.red_component c)   w h canvas.red_   canvas.width_:
+       bytemap_rectangle x y (true_color.green_component c) w h canvas.green_ canvas.width_
+       bytemap_rectangle x y (true_color.blue_component c)  w h canvas.blue_  canvas.width_

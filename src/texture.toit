@@ -140,6 +140,18 @@ class Transform:
   height width/int height/int -> int:
     return width * array_[1] + height * array_[3]
 
+abstract class AbstractCanvas:
+  width_ / int
+  height_ / int
+  x_offset_ / int := ?
+  y_offset_ / int := ?
+
+  constructor .width_ .height_ .x_offset_ .y_offset_:
+
+  abstract create_similar -> AbstractCanvas
+
+  abstract composit frame_opacity frame_canvas/AbstractCanvas painting_opacity painting_canvas/AbstractCanvas
+
 /**
 Something you can draw on a canvas.  It could be a text string, a pixmap or
   a geometric figure. They can be stacked up and will be drawn from back to
@@ -152,12 +164,12 @@ abstract class Texture:
   /**
   Writes the image data to a canvas window which is positioned at ($x, $y) in the global
     coordinate space.
-  $pixels: Some sort of canvas.  The precise type depends on the depth of the display.
+  $canvas: Some sort of canvas.  The precise type depends on the depth of the display.
   */
-  write x/int y/int pixels -> none:
-    write_ x y pixels
+  write pixels/AbstractCanvas -> none:
+    write_ pixels
 
-  abstract write_ win_x win_y canvas
+  abstract write_ canvas
 
   abstract invalidate -> none
 
@@ -274,15 +286,17 @@ abstract class SizedTexture extends Texture:
       invalidate
 
   // Redraws in a tile that will be copied to a part of the display.
-  write_ win_x/int win_y/int canvas -> none:
-    win_w := canvas.width
-    win_h := canvas.height
+  write_ canvas/AbstractCanvas -> none:
+    win_w := canvas.width_
+    win_h := canvas.height_
+    win_x := canvas.x_offset_
+    win_y := canvas.y_offset_
     transform_.xywh x_ y_ w_ h_: | x2 y2 w2 h2 |
       if win_x + win_w <= x2: return  // Right hand side of window is to the left of this texture.
       if win_x >= x2 + w2: return     // Left hand side of window is to the right of this texture.
       if win_y + win_h <= y2: return  // Bottom of window is above this texture.
       if win_y >= y2 + h2: return     // Top of window is below this texture.
-    write2_ win_x win_y canvas
+    write2_ canvas
 
   /**
   # Inheritance
@@ -290,7 +304,7 @@ abstract class SizedTexture extends Texture:
     part of the display.  Is not called for tiles that are wholly disjoint
     with the texture.
   */
-  abstract write2_ win_x win_y canvas
+  abstract write2_ canvas
 
 abstract class ResizableTexture extends SizedTexture:
   constructor x/int y/int w/int h/int transform/Transform:
@@ -355,12 +369,12 @@ abstract class BarCodeEan13_ extends SizedTexture:
     return (l_ digit) ^ 0x7f
 
   // Make a white background behind the bar code and draw the digits along the bottom.
-  draw_background_ win_x win_y canvas:
+  draw_background_ canvas/AbstractCanvas:
     // Background of a bar code is always white (0 color).
     transform_.xywh x y w_ h_: | x2 y2 w2 h2 |
       white_square_
-          x2 - win_x
-          y2 - win_y
+          x2 - canvas.x_offset_
+          y2 - canvas.y_offset_
           w2
           h2
           canvas
@@ -372,12 +386,12 @@ abstract class BarCodeEan13_ extends SizedTexture:
     text_y := y + EAN_13_HEIGHT + number_height_ - EAN_13_BOTTOM_SPACE + 1
 
     // Canvas coordinates.
-    canvas_x := (transform_.x x + 1 text_y) - win_x
-    canvas_y := (transform_.y x + 1 text_y) - win_y
+    canvas_x := (transform_.x x + 1 text_y) - canvas.x_offset_
+    canvas_y := (transform_.y x + 1 text_y) - canvas.y_offset_
     digit_ (code_.copy 0 1) canvas_x canvas_y canvas text_orientation
 
-    canvas_x = (transform_.x text_x text_y) - win_x
-    canvas_y = (transform_.y text_x text_y) - win_y
+    canvas_x = (transform_.x text_x text_y) - canvas.x_offset_
+    canvas_y = (transform_.y text_x text_y) - canvas.y_offset_
     step_x := (transform_.width 1 0)
     step_y := (transform_.height 1 0)
     (code_.copy 1 7).split "":
@@ -408,14 +422,16 @@ abstract class BarCodeEan13_ extends SizedTexture:
   abstract digit_ digit x y canvas orientation
 
   // Line in transform coordinates.
-  line_ x top bottom canvas transform win_x win_y:
+  line_ x top bottom canvas/AbstractCanvas transform:
     height := bottom - top
     transform.xywh x top 1 height: | x y w h |
-      block_ x - win_x y - win_y w h canvas
+      block_ x - canvas.x_offset_ y - canvas.y_offset_ w h canvas
 
   // Redraw routine.
-  write2_ win_x win_y canvas:
-    draw_background_ win_x win_y canvas
+  write2_ canvas/AbstractCanvas:
+    win_x := canvas.x_offset_
+    win_y := canvas.y_offset_
+    draw_background_ canvas
 
     x := x_ + EAN_13_QUIET_ZONE_WIDTH
     top := y_
@@ -423,8 +439,8 @@ abstract class BarCodeEan13_ extends SizedTexture:
     bottom := y_ + EAN_13_HEIGHT
     y := bottom - EAN_13_BOTTOM_SPACE
     // Start bars: 101.
-    line_ x     top bottom canvas transform_ win_x win_y
-    line_ x + 2 top bottom canvas transform_ win_x win_y
+    line_ x     top bottom canvas transform_
+    line_ x + 2 top bottom canvas transform_
     x += 3
     first_code := EAN_13_FIRST_CODES_[code_[0] & 0xf]
     // Left digits using the L or G mapping.
@@ -433,11 +449,11 @@ abstract class BarCodeEan13_ extends SizedTexture:
       code := ((first_code >> (6 - i)) & 1) == 0 ? (l_ digit) : (g_ digit)
       for b := 6; b >= 0; b--:
         if ((1 << b) & code) != 0:
-          line_ x top y canvas transform_ win_x win_y
+          line_ x top y canvas transform_
         x++
     // Middle bars: 01010
-    line_ x + 1 top bottom canvas transform_ win_x win_y
-    line_ x + 3 top bottom canvas transform_ win_x win_y
+    line_ x + 1 top bottom canvas transform_
+    line_ x + 3 top bottom canvas transform_
     x += 5
     // Left digits using the R mapping.
     for i := 7; i < 13; i++:
@@ -445,11 +461,11 @@ abstract class BarCodeEan13_ extends SizedTexture:
       code := r_ digit
       for b := 6; b >= 0; b--:
         if ((1 << b) & code) != 0:
-          line_ x top y canvas transform_ win_x win_y
+          line_ x top y canvas transform_
         x++
     // End bars: 101.
-    line_ x     top bottom canvas transform_ win_x win_y
-    line_ x + 2 top bottom canvas transform_ win_x win_y
+    line_ x     top bottom canvas transform_
+    line_ x + 2 top bottom canvas transform_
 
 TEXT_TEXTURE_ALIGN_LEFT ::= 0
 TEXT_TEXTURE_ALIGN_CENTER ::= 1
@@ -650,12 +666,12 @@ abstract class TextTexture_ extends SizedTexture:
     invalidate
 
   // After the textures under us have drawn themselves, we draw on top.
-  write2_ win_x win_y canvas:
+  write2_ canvas/AbstractCanvas:
     x2 := transform_.x text_x_ + displacement text_y_
     y2 := transform_.y text_x_ + displacement text_y_
     draw_
-      x2 - win_x
-      y2 - win_y
+      x2 - canvas.x_offset_
+      y2 - canvas.y_offset_
       transform_.orientation_
       canvas
 
@@ -668,11 +684,11 @@ abstract class FilledRectangle_ extends ResizableTexture:
   constructor x/int y/int w/int h/int transform/Transform:
     super x y w h transform
 
-  // Draw a colored rectangle at x,y on the canvas, which is positioned at win_x,win_y.
-  write2_ win_x win_y canvas:
+  // Draw a colored rectangle at x,y on the canvas.
+  write2_ canvas/AbstractCanvas:
     transform_.xywh x_ y_ w_ h_: | x2 y2 w2 h2 |
-      start_x := x2 - win_x
-      start_y := y2 - win_y
+      start_x := x2 - canvas.x_offset_
+      start_y := y2 - canvas.y_offset_
       translated_write_ start_x start_y w2 h2 canvas
 
   // Takes canvas coordinates.
@@ -721,8 +737,8 @@ class TextureGroup extends Texture implements Window:
     elements_ = []
 
   // After the textures under us have drawn themselves, we draw on top.
-  write_ x/int y/int canvas -> none:
-    elements_.do: it.write x y canvas
+  write_ canvas/AbstractCanvas -> none:
+    elements_.do: it.write canvas
 
   // We don't crop anything, just pass on the invalidation to the next higher Window.
   child_invalidated x/int y/int w/int h/int -> none:
@@ -847,7 +863,7 @@ abstract class WindowTexture_ extends BorderlessWindow_ implements Window:
     opaque.  As a special case it may return a single-entry byte array, which
     means all pixels have the same transparency.
   */
-  abstract frame_map win_x/int win_y/int canvas -> ByteArray
+  abstract frame_map canvas/AbstractCanvas -> ByteArray
 
   /**
   Returns a canvas that is an alpha map for the given area that describes where
@@ -858,7 +874,7 @@ abstract class WindowTexture_ extends BorderlessWindow_ implements Window:
     may return a single-entry byte array, which means all pixels have the same
     transparency.
   */
-  abstract painting_map win_x/int win_y/int canvas -> ByteArray
+  abstract painting_map canvas/AbstractCanvas -> ByteArray
 
   /**
   Draws the background on the canvas.  This represents the interior wall color
@@ -866,45 +882,45 @@ abstract class WindowTexture_ extends BorderlessWindow_ implements Window:
     take the frame_map or painting_map into account: The canvas this function
     draws on will be composited using them afterwards.
   */
-  abstract draw_background win_x win_y canvas -> none
+  abstract draw_background canvas/AbstractCanvas -> none
 
   /**
   Expected to draw the frame on the canvas.  This represents the window frame
     color.  Does not need to take the frame_map or painting_map into account: The
     return value from this function will be composited using them afterwards.
   */
-  abstract draw_frame win_x win_y canvas
+  abstract draw_frame canvas
 
   constructor .inner_x_ .inner_y_ .inner_w_ .inner_h_ x/int y/int w/int h/int transform:
     super x y w h transform
 
   // After the textures under us have drawn themselves, we draw on top.
-  write2_ win_x win_y canvas:
-    win_w := canvas.width
-    win_h := canvas.height
+  write2_ canvas/AbstractCanvas:
+    win_w := canvas.width_
+    win_h := canvas.height_
 
-    painting_opacity := painting_map win_x win_y canvas
+    painting_opacity := painting_map canvas
 
     // If the window is 100% painting at these coordinates then we can draw the
     // elements of the window and no compositing is required.  We merely draw
     // the window background color and then draw the textures.
     if is_all_opaque painting_opacity:
-      draw_background win_x win_y canvas
-      elements_.do: it.write_ win_x win_y canvas
+      draw_background canvas
+      elements_.do: it.write_ canvas
       return
 
-    frame_opacity := frame_map win_x win_y canvas
+    frame_opacity := frame_map canvas
 
     // The complicated case where we have to composite the tile from the wall,
     // the frame, and the painting_opacity.
     frame_canvas := null
     if not is_all_transparent frame_opacity:
       frame_canvas = canvas.create_similar
-      draw_frame win_x win_y frame_canvas
+      draw_frame frame_canvas
 
     painting_canvas := canvas.create_similar
-    draw_background win_x win_y painting_canvas
-    elements_.do: it.write_ win_x win_y painting_canvas
+    draw_background painting_canvas
+    elements_.do: it.write_ painting_canvas
 
     canvas.composit frame_opacity frame_canvas painting_opacity painting_canvas
 
@@ -943,39 +959,39 @@ abstract class SimpleWindow_ extends WindowTexture_:
   // Draws 100% opacity for the frame shape, a filled rectangle.
   // (The frame is behind the painting, so this doesn't mean we only
   // see the frame.)
-  frame_map win_x/int win_y/int canvas:
+  frame_map canvas/AbstractCanvas:
     if border_width_ == 0: return WindowTexture_.ALL_TRANSPARENT  // The frame is not visible anywhere.
     // Transform inner dimensions not including border
     transform_.xywh inner_x_ inner_y_ inner_w_ inner_h_: | x y w2 h2 |
-      x2 := x - win_x
-      y2 := y - win_y
-      if x2 <= 0 and y2 <= 0 and x2 + w2 >= canvas.width and y2 + h2 >= canvas.height:
+      x2 := x - canvas.x_offset_
+      y2 := y - canvas.y_offset_
+      if x2 <= 0 and y2 <= 0 and x2 + w2 >= canvas.width_ and y2 + h2 >= canvas.height_:
         // In the middle, the window content is 100% opaque and draw on top of the
         // frame.  There is no need to provide a frame alpha map, so for efficiency we
         // just return 0 which indicates the frame is 100% transparent.
         return WindowTexture_.ALL_TRANSPARENT
     // Transform outer dimensions including border.
     transform_.xywh x_ y_ w_ h_: | x y w2 h2 |
-      x2 := x - win_x
-      y2 := y - win_y
+      x2 := x - canvas.x_offset_
+      y2 := y - canvas.y_offset_
       // We need to create a bitmap to describe the frame's extent.
       transparency_map := make_alpha_map_ canvas
       // Declare the whole area inside the frame's extent opaque.  The window content will
       // draw on top of this as needed.
-      make_opaque_ x2 y2 w2 h2 transparency_map canvas.width
+      make_opaque_ x2 y2 w2 h2 transparency_map canvas.width_
       return transparency_map
     unreachable
 
   // Draws 100% opacity for the window content, a filled rectangle.
-  painting_map win_x win_y canvas:
+  painting_map canvas/AbstractCanvas:
     transform_.xywh inner_x_ inner_y_ inner_w_ inner_h_: | x y w2 h2 |
-      x2 := x - win_x
-      y2 := y - win_y
-      if x2 <= 0 and y2 <= 0 and x2 + w2 >= canvas.width and y2 + h2 >= canvas.height:
+      x2 := x - canvas.x_offset_
+      y2 := y - canvas.y_offset_
+      if x2 <= 0 and y2 <= 0 and x2 + w2 >= canvas.width_ and y2 + h2 >= canvas.height_:
         return WindowTexture_.ALL_OPAQUE  // The content is 100% opaque in the middle.
       // We need to create a bitmap to describe the content's extent.
       transparency_map := make_alpha_map_ canvas
-      make_opaque_ x2 y2 w2 h2 transparency_map canvas.width
+      make_opaque_ x2 y2 w2 h2 transparency_map canvas.width_
       return transparency_map
     unreachable
 
@@ -983,7 +999,7 @@ abstract class SimpleWindow_ extends WindowTexture_:
 abstract class RoundedCornerWindow_ extends WindowTexture_:
   corner_radius_ := 0
   opacities_ := null
-  abstract make_alpha_map_ canvas padding
+  abstract make_alpha_map_ canvas/AbstractCanvas padding
   abstract make_opaque_ x y w h map map_width --frame/bool
   abstract set_opacity_ x y opacity map map_width --frame/bool
 
@@ -1044,7 +1060,7 @@ abstract class RoundedCornerWindow_ extends WindowTexture_:
               total += extent - a
           opacities_[idx] = (0xff * total) / (downsample * downsample)
 
-  frame_map win_x/int win_y/int canvas:
+  frame_map canvas/AbstractCanvas:
     return WindowTexture_.ALL_TRANSPARENT  // No frame on these windows.
 
   static TABLE_SIZE_ ::= 256
@@ -1059,15 +1075,15 @@ abstract class RoundedCornerWindow_ extends WindowTexture_:
     return array
 
   // Draws 100% opacity for the window content, a filled rounded-corner rectangle.
-  painting_map win_x/int win_y/int canvas:
+  painting_map canvas/AbstractCanvas:
     transform_.xywh inner_x_ inner_y_ inner_w_ inner_h_: | x y w2 h2 |
-      x2 := x - win_x
-      y2 := y - win_y
-      if x2 + corner_radius_ <= 0 and y2 + corner_radius_ <= 0 and x2 + w2 - corner_radius_ >= canvas.width and y2 + h2 - corner_radius_ >= canvas.height:
+      x2 := x - canvas.x_offset_
+      y2 := y - canvas.y_offset_
+      if x2 + corner_radius_ <= 0 and y2 + corner_radius_ <= 0 and x2 + w2 - corner_radius_ >= canvas.width_ and y2 + h2 - corner_radius_ >= canvas.height_:
         return WindowTexture_.ALL_OPAQUE  // The content is 100% opaque in the middle.
       // We need to create a bitmap to describe the content's extent.
       transparency_map := make_alpha_map_ canvas 0
-      draw_rounded_corners_ transparency_map canvas.width x2 y2 w2 h2 --frame=false
+      draw_rounded_corners_ transparency_map canvas.width_ x2 y2 w2 h2 --frame=false
       return transparency_map
     unreachable
 
@@ -1114,13 +1130,16 @@ abstract class DropShadowWindow_ extends RoundedCornerWindow_:
       transform
       corner_radius
 
-  frame_map win_x/int win_y/int canvas:
+  frame_map canvas/AbstractCanvas:
+    win_x := canvas.x_offset_
+    win_y := canvas.y_offset_
+
     // Transform inner dimensions excluding shadow to determine if the canvas
     // is wholly inside the window.
     transform_.xywh inner_x_ inner_y_ inner_w_ inner_h_: | x y w2 h2 |
       x2 := x - win_x
       y2 := y - win_y
-      if x2 + corner_radius_ <= 0 and y2 + corner_radius_ <= 0 and x2 + w2 - corner_radius_ >= canvas.width and y2 + h2 - corner_radius_ >= canvas.height:
+      if x2 + corner_radius_ <= 0 and y2 + corner_radius_ <= 0 and x2 + w2 - corner_radius_ >= canvas.width_ and y2 + h2 - corner_radius_ >= canvas.height_:
         // In the middle, the window content is 100% opaque and draw on top of the
         // frame.  There is no need to provide a frame alpha map, so for efficiency we
         // just return 0 which indicates the frame is 100% transparent.
@@ -1131,13 +1150,13 @@ abstract class DropShadowWindow_ extends RoundedCornerWindow_:
     transform_.xywh x_ y_ w_ h_: | x y w2 h2 |
       x2 := x - win_x
       y2 := y - win_y
-      if x2 + w2 <= 0 or y2 + h2 <= 0 or x2 >= canvas.width or y2 >= canvas.height:
+      if x2 + w2 <= 0 or y2 + h2 <= 0 or x2 >= canvas.width_ or y2 >= canvas.height_:
         return WindowTexture_.ALL_TRANSPARENT  // The frame is not opaque outside the shadow
 
     // Create a bitmap to describe the frame's extent.  It needs to be padded
     // relative to the canvas size so we can use the Gaussian blur.
     transparency_map := make_alpha_map_ canvas blur_radius * 2
-    map_width := canvas.width + blur_radius * 2
+    map_width := canvas.width_ + blur_radius * 2
 
     transform_.xywh (inner_x_ + drop_distance_x) (inner_y_ + drop_distance_y) inner_w_ inner_h_: | x y w2 h2 |
       x2 := x + blur_radius - win_x
@@ -1154,9 +1173,9 @@ abstract class DropShadowWindow_ extends RoundedCornerWindow_:
 
     // Crop off the extra that was added to blur.
     transparency_map_unpadded := make_alpha_map_ canvas 0
-    canvas.height.repeat:
+    canvas.height_.repeat:
       source_index := (it + blur_radius) * map_width + blur_radius
-      transparency_map_unpadded.replace (it*canvas.width) transparency_map source_index source_index + canvas.width
+      transparency_map_unpadded.replace (it*canvas.width_) transparency_map source_index source_index + canvas.width_
     return transparency_map_unpadded
 
 abstract class BitmapTextureBase_ extends SizedTexture:
@@ -1176,13 +1195,13 @@ abstract class BitmapTextureBase_ extends SizedTexture:
     block.call index bit
 
   // After the textures under us have drawn themselves, we draw on top.
-  write2_ win_x win_y canvas:
+  write2_ canvas/AbstractCanvas:
     if w == 0 or h == 0: return
     x2 := transform_.x x_ y_
     y2 := transform_.y x_ y_
     draw_
-      x2 - win_x
-      y2 - win_y
+      x2 - canvas.x_offset_
+      y2 - canvas.y_offset_
       transform_.orientation_
       canvas
 
@@ -1226,13 +1245,13 @@ abstract class PixmapTexture_ extends SizedTexture:
     super x y w h transform
 
   // After the textures under us have drawn themselves, we draw on top.
-  write2_ win_x win_y canvas:
+  write2_ canvas/AbstractCanvas:
     if w == 0 or h == 0: return
     x2 := transform_.x x_ y_
     y2 := transform_.y x_ y_
     draw_
-      x2 - win_x
-      y2 - win_y
+      x2 - canvas.x_offset_
+      y2 - canvas.y_offset_
       transform_.orientation_
       canvas
 
