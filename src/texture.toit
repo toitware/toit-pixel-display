@@ -1263,7 +1263,8 @@ abstract class InfiniteBackground_ extends Texture:
   invalidate -> none:
 
 class PbmParser_:
-  INVALID_PBM_ ::= "INVALID PBM"
+  static INVALID_PBM_ ::= "INVALID PBM"
+
   bytes_ /ByteArray
   next_ := 0
 
