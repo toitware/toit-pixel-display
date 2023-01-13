@@ -41,18 +41,18 @@ main:
     x := random 1 39
     y := random 2 22
     c := random 256
-    image.set_pixel x+1 y c
-    image.set_pixel x y-2 c
-    image.set_pixel x y-1 c
-    image.set_pixel x-1 y c
-    image.set_pixel x y+1 c
-    image.set_pixel x y+1 c
-    image2.set_pixel x+1 y c
-    image2.set_pixel x y-2 c
-    image2.set_pixel x y-1 c
-    image2.set_pixel x-1 y c
-    image2.set_pixel x y+1 c
-    image2.set_pixel x y+1 c
+    image.set_pixel (x + 1) y c
+    image.set_pixel x (y - 2) c
+    image.set_pixel x (y - 1) c
+    image.set_pixel (x - 1) y c
+    image.set_pixel x (y + 1) c
+    image.set_pixel x (y + 1) c
+    image2.set_pixel (x + 1) y c
+    image2.set_pixel x (y - 2) c
+    image2.set_pixel x (y - 1) c
+    image2.set_pixel (x - 1) y c
+    image2.set_pixel x (y + 1) c
+    image2.set_pixel x (y + 1) c
 
   for x := 11; x < 50; x++:
     display.draw
