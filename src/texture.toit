@@ -797,7 +797,8 @@ abstract class BorderlessWindow_ extends ResizableTexture implements Window:
       right2 := min right (x2 + w2)
       bottom2 := min bottom (y2 + h2)
       if right2 > left2 and bottom2 > top2:
-        change_tracker.child_invalidated left2 top2 (right2 - left2) (bottom2 - top2)
+        if change_tracker:
+          change_tracker.child_invalidated left2 top2 (right2 - left2) (bottom2 - top2)
 
 /**
 A WindowTexture_ is a collections of textures.  It is modeled like a painting hung on
@@ -1017,11 +1018,12 @@ abstract class RoundedCornerWindow_ extends WindowTexture_:
     if new_radius != corner_radius_:
       invalid_radius := max corner_radius_ new_radius
       corner_radius_ = new_radius
-      transform_.xywh x_ y_ w_ h_: | x2 y2 w2 h2 |
-        change_tracker.child_invalidated x2                       y2                       invalid_radius invalid_radius
-        change_tracker.child_invalidated x2 + w2 - invalid_radius y2                       invalid_radius invalid_radius
-        change_tracker.child_invalidated x2                       y2 + h2 - invalid_radius invalid_radius invalid_radius
-        change_tracker.child_invalidated x2 + w2 + invalid_radius y2 + h2 - invalid_radius invalid_radius invalid_radius
+      if change_tracker:
+        transform_.xywh x_ y_ w_ h_: | x2 y2 w2 h2 |
+          change_tracker.child_invalidated x2                       y2                       invalid_radius invalid_radius
+          change_tracker.child_invalidated x2 + w2 - invalid_radius y2                       invalid_radius invalid_radius
+          change_tracker.child_invalidated x2                       y2 + h2 - invalid_radius invalid_radius invalid_radius
+          change_tracker.child_invalidated x2 + w2 + invalid_radius y2 + h2 - invalid_radius invalid_radius invalid_radius
 
   fix_bounding_box_ -> none:
     // There's no border outside the drawable area.
