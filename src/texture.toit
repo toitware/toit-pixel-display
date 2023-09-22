@@ -145,6 +145,8 @@ abstract class AbstractCanvas:
   height_ / int
   x_offset_ / int := ?
   y_offset_ / int := ?
+
+  // If we use the drawing operations on the canvas we need this to be set.
   transform / Transform? := null
 
   constructor .width_ .height_ .x_offset_ .y_offset_ --.transform=null:
