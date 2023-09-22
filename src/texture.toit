@@ -172,8 +172,7 @@ abstract class AbstractCanvas:
     else:
       throw "LINE_NOT_HORIZONTAL_OR_VERTICAL"
 
-  rectangle x/int y/int width/int height/int color/int -> none:
-    //
+  abstract rectangle x/int y/int width/int height/int color/int -> none
 
 /**
 Something you can draw on a canvas.  It could be a text string, a pixmap or
@@ -214,7 +213,7 @@ abstract class TransformlessTexture extends Texture:
 
   invalidate:
     if change_tracker:
-      change_tracker.child_invalidated x y w h
+      change_tracker.child_invalidated_transformless x y w h
 
   x= value/int -> none:
     invalidate
@@ -858,6 +857,9 @@ class TextureGroup extends Texture implements Window:
     if change_tracker:
       change_tracker.child_invalidated x y w h
 
+  child_invalidated_transformless x/int y/int w/int h/int -> none:
+    throw "NOT_IMPLEMENTED"
+
   invalidate -> none:
     elements_.do: it.invalidate
 
@@ -874,6 +876,9 @@ interface Window:
 
   // Called by elements that have been added to this.
   child_invalidated x/int y/int w/int h/int ->none
+
+  // Called by elements that have been added to this.
+  child_invalidated_transformless x/int y/int w/int h/int ->none
 
 abstract class BorderlessWindow_ extends ResizableTexture implements Window:
   constructor x/int y/int w/int h/int transform:
@@ -898,6 +903,9 @@ abstract class BorderlessWindow_ extends ResizableTexture implements Window:
 
   transform /Transform := ?
   elements_ := {}
+
+  child_invalidated_transformless x/int y/int w/int h/int -> none:
+    throw "NOT_IMPLEMENTED"
 
   child_invalidated x/int y/int w/int h/int -> none:
     right := x + w

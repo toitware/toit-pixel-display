@@ -47,6 +47,10 @@ class Canvas extends AbstractCanvas:
   composit frame_opacity frame_canvas/Canvas? painting_opacity painting_canvas/Canvas:
     composit_bytes pixels_ frame_opacity (frame_canvas ? frame_canvas.pixels_ : null) painting_opacity painting_canvas.pixels_ true
 
+  rectangle x/int y/int w/int h/int color/int:
+    transform.xywh x y w h: | x2 y2 w2 h2 |
+      bitmap_rectangle x y color w2 h2 pixels_ width_
+
 class FilledRectangle extends FilledRectangle_:
   color_ := ?
 

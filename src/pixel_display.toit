@@ -244,11 +244,11 @@ abstract class PixelDisplay implements Window:
   */
   add texture/Texture -> none:
     textures_.add texture
-    if texture is SizedTexture:
+    if texture is SizedTexture or texture is TransformlessTexture:
       texture.change_tracker = this
       texture.invalidate
     else:
-      child_invalidated 0 0 driver_.width driver_.height
+      throw "Not a valid texture"
 
   /**
   Removes a texture that was previously added.  You cannot remove a background
@@ -264,6 +264,10 @@ abstract class PixelDisplay implements Window:
     textures_.do: it.change_tracker = null
     if textures_.size != 0: child_invalidated 0 0 driver_.width driver_.height
     textures_ = {}
+
+  child_invalidated_transformless x/int y/int w/int h/int -> none:
+    transform_.xywh x y w h: | x2 y2 w2 h2 |
+      child_invalidated x2 y2 w2 h2
 
   child_invalidated x/int y/int w/int h/int -> none:
     if not dirty_: return  // Some devices don't use the dirty array to track changes.
