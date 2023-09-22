@@ -30,18 +30,7 @@ class Canvas extends AbstractCanvas:
     pixels_ = ByteArray size
     super width height x_offset y_offset
 
-  set_all_pixels color:
-    bitmap_zap pixels_ color
-
-  set_pixel color x y:
-    bit := 1 << (y & 7)
-    idx := x + width_ * (y >> 3)
-    if color == 0:
-      pixels_[idx] &= ~bit
-    else:
-      pixels_[idx] |= bit
-
-  get_pixel x y:
+  get_pixel_ x y:
     bit := 1 << (y & 7)
     idx := x + width_ * (y >> 3)
     return (pixels_[idx] & bit) == 0 ? 0 : 1

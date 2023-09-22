@@ -166,7 +166,7 @@ test_simple_three_color:
   red_bg.write canvas
 
   8.repeat: | x | 8.repeat: | y |
-    expect (canvas.get_pixel x y) == three_color.RED
+    expect (canvas.get_pixel_ x y) == three_color.RED
 
 test_simple_four_gray:
   gray_bg := four_gray.InfiniteBackground four_gray.LIGHT_GRAY
@@ -178,7 +178,7 @@ test_simple_four_gray:
   gray_bg.write canvas
 
   8.repeat: | x | 8.repeat: | y |
-    expect (canvas.get_pixel x y) == four_gray.LIGHT_GRAY
+    expect (canvas.get_pixel_ x y) == four_gray.LIGHT_GRAY
 
 test_simple_two_color:
   black_bg := two_color.InfiniteBackground two_color.BLACK
@@ -187,13 +187,13 @@ test_simple_two_color:
   canvas := two_color.Canvas 8 8 0 0
 
   8.repeat: | x | 8.repeat: | y |
-    expect (canvas.get_pixel x y) == two_color.WHITE
+    expect (canvas.get_pixel_ x y) == two_color.WHITE
 
   // Fill the canvas with red.
   black_bg.write canvas
 
   8.repeat: | x | 8.repeat: | y |
-    expect (canvas.get_pixel x y) == two_color.BLACK
+    expect (canvas.get_pixel_ x y) == two_color.BLACK
 
 test_simple_true_color:
   bluish := true_color.get_rgb 0x12 0x34 0x56
@@ -205,13 +205,13 @@ test_simple_true_color:
   black := true_color.get_rgb 0 0 0
 
   8.repeat: | x | 8.repeat: | y |
-    expect (canvas.get_pixel x y) == black
+    expect (canvas.get_pixel_ x y) == black
 
   // Fill the canvas with red.
   bluish_bg.write canvas
 
   8.repeat: | x | 8.repeat: | y |
-    expect (canvas.get_pixel x y) == bluish
+    expect (canvas.get_pixel_ x y) == bluish
 
 test_simple_scene:
   // The scene has an 8x8 red square at 0, 0.
@@ -234,9 +234,9 @@ test_simple_scene:
         // Check there is a red square on the canvas from 8-x,8-y to 16-x,16-y
         16.repeat: | x2 | 16.repeat: | y2 |
           if 8 - x + square_x <= x2 < 16 - x + square_x and 8 - y + square_y <= y2 < 16 - y + square_y:
-            expect (canvas.get_pixel x2 y2) == (get_red version)
+            expect (canvas.get_pixel_ x2 y2) == (get_red version)
           else:
-            expect (canvas.get_pixel x2 y2) == 0
+            expect (canvas.get_pixel_ x2 y2) == 0
 
 hash := crypto.sha1 "Toitware!"
 
@@ -286,15 +286,15 @@ test_with_transparency:
         prime_x := scene_x - texture_x
         prime_y := scene_y - texture_y
         if 0 <= prime_x < 8 and 0 <= prime_y < 8 and pseudo_random prime_y * 8 + prime_x:
-          expect (canvas.get_pixel x2 y2) == three_color.BLACK
+          expect (canvas.get_pixel_ x2 y2) == three_color.BLACK
         else:
           circle_x := scene_x - 8 + texture_x
           circle_y := scene_y - 8 + texture_y
           if 0 <= circle_x < red_circle.w_ and 0 <= circle_y < red_circle.h_:
             if (red_circle.pixel_is_set circle_x circle_y):
-              expect (canvas.get_pixel x2 y2) == three_color.RED
+              expect (canvas.get_pixel_ x2 y2) == three_color.RED
             else:
-              expect (canvas.get_pixel x2 y2) == three_color.WHITE  // Initial color of canvas.
+              expect (canvas.get_pixel_ x2 y2) == three_color.WHITE  // Initial color of canvas.
 
 get_white version:
   if version == THREE_COLOR:
@@ -407,7 +407,7 @@ composite_test:
       seq[0].write canvas
 
       24.repeat: | x | 24.repeat: | y |
-        actual_pixel := canvas.get_pixel x y
+        actual_pixel := canvas.get_pixel_ x y
         scene_x := x + x_offset
         scene_y := y + y_offset
         done := false
@@ -446,7 +446,7 @@ barcode_test:
 
   line := ""
   canvas.width_.repeat: | x |
-    line += (canvas.get_pixel x 60) == 0 ? " " : "*"
+    line += (canvas.get_pixel_ x 60) == 0 ? " " : "*"
 
   expect line == "                   * *   ** * **  **  *   *  *  ** **** *  * *** * * **  ** *** *  **  ** *  *** *  *   *** *  * *              "
 
@@ -454,7 +454,7 @@ barcode_test:
     if y > 80:
       str := ""
       canvas.width_.repeat: | x |
-        str += (canvas.get_pixel x y) == 0 ? " " : "*"
+        str += (canvas.get_pixel_ x y) == 0 ? " " : "*"
       print str
 
 random_pixel_ version x y:
@@ -549,7 +549,7 @@ test_bounding_box:
         noisy_pixel := (random_pixel_ version i j) ? (get_red version) : (get_white version)
         if scene_x < x or scene_x >= x+w or scene_y < y or scene_y >= y+h:
           // If we are outside the texture, then the canvas should be untouched.
-          expect (canvas.get_pixel i j) == noisy_pixel
+          expect (canvas.get_pixel_ i j) == noisy_pixel
         else:
           // Inside the texture the pixels should either be the texture color or
           // the original pattern.
@@ -557,11 +557,11 @@ test_bounding_box:
             // Barcodes are black and white and have a solid background.
             white := get_white version
             black := get_black version
-            expect ((canvas.get_pixel i j) == black or (canvas.get_pixel i j) == white)
+            expect ((canvas.get_pixel_ i j) == black or (canvas.get_pixel_ i j) == white)
           else:
             // Other textures have a single color in this test.
-            if (canvas.get_pixel i j) != color:
-              expect (canvas.get_pixel i j) == noisy_pixel
+            if (canvas.get_pixel_ i j) != color:
+              expect (canvas.get_pixel_ i j) == noisy_pixel
 
       // Trace a line around the perimeter of the texture to see that the pixels
       // outside the box are untouched.
@@ -572,7 +572,7 @@ test_bounding_box:
             canvas_y := (y - 1) - canvas_y_offset + (one_or_zero * (h + 1))
             noisy_pixel := (random_pixel_ version canvas_x canvas_y) ? (get_red version) : (get_white version)
             if 0 <= canvas_y < HEIGHT:
-              expect (canvas.get_pixel canvas_x canvas_y) == noisy_pixel
+              expect (canvas.get_pixel_ canvas_x canvas_y) == noisy_pixel
 
       h.repeat: | i |
         canvas_y := y + i - canvas_y_offset
@@ -581,4 +581,4 @@ test_bounding_box:
             canvas_x := (x - 1) - canvas_x_offset + (one_or_zero * (w + 1))
             noisy_pixel := (random_pixel_ version canvas_x canvas_y) ? (get_red version) : (get_white version)
             if 0 <= canvas_x < WIDTH:
-              expect (canvas.get_pixel canvas_x canvas_y) == noisy_pixel
+              expect (canvas.get_pixel_ canvas_x canvas_y) == noisy_pixel

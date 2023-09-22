@@ -145,12 +145,33 @@ abstract class AbstractCanvas:
   height_ / int
   x_offset_ / int := ?
   y_offset_ / int := ?
+  transform / Transform? := null
 
-  constructor .width_ .height_ .x_offset_ .y_offset_:
+  constructor .width_ .height_ .x_offset_ .y_offset_ --.transform=null:
 
   abstract create_similar -> AbstractCanvas
 
   abstract composit frame_opacity frame_canvas/AbstractCanvas painting_opacity painting_canvas/AbstractCanvas
+
+  // draw a Line from x1,y1 (inclusive) to x2,y2 (exclusive) using the transform.
+  // The line must be horizontal or vertical.
+  line x1/int y1/int x2/int y2/int color/int:
+    if x1 == x2:
+      if y1 < y2:
+        rectangle x1 y1 (y2 - y1) 1 color
+      else if y2 < y1:
+        rectangle x1 y2 (y1 - y2) 1 color
+      // Else do nothing - zero length line.
+    else if y1 == y2:
+      if x1 < x2:
+        rectangle x1 y1 (x2 - x1) 1 color
+      else:
+        rectangle x2 y1 (x1 - x2) 1 color
+    else:
+      throw "LINE_NOT_HORIZONTAL_OR_VERTICAL"
+
+  rectangle x/int y/int width/int height/int color/int -> none:
+    //
 
 /**
 Something you can draw on a canvas.  It could be a text string, a pixmap or
