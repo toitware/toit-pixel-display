@@ -1281,12 +1281,6 @@ abstract class PixmapTexture_ extends SizedTexture:
 
   abstract draw_ bx by orientation canvas
 
-abstract class InfiniteBackground_ extends Texture:
-
-  abstract color -> int
-
-  invalidate -> none:
-
 class PbmParser_:
   static INVALID_PBM_ ::= "INVALID PBM"
 

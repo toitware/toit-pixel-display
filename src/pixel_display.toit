@@ -118,7 +118,33 @@ abstract class PixelDisplay implements Window:
 
   transform_ /Transform
 
-  constructor .driver_ .transform_=Transform.identity:
+  // By default the orientation is the natural orientation of the display driver.
+  // If $portrait is false, then a landscape orientation is used.
+  // If $portrait is true, then a portrait orientation is used, or in the case
+  //   that the display driver is exactly square, a rotated orientation is used.
+  // The orientation is rotated by 180 degrees if $inverted is true.
+  constructor .driver_ --transform/Transform?=null --portrait/bool?=null --inverted/bool=false:
+    if transform:
+      if portrait != null or inverted: throw "INVALID_ARGUMENT"
+      transform_ = transform
+    else:
+      rotation := 0
+      if portrait != null:
+        if portrait == (driver_.width < driver_.height):
+          rotation = inverted ? 180 : 0
+        else:
+          rotation = inverted ? 270 : 90
+      else if inverted:
+        rotation = 180
+      if rotation == 0:
+        transform_ = Transform.identity
+      else if rotation == 90:
+        transform_ = (Transform.identity.translate 0 driver_.height).rotate_left
+      else if rotation == 180:
+        transform_ = (Transform.identity.translate driver_.width driver_.height).rotate_left.rotate_left
+      else:
+        transform_ = (Transform.identity.translate driver_.width 0).rotate_right
+
     height := round_up driver_.height 8
     if driver_.flags & FLAG_PARTIAL_UPDATES != 0:
       dirty_bytes_per_line_ = (driver_.width >> 3) + 1
@@ -134,6 +160,7 @@ abstract class PixelDisplay implements Window:
   With `--landscape=true` the context will use the display in portrait mode (taller than wide).
   With `--inverted=true` the context will use the display rotated 180 degrees.
   The default $color depends on the display.
+  Going away.
   */
   context --landscape/bool?=null --inverted/bool=false --color/int=default_draw_color_ --alignment/int=TEXT_TEXTURE_ALIGN_LEFT --font/Font?=null --translate_x/int=0 --translate_y/int=0 --background/int=default_background_color_ -> GraphicsContext:
     transform/Transform ::= ?
@@ -155,6 +182,7 @@ abstract class PixelDisplay implements Window:
       translated = transform.translate translate_x translate_y
     return GraphicsContext.private_ alignment color font translated background
 
+  // Going away.
   /** Returns a transform that uses the display in portrait mode.  */
   portrait -> Transform:
     if not portrait_:
@@ -165,6 +193,7 @@ abstract class PixelDisplay implements Window:
     return portrait_
   portrait_ := null
 
+  // Going away.
   /**
   Returns a transform that uses the display in portrait mode, but rotated
     180 degrees relative to the portrait method.
@@ -178,6 +207,7 @@ abstract class PixelDisplay implements Window:
     return inverted_portrait_
   inverted_portrait_ := null
 
+  // Going away.
   /** Returns a transform that uses the display in landscape mode.  */
   landscape -> Transform:
     if not landscape_:
@@ -188,6 +218,7 @@ abstract class PixelDisplay implements Window:
     return landscape_
   landscape_ := null
 
+  // Going away.
   /**
   Returns a transform that uses the display in landscape mode, but rotated
     180 degrees relative to the landscape method.  Sometimes called 'seascape'.
@@ -210,30 +241,20 @@ abstract class PixelDisplay implements Window:
     last-added are at the front.  However you can add textures via a
     TextureGroup.  This enables you to later add textures that are not at the
     front, by adding them to a TextureGroup that is not at the front.
-
-  Adding an InfiniteBackground texture removes a previous InfiniteBackground
-    texture.  This is deprecated: The preferred method is to set the background
-    color with $background=.
   */
   add texture/Texture -> none:
-    if texture is InfiniteBackground_:
-      background_ = texture
-      child_invalidated 0 0 driver_.width driver_.height
+    textures_.add texture
+    if texture is SizedTexture:
+      texture.change_tracker = this
+      texture.invalidate
     else:
-      textures_.add texture
-      if texture is SizedTexture:
-        texture.change_tracker = this
-        texture.invalidate
-      else:
-        child_invalidated 0 0 driver_.width driver_.height
+      child_invalidated 0 0 driver_.width driver_.height
 
   /**
   Removes a texture that was previously added.  You cannot remove a background
     texture.  Instead you should set a new background with @background=.
   */
   remove texture/Texture -> none:
-    if texture == background_:
-      throw "BACKGROUND_REMOVED"
     textures_.remove texture
     texture.invalidate
     texture.change_tracker = null
@@ -389,7 +410,7 @@ class TwoColorPixelDisplay extends PixelDisplay:
 
   constructor driver/AbstractDriver:
     super driver
-    background_ = two_color.InfiniteBackground two_color.WHITE
+    background_ = two_color.WHITE
 
   default_draw_color_ -> int:
     return two_color.BLACK
@@ -399,7 +420,7 @@ class TwoColorPixelDisplay extends PixelDisplay:
 
   background= color/int -> none:
     if not background_ or background_.color != color:
-      background_ = two_color.InfiniteBackground color
+      background_ = color
       child_invalidated 0 0 driver_.width driver_.height
 
   text context/GraphicsContext x/int y/int text/string -> two_color.TextTexture:
@@ -491,14 +512,14 @@ class TwoColorPixelDisplay extends PixelDisplay:
     pixels := canvas.pixels_
     List.chunk_up 0 (round_up driver_.height 8) step: | top bottom |
       canvas.y_offset_ = top
-      background_.write canvas
+      canvas.set_all_pixels background_
       textures_.do: it.write canvas
       driver_.draw_two_color 0 top driver_.width bottom pixels
     driver_.commit 0 0 driver_.width driver_.height
 
   redraw_rect_ left/int top/int right/int bottom/int -> none:
     canvas := two_color.Canvas (right - left) (bottom - top) left top
-    background_.write canvas
+    canvas.set_all_pixels background_
     textures_.do: it.write canvas
     driver_.draw_two_color left top right bottom canvas.pixels_
 
@@ -513,11 +534,11 @@ See https://docs.toit.io/language/sdk/display
 class FourGrayPixelDisplay extends TwoBitPixelDisplay_:
   constructor driver/AbstractDriver:
     super driver
-    background_ = four_gray.InfiniteBackground four_gray.WHITE
+    background_ = four_gray.WHITE
 
   background= color/int -> none:
     if not background_ or background_.color != color:
-      background_ = four_gray.InfiniteBackground color
+      background_ = color
       child_invalidated 0 0 driver_.width driver_.height
 
   default_draw_color_ -> int:
@@ -591,11 +612,11 @@ See https://docs.toit.io/language/sdk/display
 class ThreeColorPixelDisplay extends TwoBitPixelDisplay_:
   constructor driver/AbstractDriver:
     super driver
-    background_ = three_color.InfiniteBackground three_color.WHITE
+    background_ = three_color.WHITE
 
   background= color/int -> none:
     if not background_ or background_.color != color:
-      background_ = three_color.InfiniteBackground color
+      background_ = color
       child_invalidated 0 0 driver_.width driver_.height
 
   default_draw_color_ -> int:
@@ -648,7 +669,7 @@ class ThreeColorPixelDisplay extends TwoBitPixelDisplay_:
     return texture
 
 abstract class TwoBitPixelDisplay_ extends PixelDisplay:
-  background_ := three_color.InfiniteBackground three_color.WHITE
+  background_ := three_color.WHITE
 
   constructor driver/AbstractDriver:
     super driver
@@ -695,11 +716,11 @@ See https://docs.toit.io/language/sdk/display
 class GrayScalePixelDisplay extends PixelDisplay:
   constructor driver/AbstractDriver:
     super driver
-    background_ = gray_scale.InfiniteBackground gray_scale.WHITE
+    background_ = gray_scale.WHITE
 
   background= color/int -> none:
     if not background_ or background_.color != color:
-      background_ = gray_scale.InfiniteBackground color
+      background_ = color
       child_invalidated 0 0 driver_.width driver_.height
 
   text context/GraphicsContext x/int y/int text/string -> gray_scale.TextTexture:
@@ -787,11 +808,11 @@ See https://docs.toit.io/language/sdk/display
 class SeveralColorPixelDisplay extends PixelDisplay:
   constructor driver/AbstractDriver:
     super driver
-    background_ = several_color.InfiniteBackground 0
+    background_ = 0
 
   background= color/int -> none:
     if not background_ or background_.color != color:
-      background_ = several_color.InfiniteBackground color
+      background_ = color
       child_invalidated 0 0 driver_.width driver_.height
 
   text context/GraphicsContext x/int y/int text/string -> several_color.TextTexture:
@@ -879,11 +900,11 @@ See https://docs.toit.io/language/sdk/display
 class TrueColorPixelDisplay extends PixelDisplay:
   constructor driver/AbstractDriver:
     super driver
-    background_ = true_color.InfiniteBackground true_color.WHITE
+    background_ = true_color.WHITE
 
   background= color/int -> none:
     if not background_ or background_.color != color:
-      background_ = true_color.InfiniteBackground color
+      background_ = color
       child_invalidated 0 0 driver_.width driver_.height
 
   text context/GraphicsContext x/int y/int text/string -> true_color.TextTexture:

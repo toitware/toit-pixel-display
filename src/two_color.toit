@@ -35,6 +35,9 @@ class Canvas extends AbstractCanvas:
     idx := x + width_ * (y >> 3)
     return (pixels_[idx] & bit) == 0 ? 0 : 1
 
+  set_all_pixels color/int:
+    bitmap_zap pixels_ (color & 1)
+
   /**
   Creates a blank texture with the same dimensions as this one.
   */
@@ -43,22 +46,6 @@ class Canvas extends AbstractCanvas:
 
   composit frame_opacity frame_canvas/Canvas? painting_opacity painting_canvas/Canvas:
     composit_bytes pixels_ frame_opacity (frame_canvas ? frame_canvas.pixels_ : null) painting_opacity painting_canvas.pixels_ true
-
-class InfiniteBackground extends InfiniteBackground_:
-  color_ := ?
-
-  constructor .color_:
-    assert: color_ < 2  // Not transparent.
-
-  color -> int:
-    return color_
-
-  // No point in calling write for textures under this one.
-  write canvas/Canvas:
-    bitmap_zap canvas.pixels_ color_
-
-  write_ canvas/Canvas:
-    throw "Not used"
 
 class FilledRectangle extends FilledRectangle_:
   color_ := ?

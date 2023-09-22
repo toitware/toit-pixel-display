@@ -48,6 +48,11 @@ class Canvas extends AbstractCanvas:
     idx := x + width_ * y
     return get_rgb red_[idx] green_[idx] blue_[idx]
 
+  set_all_pixels color/int:
+    bytemap_zap red_ ((color >> 16) & 0xff)
+    bytemap_zap green_ ((color >> 8) & 0xff)
+    bytemap_zap blue_ (color & 0xff)
+
   /**
   Creates a blank texture with the same dimensions as this one.
   */
@@ -58,22 +63,6 @@ class Canvas extends AbstractCanvas:
     composit_bytes red_ frame_opacity (frame_canvas ? frame_canvas.red_ : null) painting_opacity painting_canvas.red_ false
     composit_bytes green_ frame_opacity (frame_canvas ? frame_canvas.green_ : null) painting_opacity painting_canvas.green_ false
     composit_bytes blue_ frame_opacity (frame_canvas ? frame_canvas.blue_ : null) painting_opacity painting_canvas.blue_ false
-
-class InfiniteBackground extends InfiniteBackground_:
-  color_ := 0
-
-  constructor .color_:
-
-  color -> int:
-    return color_
-
-  write canvas/Canvas:
-    bytemap_zap canvas.red_ (red_component color_)
-    bytemap_zap canvas.green_ (green_component color_)
-    bytemap_zap canvas.blue_ (blue_component color_)
-
-  write_ canvas/Canvas:
-    throw "Not used"
 
 class FilledRectangle extends FilledRectangle_:
   color_ := ?

@@ -157,47 +157,42 @@ canvas_factory version w h x y:
     return true_color.Canvas w h x y
 
 test_simple_three_color:
-  red_bg := three_color.InfiniteBackground three_color.RED
+  red_bg := three_color.RED
 
   // A little 8x8 canvas to draw on.
   canvas := three_color.Canvas 8 8 0 0
 
   // Fill the canvas with red.
-  red_bg.write canvas
+  canvas.set_all_pixels red_bg
 
   8.repeat: | x | 8.repeat: | y |
     expect (canvas.get_pixel_ x y) == three_color.RED
 
 test_simple_four_gray:
-  gray_bg := four_gray.InfiniteBackground four_gray.LIGHT_GRAY
-
   // A little 8x8 canvas to draw on.
   canvas := four_gray.Canvas 8 8 0 0
 
   // Fill the canvas with light gray.
-  gray_bg.write canvas
+  canvas.set_all_pixels four_gray.LIGHT_GRAY
 
   8.repeat: | x | 8.repeat: | y |
     expect (canvas.get_pixel_ x y) == four_gray.LIGHT_GRAY
 
 test_simple_two_color:
-  black_bg := two_color.InfiniteBackground two_color.BLACK
-
   // A little 8x8 canvas to draw on.
   canvas := two_color.Canvas 8 8 0 0
 
   8.repeat: | x | 8.repeat: | y |
     expect (canvas.get_pixel_ x y) == two_color.WHITE
 
-  // Fill the canvas with red.
-  black_bg.write canvas
+  // Fill the canvas with black.
+  canvas.set_all_pixels two_color.BLACK
 
   8.repeat: | x | 8.repeat: | y |
     expect (canvas.get_pixel_ x y) == two_color.BLACK
 
 test_simple_true_color:
   bluish := true_color.get_rgb 0x12 0x34 0x56
-  bluish_bg := true_color.InfiniteBackground bluish
 
   // A little 8x8 canvas to draw on.
   canvas := true_color.Canvas 8 8 0 0
@@ -208,7 +203,7 @@ test_simple_true_color:
     expect (canvas.get_pixel_ x y) == black
 
   // Fill the canvas with red.
-  bluish_bg.write canvas
+  canvas.set_all_pixels bluish
 
   8.repeat: | x | 8.repeat: | y |
     expect (canvas.get_pixel_ x y) == bluish
@@ -470,13 +465,13 @@ test_bounding_box:
     noisy_background := opaque_bitmap_texture_factory version 0 0 WIDTH HEIGHT (get_red version) (get_white version)
     white_background := null
     if version == THREE_COLOR:
-      white_background = three_color.InfiniteBackground three_color.WHITE
+      white_background = three_color.WHITE
     else if version == TWO_COLOR:
-      white_background = two_color.InfiniteBackground two_color.WHITE
+      white_background = two_color.WHITE
     else if version == FOUR_GRAY:
-      white_background = four_gray.InfiniteBackground four_gray.WHITE
+      white_background = four_gray.WHITE
     else:
-      white_background = true_color.InfiniteBackground (true_color.get_rgb 0xff 0xff 0xff)
+      white_background = true_color.get_rgb 0xff 0xff 0xff
     sans10 := Font.get "sans10"
     WIDTH.repeat: | x | HEIGHT.repeat: | y |
       if random_pixel_ version x y:
@@ -533,7 +528,7 @@ test_bounding_box:
       canvas_x_offset := (random 0 16) << 3
       canvas_y_offset := (random 0 16) << 3
       canvas := canvas_factory version WIDTH HEIGHT 0 0
-      white_background.write canvas
+      canvas.set_all_pixels white_background
       noisy_background.write canvas
       canvas.x_offset_ = canvas_x_offset
       canvas.y_offset_ = canvas_y_offset

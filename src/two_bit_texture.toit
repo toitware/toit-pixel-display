@@ -31,6 +31,10 @@ class TwoBitCanvas_ extends AbstractCanvas:
     bit1 := (plane_1_[idx] & bit) == 0 ? 0 : 1
     return bit0 + (bit1 << 1)
 
+  set_all_pixels color/int:
+    bitmap_zap plane_0_ (color & 1)
+    bitmap_zap plane_1_ ((color & 2) >> 1)
+
   /**
   Creates a blank texture with the same dimensions as this one.
   */
@@ -40,21 +44,6 @@ class TwoBitCanvas_ extends AbstractCanvas:
   composit frame_opacity frame_canvas painting_opacity painting_canvas/TwoBitCanvas_:
     composit_bytes plane_0_ frame_opacity (frame_canvas ? frame_canvas.plane_0_ : null) painting_opacity painting_canvas.plane_0_ true
     composit_bytes plane_1_ frame_opacity (frame_canvas ? frame_canvas.plane_1_ : null) painting_opacity painting_canvas.plane_1_ true
-
-class TwoBitInfiniteBackground_ extends InfiniteBackground_:
-  color_ := ?
-
-  constructor .color_:
-
-  color -> int:
-    return color_
-
-  write canvas/TwoBitCanvas_:
-    bitmap_zap canvas.plane_0_ (color_ & 1)
-    bitmap_zap canvas.plane_1_ (color_ & 2) >> 1
-
-  write_ canvas/TwoBitCanvas_:
-    throw "Not used"
 
 class TwoBitFilledRectangle_ extends FilledRectangle_:
   color_ := ?
