@@ -195,6 +195,97 @@ abstract class Texture:
 
   abstract invalidate -> none
 
+abstract class TransformlessTexture extends Texture:
+  x_ /int? := null
+  y_ /int? := null
+  w_ /int? := null
+  h_ /int? := null
+
+  x -> int: return x_
+  y -> int: return y_
+  w -> int: return w_
+  h -> int: return h_
+
+  constructor x/int?=null y/int?=null --w/int?=null --h/int?=null:
+    x_ = x
+    y_ = y
+    w_ = w
+    h_ = h
+
+  invalidate:
+    if change_tracker:
+      change_tracker.child_invalidated x y w h
+
+  x= value/int -> none:
+    invalidate
+    x_ = value
+    invalidate
+
+  y= value/int -> none:
+    invalidate
+    y_ = value
+    invalidate
+
+  move-to x/int y/int:
+    invalidate
+    x_ = x
+    y_ = y
+    invalidate
+
+  w= value/int -> none:
+    invalidate
+    w_ = value
+    invalidate
+
+  h= value/int -> none:
+    invalidate
+    h_ = value
+    invalidate
+
+  set-size w/int h/int -> none:
+    invalidate
+    w_ = w
+    h_ = h
+    invalidate
+
+  abstract draw texture/Texture -> none
+
+  write_ canvas -> none:
+    throw "Can't call write_ on a TransformlessTexture"
+
+abstract class TransformlessColoredTexture extends TransformlessTexture:
+  color_/int := ?
+
+  constructor x/int y/int --w/int?=null --h/int?=null --color/int:
+    color_ = color
+    super x y --w=w --h=h
+
+  color -> int: return color_
+
+  color= value/int -> none:
+    invalidate
+    color_ = value
+
+class TransformlessFilledRectangle extends TransformlessColoredTexture:
+  constructor x/int y/int --w/int --h/int --color/int:
+    super x y --w=w --h=h --color=color
+
+  draw canvas/AbstractCanvas -> none:
+    canvas.rectangle x_ y_ w_ h_ color_
+
+class TransformlessOutlineRectangle extends TransformlessColoredTexture:
+  thickness_/int := ?
+
+  constructor x/int y/int --w/int --h/int --color/int --thickness/int=1:
+    thickness_ = thickness
+    super x y --w=w --h=h --color=color
+
+  draw canvas /AbstractCanvas -> none:
+    canvas.rectangle x_ y_                     thickness_ h_         color_
+    canvas.rectangle x_ y_                     w_         thickness_ color_
+    canvas.rectangle (x_ + w_ - thickness_) y_ thickness_ h_         color_
+    canvas.rectangle x_ (y + h_ - thickness_)  w_         thickness_ color_
+
 /**
 Most $Texture s have a size and know their own position in the scene, and are
   thus SizedTextures.  A sized texture keeps track of the coordinate system that
