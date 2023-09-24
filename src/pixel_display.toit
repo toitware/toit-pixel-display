@@ -423,7 +423,7 @@ class TwoColorPixelDisplay extends PixelDisplay:
     return two_color.WHITE
 
   background= color/int -> none:
-    if not background_ or background_.color != color:
+    if background_ != color:
       background_ = color
       child_invalidated 0 0 driver_.width driver_.height
 
@@ -541,7 +541,7 @@ class FourGrayPixelDisplay extends TwoBitPixelDisplay_:
     background_ = four_gray.WHITE
 
   background= color/int -> none:
-    if not background_ or background_.color != color:
+    if background_ != color:
       background_ = color
       child_invalidated 0 0 driver_.width driver_.height
 
@@ -619,7 +619,7 @@ class ThreeColorPixelDisplay extends TwoBitPixelDisplay_:
     background_ = three_color.WHITE
 
   background= color/int -> none:
-    if not background_ or background_.color != color:
+    if background_ != color:
       background_ = color
       child_invalidated 0 0 driver_.width driver_.height
 
@@ -698,14 +698,14 @@ abstract class TwoBitPixelDisplay_ extends PixelDisplay:
     canvas := three_color.Canvas w (min step (round_up driver_.height 8)) 0 0
     List.chunk_up 0 (round_up driver_.height 8) step: | y y_end |
       canvas.y_offset_ = y
-      background_.write canvas
+      canvas.set-all-pixels background_
       textures_.do: it.write canvas
       driver_.draw_two_bit 0 y driver_.width y_end canvas.plane_0_ canvas.plane_1_
     driver_.commit 0 0 driver_.width driver_.height
 
   redraw_rect_ left/int top/int right/int bottom/int -> none:
     canvas := three_color.Canvas (right - left) (bottom - top) left top
-    background_.write canvas
+    canvas.set-all-pixels background_
     textures_.do: it.write canvas
     driver_.draw_two_bit left top right bottom canvas.plane_0_ canvas.plane_1_
 
@@ -723,7 +723,7 @@ class GrayScalePixelDisplay extends PixelDisplay:
     background_ = gray_scale.WHITE
 
   background= color/int -> none:
-    if not background_ or background_.color != color:
+    if background_ != color:
       background_ = color
       child_invalidated 0 0 driver_.width driver_.height
 
@@ -790,14 +790,14 @@ class GrayScalePixelDisplay extends PixelDisplay:
     canvas := gray_scale.Canvas w step 0 0
     List.chunk_up 0 driver_.height step: | top bottom |
       canvas.y_offset_ = top
-      background_.write canvas
+      canvas.set-all-pixels background_
       textures_.do: it.write canvas
       driver_.draw_gray_scale 0 top driver_.width bottom canvas.pixels_
     driver_.commit 0 0 driver_.width driver_.height
 
   redraw_rect_ left/int top/int right/int bottom/int -> none:
     canvas := gray_scale.Canvas (right - left) (bottom - top) left top
-    background_.write canvas
+    canvas.set-all-pixels background_
     textures_.do: it.write canvas
     driver_.draw_gray_scale left top right bottom canvas.pixels_
 
@@ -815,7 +815,7 @@ class SeveralColorPixelDisplay extends PixelDisplay:
     background_ = 0
 
   background= color/int -> none:
-    if not background_ or background_.color != color:
+    if background_ != color:
       background_ = color
       child_invalidated 0 0 driver_.width driver_.height
 
@@ -882,14 +882,14 @@ class SeveralColorPixelDisplay extends PixelDisplay:
     canvas := several_color.Canvas w step 0 0
     List.chunk_up 0 driver_.height step: | top bottom |
       canvas.y_offset_ = top
-      background_.write canvas
+      canvas.set-all-pixels background_
       textures_.do: it.write canvas
       driver_.draw_several_color 0 top driver_.width bottom canvas.pixels_
     driver_.commit 0 0 driver_.width driver_.height
 
   redraw_rect_ left/int top/int right/int bottom/int -> none:
     canvas := several_color.Canvas (right - left) (bottom - top) left top
-    background_.write canvas
+    canvas.set-all-pixels background_
     textures_.do: it.write canvas
     driver_.draw_several_color left top right bottom canvas.pixels_
 
@@ -907,7 +907,7 @@ class TrueColorPixelDisplay extends PixelDisplay:
     background_ = true_color.WHITE
 
   background= color/int -> none:
-    if not background_ or background_.color != color:
+    if background_ != color:
       background_ = color
       child_invalidated 0 0 driver_.width driver_.height
 
@@ -975,13 +975,13 @@ class TrueColorPixelDisplay extends PixelDisplay:
     canvas := true_color.Canvas w step 0 0
     List.chunk_up 0 driver_.height step: | top bottom h |
       canvas.y_offset_ = top
-      background_.write canvas
+      canvas.set_all_pixels background_
       textures_.do: it.write canvas
       driver_.draw_true_color 0 top driver_.width bottom canvas.red_ canvas.green_ canvas.blue_
     driver_.commit 0 0 driver_.width driver_.height
 
   redraw_rect_ left/int top/int right/int bottom/int -> none:
     canvas := true_color.Canvas (right - left) (bottom - top) left top
-    background_.write canvas
+    canvas.set_all_pixels background_
     textures_.do: it.write canvas
     driver_.draw_true_color left top right bottom canvas.red_ canvas.green_ canvas.blue_
