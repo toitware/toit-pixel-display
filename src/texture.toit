@@ -153,6 +153,8 @@ abstract class AbstractCanvas:
 
   abstract create_similar -> AbstractCanvas
 
+  abstract set_all_pixels color/int -> none
+
   abstract composit frame_opacity frame_canvas/AbstractCanvas painting_opacity painting_canvas/AbstractCanvas
 
   // draw a Line from x1,y1 (inclusive) to x2,y2 (exclusive) using the transform.

@@ -297,7 +297,19 @@ abstract class PixelDisplay implements Window:
     return dirty_[idx + byte] & mask != CLEAN_  // Only works because CLEAN_ == 0
 
   /// For displays that don't support any form of partial update.
-  abstract draw_entire_display_
+  draw_entire_display_:
+    driver_.start_full_update speed_
+    w := driver_.width
+    step := round_up
+        max_canvas_height_ driver_.width
+        8
+    canvas := create_canvas_ 0 0 w step
+    List.chunk_up 0 (round_up driver_.height 8) step: | top bottom |
+      canvas.y_offset_ = top
+      canvas.set_all_pixels background_
+      textures_.do: it.write canvas
+      draw_ 0 top driver_.width bottom canvas
+    driver_.commit 0 0 driver_.width driver_.height
 
   /**
   Draws the texture.
@@ -334,7 +346,7 @@ abstract class PixelDisplay implements Window:
     width := min driver_.width 120
     max_height := max
         round_down (max_canvas_height_ width) 8
-        8
+        canvas_height_rounding_
 
     // Outer loop - the coarse rectangles that are the max size of
     // update patches.
@@ -387,9 +399,19 @@ abstract class PixelDisplay implements Window:
           else:
             redraw_rect_ dirty_left dirty_top dirty_right+8 dirty_bottom+8
 
+  redraw_rect_ left/int top/int right/int bottom/int -> none:
+    canvas := create_canvas_ left top (right - left) (bottom - top)
+    canvas.set_all_pixels background_
+    textures_.do: it.write canvas
+    draw_ left top right bottom canvas
+
   abstract max_canvas_height_ width/int -> int
 
-  abstract redraw_rect_ left/int top/int right/int bottom/int -> none
+  canvas_height_rounding_: return 1
+
+  abstract create_canvas_ x/int y/int w/int h/int -> AbstractCanvas
+
+  abstract draw_ x y w h canvas/AbstractCanvas -> none
 
   clean_rect_ left/int top/int right/int bottom/int -> none:
     driver_.clean left top right bottom
@@ -506,26 +528,13 @@ class TwoColorPixelDisplay extends PixelDisplay:
     // We can't work well with canvases that are less than 8 pixels tall.
     return max 8 height
 
-  draw_entire_display_:
-    driver_.start_full_update speed_
-    w := driver_.width
-    step := round_up
-        max_canvas_height_ driver_.width
-        8
-    canvas := two_color.Canvas w step 0 0
-    pixels := canvas.pixels_
-    List.chunk_up 0 (round_up driver_.height 8) step: | top bottom |
-      canvas.y_offset_ = top
-      canvas.set_all_pixels background_
-      textures_.do: it.write canvas
-      driver_.draw_two_color 0 top driver_.width bottom pixels
-    driver_.commit 0 0 driver_.width driver_.height
+  canvas_height_rounding_: return 8
 
-  redraw_rect_ left/int top/int right/int bottom/int -> none:
-    canvas := two_color.Canvas (right - left) (bottom - top) left top
-    canvas.set_all_pixels background_
-    textures_.do: it.write canvas
-    driver_.draw_two_color left top right bottom canvas.pixels_
+  create_canvas_ x/int y/int w/int h/int -> AbstractCanvas:
+    return two_color.Canvas w h x y
+
+  draw_ x/int y/int w/int h/int canvas/two_color.Canvas -> none:
+      driver_.draw_two_color x y w h canvas.pixels_
 
 /**
 Pixel-based display with four shades of gray, connected to a device.
@@ -691,23 +700,13 @@ abstract class TwoBitPixelDisplay_ extends PixelDisplay:
     // We can't work well with canvases that are less than 8 pixels tall.
     return max 8 height
 
-  draw_entire_display_:
-    driver_.start_full_update speed_
-    w := driver_.width
-    step := max_canvas_height_ driver_.width
-    canvas := three_color.Canvas w (min step (round_up driver_.height 8)) 0 0
-    List.chunk_up 0 (round_up driver_.height 8) step: | y y_end |
-      canvas.y_offset_ = y
-      canvas.set-all-pixels background_
-      textures_.do: it.write canvas
-      driver_.draw_two_bit 0 y driver_.width y_end canvas.plane_0_ canvas.plane_1_
-    driver_.commit 0 0 driver_.width driver_.height
+  canvas_height_rounding_: return 8
 
-  redraw_rect_ left/int top/int right/int bottom/int -> none:
-    canvas := three_color.Canvas (right - left) (bottom - top) left top
-    canvas.set-all-pixels background_
-    textures_.do: it.write canvas
-    driver_.draw_two_bit left top right bottom canvas.plane_0_ canvas.plane_1_
+  create_canvas_ x/int y/int w/int h/int -> AbstractCanvas:
+    return three_color.Canvas w h x y
+
+  draw_ x/int y/int w/int h/int canvas/three_color.Canvas -> none:
+    driver_.draw_two_bit x y w h canvas.plane_0_ canvas.plane_1_
 
 /**
 Pixel-based display with up to 256 shades of gray, connected to a device.
@@ -783,23 +782,11 @@ class GrayScalePixelDisplay extends PixelDisplay:
     // We can't work well with canvases that are less than 4 pixels tall.
     return height < 8 ? 4 : height
 
-  draw_entire_display_:
-    driver_.start_full_update speed_
-    w := driver_.width
-    step := max_canvas_height_ w
-    canvas := gray_scale.Canvas w step 0 0
-    List.chunk_up 0 driver_.height step: | top bottom |
-      canvas.y_offset_ = top
-      canvas.set-all-pixels background_
-      textures_.do: it.write canvas
-      driver_.draw_gray_scale 0 top driver_.width bottom canvas.pixels_
-    driver_.commit 0 0 driver_.width driver_.height
+  create_canvas_ x/int y/int w/int h/int -> AbstractCanvas:
+    return gray_scale.Canvas w h x y
 
-  redraw_rect_ left/int top/int right/int bottom/int -> none:
-    canvas := gray_scale.Canvas (right - left) (bottom - top) left top
-    canvas.set-all-pixels background_
-    textures_.do: it.write canvas
-    driver_.draw_gray_scale left top right bottom canvas.pixels_
+  draw_ x/int y/int w/int h/int canvas/gray_scale.Canvas -> none:
+    driver_.draw_gray_scale x y w h canvas.pixels_
 
 /**
 Pixel-based display with up to 256 colors, connected to a device.
@@ -875,23 +862,11 @@ class SeveralColorPixelDisplay extends PixelDisplay:
     // We can't work well with canvases that are less than 4 pixels tall.
     return height < 8 ? 4 : height
 
-  draw_entire_display_:
-    driver_.start_full_update speed_
-    w := driver_.width
-    step := max_canvas_height_ w
-    canvas := several_color.Canvas w step 0 0
-    List.chunk_up 0 driver_.height step: | top bottom |
-      canvas.y_offset_ = top
-      canvas.set-all-pixels background_
-      textures_.do: it.write canvas
-      driver_.draw_several_color 0 top driver_.width bottom canvas.pixels_
-    driver_.commit 0 0 driver_.width driver_.height
+  create_canvas_ x/int y/int w/int h/int -> AbstractCanvas:
+    return several_color.Canvas w h x y
 
-  redraw_rect_ left/int top/int right/int bottom/int -> none:
-    canvas := several_color.Canvas (right - left) (bottom - top) left top
-    canvas.set-all-pixels background_
-    textures_.do: it.write canvas
-    driver_.draw_several_color left top right bottom canvas.pixels_
+  draw_ x/int y/int w/int h/int canvas/several_color.Canvas -> none:
+    driver_.draw_several_color x y w h canvas.pixels_
 
 /**
 Pixel-based display with up to 16 million colors, connected to a device.
@@ -968,20 +943,8 @@ class TrueColorPixelDisplay extends PixelDisplay:
     // We can't work well with canvases that are less than 4 pixels tall.
     return max 4 height
 
-  draw_entire_display_:
-    driver_.start_full_update speed_
-    w := driver_.width
-    step := max_canvas_height_ driver_.width
-    canvas := true_color.Canvas w step 0 0
-    List.chunk_up 0 driver_.height step: | top bottom h |
-      canvas.y_offset_ = top
-      canvas.set_all_pixels background_
-      textures_.do: it.write canvas
-      driver_.draw_true_color 0 top driver_.width bottom canvas.red_ canvas.green_ canvas.blue_
-    driver_.commit 0 0 driver_.width driver_.height
+  create_canvas_ x/int y/int w/int h/int -> AbstractCanvas:
+    return true_color.Canvas w h x y
 
-  redraw_rect_ left/int top/int right/int bottom/int -> none:
-    canvas := true_color.Canvas (right - left) (bottom - top) left top
-    canvas.set_all_pixels background_
-    textures_.do: it.write canvas
-    driver_.draw_true_color left top right bottom canvas.red_ canvas.green_ canvas.blue_
+  draw_ x/int y/int w/int h/int canvas/true_color.Canvas -> none:
+    driver_.draw_true_color x y w h canvas.red_ canvas.green_ canvas.blue_
