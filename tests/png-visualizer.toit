@@ -68,7 +68,7 @@ abstract class PngVisualizingDriver_ extends AbstractDriver:
 
   draw_true_color left/int top/int right/int bottom/int red/ByteArray green/ByteArray blue/ByteArray -> none:
     patch_width := right - left
-    top_left              := min buffer_.size (3 * (left + width_ * top))
+    top_left := min buffer_.size (3 * (left + width_ * top))
 
     if outline:
       red2 := red.copy
@@ -78,7 +78,7 @@ abstract class PngVisualizingDriver_ extends AbstractDriver:
       draw_byte_outline_ ((outline >> 16) & 0xff) green2 patch_width
       draw_byte_outline_ (outline & 0xff) blue2 patch_width
 
-      // pack 3 pixels in three consecutive bytes.  since we receive the data in
+      // Pack 3 pixels in three consecutive bytes.  Since we receive the data in
       // three one-byte-per-pixel buffers we have to shuffle the bytes.
       blit red2   outline_buffer_[top_left..]     patch_width --destination_pixel_stride=3 --destination_line_stride=(width_ * 3)
       blit green2 outline_buffer_[top_left + 1..] patch_width --destination_pixel_stride=3 --destination_line_stride=(width_ * 3)
@@ -92,7 +92,7 @@ abstract class PngVisualizingDriver_ extends AbstractDriver:
 
   draw_gray_scale left/int top/int right/int bottom/int pixels/ByteArray -> none:
     patch_width := right - left
-    top_left              := min buffer_.size (left + width_ * top)
+    top_left := min buffer_.size (left + width_ * top)
     if outline:
       pixels2 := pixels.copy
       draw_byte_outline_ outline pixels2 patch_width
