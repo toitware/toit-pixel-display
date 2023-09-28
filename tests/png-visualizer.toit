@@ -68,7 +68,7 @@ abstract class PngVisualizingDriver_ extends AbstractDriver:
 
   draw_true_color left/int top/int right/int bottom/int red/ByteArray green/ByteArray blue/ByteArray -> none:
     patch_width := right - left
-    top_left              := min buffer_.size (3 * (left + width_ * top))
+    top_left := min buffer_.size (3 * (left + width_ * top))
 
     if outline:
       red2 := red.copy
@@ -78,7 +78,7 @@ abstract class PngVisualizingDriver_ extends AbstractDriver:
       draw_byte_outline_ ((outline >> 16) & 0xff) green2 patch_width
       draw_byte_outline_ (outline & 0xff) blue2 patch_width
 
-      // pack 3 pixels in three consecutive bytes.  since we receive the data in
+      // Pack 3 pixels in three consecutive bytes.  Since we receive the data in
       // three one-byte-per-pixel buffers we have to shuffle the bytes.
       blit red2   outline_buffer_[top_left..]     patch_width --destination_pixel_stride=3 --destination_line_stride=(width_ * 3)
       blit green2 outline_buffer_[top_left + 1..] patch_width --destination_pixel_stride=3 --destination_line_stride=(width_ * 3)
@@ -92,7 +92,7 @@ abstract class PngVisualizingDriver_ extends AbstractDriver:
 
   draw_gray_scale left/int top/int right/int bottom/int pixels/ByteArray -> none:
     patch_width := right - left
-    top_left              := min buffer_.size (left + width_ * top)
+    top_left := min buffer_.size (left + width_ * top)
     if outline:
       pixels2 := pixels.copy
       draw_byte_outline_ outline pixels2 patch_width
@@ -116,8 +116,8 @@ abstract class PngVisualizingDriver_ extends AbstractDriver:
   write_png_two_color buffer/ByteArray left/int top/int right/int bottom/int pixels/ByteArray -> none:
     if temp_buffer_.size < pixels.size:
       temp_buffer_ = ByteArray pixels.size
-      8.repeat:
-        temps_[it] = temp_buffer_[it..]
+    8.repeat:
+      temps_[it] = temp_buffer_[it..pixels.size]
 
     assert: left == (round_up left 8)
     assert: top == (round_up top 8)
@@ -158,8 +158,8 @@ abstract class PngVisualizingDriver_ extends AbstractDriver:
     // Now we need to spread the 8x8 blocks out over the lines they belong on.
     // First line is bytes 0, 8, 16..., next line is bytes 1, 9, 17... etc.
     8.repeat:
-      index := (left + width_ * (top + 7 - it)) >> 3
-      blit temps_[it] buffer[index..] (patch_width >> 3) --source_pixel_stride=8 --destination_line_stride=(width_ >> 3) --lookup_table=INVERT_
+      index := left + (width_ * (top + 7 - it)) >> 3
+      blit temps_[it] buffer[index..] (patch_width >> 3) --source_pixel_stride=8 --destination_line_stride=width_ --lookup_table=INVERT_
 
   draw_bit_outline_ outline/int pixels/ByteArray patch_width/int -> none:
     bottom_left := pixels.size - patch_width
@@ -219,7 +219,7 @@ abstract class PngVisualizingDriver_ extends AbstractDriver:
     ppb := 4  // Pixels per byte.
     for y := 0; y < patch_height; y += 8:
       for in_bit := 0; in_bit < 8 and y + top + in_bit < height; in_bit++:
-        out_index := (top + y + in_bit) * byte_width
+        out_index := (left >> 2) + (top + y + in_bit) * byte_width
         for x := 0; x < patch_width; x += ppb:
           out := 0
           byte_pos := row + x + ppb - 1
@@ -227,7 +227,7 @@ abstract class PngVisualizingDriver_ extends AbstractDriver:
             out |= ((plane_0[byte_pos - out_bit] >> in_bit) & 1) << (out_bit * 2)
             out |= ((plane_1[byte_pos - out_bit] >> in_bit) & 1) << (out_bit * 2 + 1)
           buffer[out_index + (width_to_byte_width x)] = out
-      row += width_
+      row += patch_width
 
   png_counter := 0
   png_basename_/string
