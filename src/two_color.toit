@@ -30,13 +30,13 @@ class Canvas extends AbstractCanvas:
     pixels_ = ByteArray size
     super width height x_offset y_offset
 
+  set_all_pixels color/int -> none:
+    bitmap_zap pixels_ (color & 1)
+
   get_pixel_ x y:
     bit := 1 << (y & 7)
     idx := x + width_ * (y >> 3)
     return (pixels_[idx] & bit) == 0 ? 0 : 1
-
-  set_all_pixels color/int:
-    bitmap_zap pixels_ (color & 1)
 
   /**
   Creates a blank texture with the same dimensions as this one.

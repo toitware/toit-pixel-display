@@ -44,14 +44,14 @@ class Canvas extends AbstractCanvas:
   stringify:
     return "true_color.Canvas $(width_)x$height_"
 
-  get_pixel_ x y:
-    idx := x + width_ * y
-    return get_rgb red_[idx] green_[idx] blue_[idx]
-
-  set_all_pixels color/int:
+  set_all_pixels color/int -> none:
     bytemap_zap red_ ((color >> 16) & 0xff)
     bytemap_zap green_ ((color >> 8) & 0xff)
     bytemap_zap blue_ (color & 0xff)
+
+  get_pixel_ x y:
+    idx := x + width_ * y
+    return get_rgb red_[idx] green_[idx] blue_[idx]
 
   /**
   Creates a blank texture with the same dimensions as this one.
