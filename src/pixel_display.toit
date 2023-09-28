@@ -215,30 +215,20 @@ abstract class PixelDisplay implements Window:
     last-added are at the front.  However you can add textures via a
     TextureGroup.  This enables you to later add textures that are not at the
     front, by adding them to a TextureGroup that is not at the front.
-
-  Adding an InfiniteBackground texture removes a previous InfiniteBackground
-    texture.  This is deprecated: The preferred method is to set the background
-    color with $background=.
   */
   add texture/Texture -> none:
-    if texture is InfiniteBackground_:
-      background_ = texture
-      child_invalidated 0 0 width_ height_
+    textures_.add texture
+    if texture is SizedTexture:
+      texture.change_tracker = this
+      texture.invalidate
     else:
-      textures_.add texture
-      if texture is SizedTexture:
-        texture.change_tracker = this
-        texture.invalidate
-      else:
-        child_invalidated 0 0 width_ height_
+      throw "Not a valid texture"
 
   /**
   Removes a texture that was previously added.  You cannot remove a background
     texture.  Instead you should set a new background with @background=.
   */
   remove texture/Texture -> none:
-    if texture == background_:
-      throw "BACKGROUND_REMOVED"
     textures_.remove texture
     texture.invalidate
     texture.change_tracker = null
@@ -394,7 +384,7 @@ class TwoColorPixelDisplay extends PixelDisplay:
 
   constructor driver/AbstractDriver:
     super driver
-    background_ = two_color.InfiniteBackground two_color.WHITE
+    background_ = two_color.WHITE
 
   default_draw_color_ -> int:
     return two_color.BLACK
@@ -403,8 +393,8 @@ class TwoColorPixelDisplay extends PixelDisplay:
     return two_color.WHITE
 
   background= color/int -> none:
-    if not background_ or background_.color != color:
-      background_ = two_color.InfiniteBackground color
+    if background_ != color:
+      background_ = color
       child_invalidated 0 0 width_ height_
 
   text context/GraphicsContext x/int y/int text/string -> two_color.TextTexture:
@@ -503,7 +493,7 @@ class TwoColorPixelDisplay extends PixelDisplay:
 
   redraw_rect_ left/int top/int right/int bottom/int -> none:
     canvas := two_color.Canvas (right - left) (bottom - top) left top
-    background_.write canvas
+    canvas.set_all_pixels background_
     textures_.do: it.write canvas
     driver_.draw_two_color left top right bottom canvas.pixels_
 
@@ -518,11 +508,11 @@ See https://docs.toit.io/language/sdk/display
 class FourGrayPixelDisplay extends TwoBitPixelDisplay_:
   constructor driver/AbstractDriver:
     super driver
-    background_ = four_gray.InfiniteBackground four_gray.WHITE
+    background_ = four_gray.WHITE
 
   background= color/int -> none:
-    if not background_ or background_.color != color:
-      background_ = four_gray.InfiniteBackground color
+    if background_ != color:
+      background_ = color
       child_invalidated 0 0 width_ height_
 
   default_draw_color_ -> int:
@@ -596,11 +586,11 @@ See https://docs.toit.io/language/sdk/display
 class ThreeColorPixelDisplay extends TwoBitPixelDisplay_:
   constructor driver/AbstractDriver:
     super driver
-    background_ = three_color.InfiniteBackground three_color.WHITE
+    background_ = three_color.WHITE
 
   background= color/int -> none:
-    if not background_ or background_.color != color:
-      background_ = three_color.InfiniteBackground color
+    if background_ != color:
+      background_ = color
       child_invalidated 0 0 width_ height_
 
   default_draw_color_ -> int:
@@ -653,7 +643,7 @@ class ThreeColorPixelDisplay extends TwoBitPixelDisplay_:
     return texture
 
 abstract class TwoBitPixelDisplay_ extends PixelDisplay:
-  background_ := three_color.InfiniteBackground three_color.WHITE
+  background_ := three_color.WHITE
 
   constructor driver/AbstractDriver:
     super driver
@@ -685,7 +675,7 @@ abstract class TwoBitPixelDisplay_ extends PixelDisplay:
 
   redraw_rect_ left/int top/int right/int bottom/int -> none:
     canvas := three_color.Canvas (right - left) (bottom - top) left top
-    background_.write canvas
+    canvas.set_all_pixels background_
     textures_.do: it.write canvas
     driver_.draw_two_bit left top right bottom canvas.plane_0_ canvas.plane_1_
 
@@ -700,11 +690,11 @@ See https://docs.toit.io/language/sdk/display
 class GrayScalePixelDisplay extends PixelDisplay:
   constructor driver/AbstractDriver:
     super driver
-    background_ = gray_scale.InfiniteBackground gray_scale.WHITE
+    background_ = gray_scale.WHITE
 
   background= color/int -> none:
-    if not background_ or background_.color != color:
-      background_ = gray_scale.InfiniteBackground color
+    if background_ != color:
+      background_ = color
       child_invalidated 0 0 width_ height_
 
   text context/GraphicsContext x/int y/int text/string -> gray_scale.TextTexture:
@@ -777,7 +767,7 @@ class GrayScalePixelDisplay extends PixelDisplay:
 
   redraw_rect_ left/int top/int right/int bottom/int -> none:
     canvas := gray_scale.Canvas (right - left) (bottom - top) left top
-    background_.write canvas
+    canvas.set_all_pixels background_
     textures_.do: it.write canvas
     driver_.draw_gray_scale left top right bottom canvas.pixels_
 
@@ -792,11 +782,11 @@ See https://docs.toit.io/language/sdk/display
 class SeveralColorPixelDisplay extends PixelDisplay:
   constructor driver/AbstractDriver:
     super driver
-    background_ = several_color.InfiniteBackground 0
+    background_ = 0
 
   background= color/int -> none:
-    if not background_ or background_.color != color:
-      background_ = several_color.InfiniteBackground color
+    if background_ != color:
+      background_ = color
       child_invalidated 0 0 width_ height_
 
   text context/GraphicsContext x/int y/int text/string -> several_color.TextTexture:
@@ -884,11 +874,11 @@ See https://docs.toit.io/language/sdk/display
 class TrueColorPixelDisplay extends PixelDisplay:
   constructor driver/AbstractDriver:
     super driver
-    background_ = true_color.InfiniteBackground true_color.WHITE
+    background_ = true_color.WHITE
 
   background= color/int -> none:
-    if not background_ or background_.color != color:
-      background_ = true_color.InfiniteBackground color
+    if background_ != color:
+      background_ = color
       child_invalidated 0 0 width_ height_
 
   text context/GraphicsContext x/int y/int text/string -> true_color.TextTexture:
@@ -962,6 +952,6 @@ class TrueColorPixelDisplay extends PixelDisplay:
 
   redraw_rect_ left/int top/int right/int bottom/int -> none:
     canvas := true_color.Canvas (right - left) (bottom - top) left top
-    background_.write canvas
+    canvas.set_all_pixels background_
     textures_.do: it.write canvas
     driver_.draw_true_color left top right bottom canvas.red_ canvas.green_ canvas.blue_

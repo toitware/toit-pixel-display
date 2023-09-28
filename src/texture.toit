@@ -150,6 +150,8 @@ abstract class AbstractCanvas:
 
   abstract create_similar -> AbstractCanvas
 
+  abstract set_all_pixels color/int -> none
+
   abstract composit frame_opacity frame_canvas/AbstractCanvas painting_opacity painting_canvas/AbstractCanvas
 
 /**
@@ -1257,12 +1259,6 @@ abstract class PixmapTexture_ extends SizedTexture:
       canvas
 
   abstract draw_ bx by orientation canvas
-
-abstract class InfiniteBackground_ extends Texture:
-
-  abstract color -> int
-
-  invalidate -> none:
 
 class PbmParser_:
   static INVALID_PBM_ ::= "INVALID PBM"
