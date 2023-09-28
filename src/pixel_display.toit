@@ -689,7 +689,7 @@ abstract class TwoBitPixelDisplay_ extends PixelDisplay:
 
   max_canvas_height_ width:
     width_rounded := round_up width 8
-    height_rounded := round_up height_ 8
+    height_rounded := round_up driver_.height 8
     height := ?
     if width_rounded * height_rounded >> 3 < 4000:
       // If we can fit both the red and black plane in < 8k then do that.
