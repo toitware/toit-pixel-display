@@ -45,9 +45,9 @@ class Canvas extends AbstractCanvas:
     return "true_color.Canvas $(width_)x$height_"
 
   set_all_pixels color/int -> none:
-    bytemap_zap red_ ((color >> 16) & 0xff)
-    bytemap_zap green_ ((color >> 8) & 0xff)
-    bytemap_zap blue_ (color & 0xff)
+    bytemap_zap red_ (red_component color)
+    bytemap_zap green_ (green_component color)
+    bytemap_zap blue_ (blue_component color)
 
   get_pixel_ x y:
     idx := x + width_ * y

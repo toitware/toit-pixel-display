@@ -785,8 +785,11 @@ class GrayScalePixelDisplay extends PixelDisplay:
   create_canvas_ x/int y/int w/int h/int -> AbstractCanvas:
     return gray_scale.Canvas w h x y
 
-  draw_ x/int y/int w/int h/int canvas/gray_scale.Canvas -> none:
-    driver_.draw_gray_scale x y w h canvas.pixels_
+  redraw_rect_ left/int top/int right/int bottom/int -> none:
+    canvas := gray_scale.Canvas (right - left) (bottom - top) left top
+    canvas.set_all_pixels background_
+    textures_.do: it.write canvas
+    driver_.draw_gray_scale left top right bottom canvas.pixels_
 
 /**
 Pixel-based display with up to 256 colors, connected to a device.
@@ -946,5 +949,8 @@ class TrueColorPixelDisplay extends PixelDisplay:
   create_canvas_ x/int y/int w/int h/int -> AbstractCanvas:
     return true_color.Canvas w h x y
 
-  draw_ x/int y/int w/int h/int canvas/true_color.Canvas -> none:
-    driver_.draw_true_color x y w h canvas.red_ canvas.green_ canvas.blue_
+  redraw_rect_ left/int top/int right/int bottom/int -> none:
+    canvas := true_color.Canvas (right - left) (bottom - top) left top
+    canvas.set_all_pixels background_
+    textures_.do: it.write canvas
+    driver_.draw_true_color left top right bottom canvas.red_ canvas.green_ canvas.blue_
