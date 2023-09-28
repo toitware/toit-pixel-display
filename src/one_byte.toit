@@ -21,13 +21,10 @@ abstract class OneByteCanvas_ extends AbstractCanvas:
     pixels_ = ByteArray size
     super width height x_offset y_offset
 
-  set_all_pixels color:
+  set_all_pixels color/int -> none:
     bytemap_zap pixels_ color
 
-  set_pixel color x y:
-    pixels_[x + width_ * y] = color
-
-  get_pixel x y:
+  get_pixel_ x y:
     return pixels_[x + width_ * y]
 
   composit frame_opacity frame_canvas/OneByteCanvas_? painting_opacity painting_canvas/OneByteCanvas_:
