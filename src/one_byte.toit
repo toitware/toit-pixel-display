@@ -33,19 +33,6 @@ abstract class OneByteCanvas_ extends AbstractCanvas:
   composit frame_opacity frame_canvas/OneByteCanvas_? painting_opacity painting_canvas/OneByteCanvas_:
     composit_bytes pixels_ frame_opacity (frame_canvas ? frame_canvas.pixels_ : null) painting_opacity painting_canvas.pixels_ false
 
-class OneByteInfiniteBackground_ extends InfiniteBackground_:
-  color_ := 0
-
-  constructor .color_:
-
-  color -> int:
-    return color_
-
-  write canvas/OneByteCanvas_:
-    bytemap_zap canvas.pixels_ color_
-
-  write_ canvas/OneByteCanvas_:
-    throw "Not used"
 
 class OneByteFilledRectangle_ extends FilledRectangle_:
   color_ := ?

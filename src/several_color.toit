@@ -26,10 +26,6 @@ class Canvas extends OneByteCanvas_:
   create_similar:
     return Canvas width_ height_ x_offset_ y_offset_
 
-class InfiniteBackground extends OneByteInfiniteBackground_:
-  constructor color/int:
-    super color
-
 class FilledRectangle extends OneByteFilledRectangle_:
   constructor color/int x/int y/int w/int h/int transform/Transform:
     super color x y w h transform

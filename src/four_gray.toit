@@ -29,10 +29,6 @@ class Canvas extends TwoBitCanvas_:
   constructor width/int height/int x_offset/int y_offset/int:
     super width height x_offset y_offset
 
-class InfiniteBackground extends TwoBitInfiniteBackground_:
-  constructor color:
-    super color
-
 class FilledRectangle extends TwoBitFilledRectangle_:
   constructor color x/int y/int w/int h/int transform/Transform:
     super color x y w h transform
