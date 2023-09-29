@@ -16,12 +16,12 @@ for outfilename in tests/out/$TOIT_PROGRAM-*.png
 do
   echo $outfilename
   goldfilename=${outfilename/out/gold}.gz
-  zcat $goldfilename | cmp $outfilename
+  gunzip -c $goldfilename | cmp $outfilename
 done
 
 for goldfilename in tests/gold/$TOIT_PROGRAM-*.png.gz
 do
   outfilename=${goldfilename/gold/out}
   outfilename=${outfilename%.gz}
-  zcat $goldfilename | cmp $outfilename
+  gunzip -c $goldfilename | cmp $outfilename
 done
