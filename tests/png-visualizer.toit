@@ -330,10 +330,11 @@ abstract class PngVisualizingDriver_ extends AbstractDriver:
       done.set null
 
     zero_byte := #[0]
+    line_size := width_to_byte_width width
+    line_step := width_to_byte_width width_
     height.repeat: | y |
       compressor.write zero_byte  // Adaptive scheme.
-      line_size := width_to_byte_width width_
-      index := y * line_size
+      index := y * line_step
       line := buffer[index..index + line_size]
       if gray:
         line = ByteArray line.size: line[it] ^ 0xff
