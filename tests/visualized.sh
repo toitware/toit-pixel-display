@@ -15,13 +15,13 @@ $TOIT_EXE tests/$TOIT_PROGRAM tests/out/$TOIT_PROGRAM
 for outfilename in tests/out/$TOIT_PROGRAM-*.png
 do
   echo $outfilename
-  goldfilename=${outfilename/out/gold}
-  cmp $goldfilename $outfilename
+  goldfilename=${outfilename/out/gold}.gz
+  zcmp $goldfilename $outfilename
 done
 
-for goldfilename in tests/gold/$TOIT_PROGRAM-*.png
+for goldfilename in tests/gold/$TOIT_PROGRAM-*.png.gz
 do
   outfilename=${goldfilename/gold/out}
-  cmp $goldfilename $outfilename
+  outfilename=${outfilename%.gz}
+  zcmp $goldfilename $outfilename
 done
-

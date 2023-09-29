@@ -320,7 +320,7 @@ abstract class PngVisualizingDriver_ extends AbstractDriver:
           0xff, 0xc0, 0,            // 6 is orange
         ]
 
-    compressor := zlib.RunLengthZlibEncoder
+    compressor := zlib.UncompressedZlibEncoder
     done := Latch
     compressed := Buffer
 
