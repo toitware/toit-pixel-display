@@ -64,7 +64,7 @@ class Canvas extends AbstractCanvas:
     composit_bytes green_ frame_opacity (frame_canvas ? frame_canvas.green_ : null) painting_opacity painting_canvas.green_ false
     composit_bytes blue_ frame_opacity (frame_canvas ? frame_canvas.blue_ : null) painting_opacity painting_canvas.blue_ false
 
-  rectangle x/int y/int w/int h/int color/int:
+  rectangle x/int y/int --w/int --h/int --color/int:
     transform.xywh x y w h: | x2 y2 w2 h2 |
       r := color >> 16
       g := (color >> 8) & 0xff

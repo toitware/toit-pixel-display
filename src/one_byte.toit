@@ -30,7 +30,7 @@ abstract class OneByteCanvas_ extends AbstractCanvas:
   composit frame_opacity frame_canvas/OneByteCanvas_? painting_opacity painting_canvas/OneByteCanvas_:
     composit_bytes pixels_ frame_opacity (frame_canvas ? frame_canvas.pixels_ : null) painting_opacity painting_canvas.pixels_ false
 
-  rectangle x/int y/int w/int h/int color/int:
+  rectangle x/int y/int --w/int --h/int --color/int:
     transform.xywh x y w h: | x2 y2 w2 h2 |
       bytemap_rectangle x y color w2 h2 pixels_ width_
 

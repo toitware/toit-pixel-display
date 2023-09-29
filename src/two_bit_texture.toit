@@ -45,7 +45,7 @@ class TwoBitCanvas_ extends AbstractCanvas:
     composit_bytes plane_0_ frame_opacity (frame_canvas ? frame_canvas.plane_0_ : null) painting_opacity painting_canvas.plane_0_ true
     composit_bytes plane_1_ frame_opacity (frame_canvas ? frame_canvas.plane_1_ : null) painting_opacity painting_canvas.plane_1_ true
 
-  rectangle x/int y/int w/int h/int color/int:
+  rectangle x/int y/int --w/int --h/int --color/int:
     transform.xywh x y w h: | x2 y2 w2 h2 |
       c2 := (color & 2) >> 1
       bitmap_rectangle x y (color & 1) w2 h2 plane_0_ width_

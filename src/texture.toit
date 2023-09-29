@@ -162,19 +162,19 @@ abstract class AbstractCanvas:
   line x1/int y1/int x2/int y2/int color/int:
     if x1 == x2:
       if y1 < y2:
-        rectangle x1 y1 (y2 - y1) 1 color
+        rectangle x1 y1 --w=(y2 - y1) --h=1 --color=color
       else if y2 < y1:
-        rectangle x1 y2 (y1 - y2) 1 color
+        rectangle x1 y2 --w=(y1 - y2) --h=1 --color=color
       // Else do nothing - zero length line.
     else if y1 == y2:
       if x1 < x2:
-        rectangle x1 y1 (x2 - x1) 1 color
+        rectangle x1 y1 --w=1 --h=(x2 - x1) --color=color
       else:
-        rectangle x2 y1 (x1 - x2) 1 color
+        rectangle x2 y1 --w=1 --h=(x1 - x2) --color=color
     else:
       throw "LINE_NOT_HORIZONTAL_OR_VERTICAL"
 
-  abstract rectangle x/int y/int width/int height/int color/int -> none
+  abstract rectangle x/int y/int --w/int --h/int --color/int -> none
 
 /**
 Something you can draw on a canvas.  It could be a text string, a pixmap or
@@ -196,26 +196,16 @@ abstract class Texture:
 
   abstract invalidate -> none
 
-abstract class TransformlessTexture extends Texture:
+abstract class Element extends Texture:
   x_ /int? := null
   y_ /int? := null
-  w_ /int? := null
-  h_ /int? := null
 
   x -> int: return x_
   y -> int: return y_
-  w -> int: return w_
-  h -> int: return h_
 
-  constructor x/int?=null y/int?=null --w/int?=null --h/int?=null:
+  constructor x/int?=null y/int?=null:
     x_ = x
     y_ = y
-    w_ = w
-    h_ = h
-
-  invalidate:
-    if change_tracker:
-      change_tracker.child_invalidated_transformless x y w h
 
   x= value/int -> none:
     invalidate
@@ -233,6 +223,40 @@ abstract class TransformlessTexture extends Texture:
     y_ = y
     invalidate
 
+  write_ canvas -> none:
+    throw "Can't call write_ on an Element"
+
+  abstract draw texture/Texture -> none
+
+abstract class ColoredElement extends Element:
+  color_/int? := ?
+
+  constructor x/int y/int --color/int?=null:
+    color_ = color
+    super x y
+
+  color -> int?: return color_
+
+  color= value/int -> none:
+    invalidate
+    color_ = value
+
+abstract class ResizableElement extends ColoredElement:
+  w_ /int? := null
+  h_ /int? := null
+
+  constructor x/int?=null y/int?=null --color/int --w/int?=null --h/int?=null:
+    w_ = w
+    h_ = h
+    super x y --color=color
+
+  invalidate:
+    if change_tracker:
+      change_tracker.child_invalidated_element x y w h
+
+  w -> int: return w_
+  h -> int: return h_
+
   w= value/int -> none:
     invalidate
     w_ = value
@@ -249,43 +273,97 @@ abstract class TransformlessTexture extends Texture:
     h_ = h
     invalidate
 
-  abstract draw texture/Texture -> none
-
-  write_ canvas -> none:
-    throw "Can't call write_ on a TransformlessTexture"
-
-abstract class TransformlessColoredTexture extends TransformlessTexture:
-  color_/int := ?
-
-  constructor x/int y/int --w/int?=null --h/int?=null --color/int:
-    color_ = color
-    super x y --w=w --h=h
-
-  color -> int: return color_
-
-  color= value/int -> none:
-    invalidate
-    color_ = value
-
-class TransformlessFilledRectangle extends TransformlessColoredTexture:
+class RectangleElement extends ResizableElement:
   constructor x/int y/int --w/int --h/int --color/int:
-    super x y --w=w --h=h --color=color
+    super x y --color=color --w=w --h=h
 
   draw canvas/AbstractCanvas -> none:
-    canvas.rectangle x_ y_ w_ h_ color_
+    canvas.rectangle x_ y_ --w=w_ --h=h_ --color=color_
 
-class TransformlessOutlineRectangle extends TransformlessColoredTexture:
+class OutlineRectanngleElement extends ResizableElement:
   thickness_/int := ?
 
   constructor x/int y/int --w/int --h/int --color/int --thickness/int=1:
     thickness_ = thickness
-    super x y --w=w --h=h --color=color
+    super x y --color=color --w=w --h=h
 
   draw canvas /AbstractCanvas -> none:
-    canvas.rectangle x_ y_                     thickness_ h_         color_
-    canvas.rectangle x_ y_                     w_         thickness_ color_
-    canvas.rectangle (x_ + w_ - thickness_) y_ thickness_ h_         color_
-    canvas.rectangle x_ (y + h_ - thickness_)  w_         thickness_ color_
+    canvas.rectangle x_ y_                     --w=thickness_ --h=h_         --color=color_
+    canvas.rectangle x_ y_                     --w=w_         --h=thickness_ --color=color_
+    canvas.rectangle (x_ + w_ - thickness_) y_ --w=thickness_ --h=h_         --color=color_
+    canvas.rectangle x_ (y + h_ - thickness_)  --w=w_         --h=thickness_ --color=color_
+
+class TextElement extends ColoredElement:
+  text_/string? := null
+  alignment_/int := ?
+  orientation_/int := ?
+  font_/Font := ?
+  left_/int? := null
+  top_/int? := null
+  width_/int? := null
+  height_/int? := null
+
+  constructor x/int y/int --color/int --text/string?=null --font/Font --orientation/int=ORIENTATION_0 --alignment/int=TEXT_TEXTURE_ALIGN_LEFT:
+    text_ = text
+    alignment_ = alignment
+    orientation_ = orientation
+    font_ = font
+    super x y --color=color
+
+  /**
+  Calls the block with the left, top, width, and height.
+  For zero sized objects, doesn't call the block.
+  */
+  xywh [block]:
+    if not text_: return
+    if not left_:
+      extent/List := font_.text_extent text_
+      displacement := 0
+      if alignment_ != TEXT_TEXTURE_ALIGN_LEFT:
+        displacement = -(font_.pixel_width text_)
+        if alignment_ == TEXT_TEXTURE_ALIGN_CENTER: displacement >>= 1
+      if orientation_ == ORIENTATION_0:
+        left_   = x_ + extent[2] + displacement
+        top_    = y_ - extent[3] - extent[1]
+        width_  = extent[0]
+        height_ = extent[1]
+      else if orientation_ == ORIENTATION_90:
+        left_   = x_ - extent[3] - extent[1]
+        top_    = y_ - extent[2] - displacement
+        width_  = extent[1]
+        height_ = extent[0]
+      else if orientation_ == ORIENTATION_180:
+        left_   = x_ - extent[2] - displacement
+        top_    = y_ + extent[3] + extent[1]
+        width_  = extent[0]
+        height_ = extent[1]
+      else:
+        assert: orientation_ == ORIENTATION_270
+        left_   = x_ + extent[3] + extent[1]
+        top_    = y_ + extent[2] + displacement
+        width_  = extent[1]
+        height_ = extent[0]
+    block.call left_ top_ width_ height_
+
+  invalidate:
+    if change_tracker and text_:
+      xywh: | x y w h |
+        change_tracker.child_invalidated_element x y w h
+
+  text= value/string? -> none:
+    invalidate
+    text_ = value
+    left_ = null  // Trigger recalculation.
+    invalidate
+
+  orientation= value/int -> none:
+    invalidate
+    orientation_ = value
+    left_ = null  // Trigger recalculation.
+    invalidate
+
+  draw canvas /AbstractCanvas -> none:
+    //canvas.text x_ y_ font_ orientation_ text_ color_
 
 /**
 Most $Texture s have a size and know their own position in the scene, and are
@@ -667,22 +745,33 @@ abstract class TextTexture_ extends SizedTexture:
       string_ = new_string
       fix_bounding_box_
       return
-    left_doesnt_move  := alignment_ == TEXT_TEXTURE_ALIGN_LEFT
-    right_doesnt_move := alignment_ == TEXT_TEXTURE_ALIGN_RIGHT
+
+    get_bounding_boxes_ string_ new_string alignment_ font_: | changed_extent_old/TextExtent_ changed_extent_new/TextExtent_ |
+      invalidate_extent_ changed_extent_old
+      invalidate_extent_ changed_extent_new
+      string_ = new_string
+      fix_bounding_box_
+      return
+    string_ = new_string
+    update_
+
+  static get_bounding_boxes_ old/string new/string alignment/int font/Font [block]:
+    left_doesnt_move  := alignment == TEXT_TEXTURE_ALIGN_LEFT
+    right_doesnt_move := alignment == TEXT_TEXTURE_ALIGN_RIGHT
     // If the rendered length does not change then both ends don't move.
     // for center alignment it gets a little harder to detect which part of the
     // display to invalidate so we don't bother with this case for now.
-    if alignment_ != TEXT_TEXTURE_ALIGN_CENTER and (font_.pixel_width string_) == (font_.pixel_width new_string):
+    if alignment != TEXT_TEXTURE_ALIGN_CENTER and (font.pixel_width old) == (font.pixel_width new):
       left_doesnt_move = true
       right_doesnt_move = true
-    l := min string_.size new_string.size
+    l := min old.size new.size
     unchanged_left := 0
     unchanged_right := 0
     if left_doesnt_move:
       // Find out how many bytes are unchanged at the start of the string.
       unchanged_left = l
       for i := 0; i < l; i++:
-        if string_[i] != new_string[i]:
+        if old[i] != new[i]:
           unchanged_left = i
           break
     if right_doesnt_move:
@@ -690,31 +779,25 @@ abstract class TextTexture_ extends SizedTexture:
       unchanged_right = l
       last_character_start := 0  // Location (counting from end) of the start of the last UTF-8 sequence.
       for i := 0; i < l; i++:
-        if string_[string_.size - 1 - i] != new_string[new_string.size - 1 - i]:
+        if old[old.size - 1 - i] != new[new.size - 1 - i]:
           unchanged_right = last_character_start
           break
-        else if string_[string_.size - 1 - i]:
+        else if old[old.size - 1 - i]:
           last_character_start = i + 1
     if unchanged_right != 0 or unchanged_left != 0:
-      changed_old := string_.copy unchanged_left (string_.size - unchanged_right)
-      changed_new := new_string.copy unchanged_left (new_string.size - unchanged_right)
-      changed_extent_old := TextExtent_ changed_old font_ alignment_
-      changed_extent_new := TextExtent_ changed_new font_ alignment_
+      changed_old := old.copy unchanged_left (old.size - unchanged_right)
+      changed_new := new.copy unchanged_left (new.size - unchanged_right)
+      changed_extent_old := TextExtent_ changed_old font alignment
+      changed_extent_new := TextExtent_ changed_new font alignment
       unchanged_width := 0
-      if alignment_ == TEXT_TEXTURE_ALIGN_LEFT:
-        unchanged_width = font_.pixel_width (string_.copy 0 unchanged_left)
+      if alignment == TEXT_TEXTURE_ALIGN_LEFT:
+        unchanged_width = font.pixel_width (old.copy 0 unchanged_left)
       else:
-        assert: alignment_ == TEXT_TEXTURE_ALIGN_RIGHT
-        unchanged_width = -(font_.pixel_width (string_.copy string_.size - unchanged_right string_.size))
+        assert: alignment == TEXT_TEXTURE_ALIGN_RIGHT
+        unchanged_width = -(font.pixel_width (old.copy old.size - unchanged_right old.size))
       changed_extent_old.x += unchanged_width
       changed_extent_new.x += unchanged_width
-      invalidate_extent_ changed_extent_old
-      invalidate_extent_ changed_extent_new
-      string_ = new_string
-      fix_bounding_box_
-    else:
-      string_ = new_string
-      update_
+      block.call changed_extent_old changed_extent_new
 
   invalidate_extent_ ex:
     invalidate
@@ -859,7 +942,7 @@ class TextureGroup extends Texture implements Window:
     if change_tracker:
       change_tracker.child_invalidated x y w h
 
-  child_invalidated_transformless x/int y/int w/int h/int -> none:
+  child_invalidated_element x/int y/int w/int h/int -> none:
     throw "NOT_IMPLEMENTED"
 
   invalidate -> none:
@@ -880,7 +963,7 @@ interface Window:
   child_invalidated x/int y/int w/int h/int ->none
 
   // Called by elements that have been added to this.
-  child_invalidated_transformless x/int y/int w/int h/int ->none
+  child_invalidated_element x/int y/int w/int h/int ->none
 
 abstract class BorderlessWindow_ extends ResizableTexture implements Window:
   constructor x/int y/int w/int h/int transform:
@@ -906,7 +989,7 @@ abstract class BorderlessWindow_ extends ResizableTexture implements Window:
   transform /Transform := ?
   elements_ := {}
 
-  child_invalidated_transformless x/int y/int w/int h/int -> none:
+  child_invalidated_element x/int y/int w/int h/int -> none:
     throw "NOT_IMPLEMENTED"
 
   child_invalidated x/int y/int w/int h/int -> none:
