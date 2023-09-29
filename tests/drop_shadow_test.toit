@@ -29,7 +29,7 @@ true_color_test -> none:
   48.repeat: | y |
     line := ""
     64.repeat: | x |
-      pixel := canvas.get_pixel x y
+      pixel := canvas.get_pixel_ x y
       line += "$(%3d true_color.red_component pixel) $(%3d true_color.green_component pixel) $(%3d true_color.blue_component pixel)   ";
     print line
 
@@ -42,6 +42,6 @@ gray_scale_test -> none:
   48.repeat: | y |
     line := ""
     64.repeat: | x |
-      pixel := canvas.get_pixel x y
+      pixel := canvas.get_pixel_ x y
       line += "$(%3d pixel) ";
     print line

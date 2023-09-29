@@ -49,13 +49,7 @@ class Canvas extends AbstractCanvas:
     bytemap_zap green_ (green_component color)
     bytemap_zap blue_ (blue_component color)
 
-  set_pixel color x y:
-    idx := x + width_ * y
-    red_[idx] = (red_component color)
-    green_[idx] = (green_component color)
-    blue_[idx] = (blue_component color)
-
-  get_pixel x y:
+  get_pixel_ x y:
     idx := x + width_ * y
     return get_rgb red_[idx] green_[idx] blue_[idx]
 
