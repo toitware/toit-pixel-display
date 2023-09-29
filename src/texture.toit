@@ -1115,6 +1115,7 @@ abstract class DropShadowWindow_ extends RoundedCornerWindow_:
   drop_distance_y := 0
 
   constructor x y w h transform corner_radius .blur_radius .drop_distance_x .drop_distance_y:
+    if not 0 <= blur_radius <= 6: throw "OUT_OF_RANGE"
     extension_left := blur_radius > drop_distance_x ?  blur_radius - drop_distance_x : 0
     extension_top := blur_radius > drop_distance_y ?  blur_radius - drop_distance_y : 0
     extension_right := blur_radius > -drop_distance_x ? blur_radius + drop_distance_x : 0
