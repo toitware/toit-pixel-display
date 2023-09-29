@@ -118,19 +118,18 @@ abstract class PixelDisplay implements Window:
 
   transform_ /Transform
 
-  constructor .driver_:
-    height := round_up driver_.height 8
-    if driver_.flags & FLAG_PARTIAL_UPDATES != 0:
-      dirty_bytes_per_line_ = (driver_.width >> 3) + 1
-      dirty_strips := (height >> 6) + 1  // 8-tall strips of dirty bits.
-      dirty_ = ByteArray dirty_bytes_per_line_ * dirty_strips: 0xff  // Initialized to DIRTY_, which is 1.
-
   // By default the orientation is the natural orientation of the display driver.
   // If $portrait is false, then a landscape orientation is used.
   // If $portrait is true, then a portrait orientation is used, or in the case
   //   that the display driver is exactly square, a rotated orientation is used.
   // The orientation is rotated by 180 degrees if $inverted is true.
   constructor .driver_ --transform/Transform?=null --portrait/bool?=null --inverted/bool=false:
+    height := round_up driver_.height 8
+    if driver_.flags & FLAG_PARTIAL_UPDATES != 0:
+      dirty_bytes_per_line_ = (driver_.width >> 3) + 1
+      dirty_strips := (height >> 6) + 1  // 8-tall strips of dirty bits.
+      dirty_ = ByteArray dirty_bytes_per_line_ * dirty_strips: 0xff  // Initialized to DIRTY_, which is 1.
+
     if transform:
       if portrait != null or inverted: throw "INVALID_ARGUMENT"
       transform_ = transform
