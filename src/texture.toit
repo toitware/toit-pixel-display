@@ -22,6 +22,12 @@ class Transform:
 
   constructor.with_ .array_:
 
+  stringify -> string:
+    line1 := "$(%3d array_[0]) $(%3d array_[1])"
+    line2 := "$(%3d array_[2]) $(%3d array_[3])"
+    line3 := "$(%3d array_[4]) $(%3d array_[5])"
+    return "$line1\n$line2\n$line3"
+
   apply other/Transform -> Transform:
     a0 := array_[0]
     a1 := array_[1]
@@ -92,10 +98,10 @@ class Transform:
     x_transformed := x x_in y_in
     y_transformed := y x_in y_in
     o_transformed/int := ?
-    if array_[0] > 0: o_transformed = o_in + ORIENTATION_0
-    if array_[1] < 0: o_transformed = o_in + ORIENTATION_90
-    if array_[0] < 0: o_transformed = o_in + ORIENTATION_180
-    else:             o_transformed = o_in + ORIENTATION_270
+    if      array_[0] > 0: o_transformed = o_in + ORIENTATION_0
+    else if array_[1] < 0: o_transformed = o_in + ORIENTATION_90
+    else if array_[0] < 0: o_transformed = o_in + ORIENTATION_180
+    else:                  o_transformed = o_in + ORIENTATION_270
     block.call x_transformed y_transformed o_transformed
 
   /**
@@ -314,7 +320,7 @@ class RectangleElement extends ResizableElement:
   draw canvas/AbstractCanvas -> none:
     canvas.rectangle x_ y_ --w=w_ --h=h_ --color=color_
 
-class OutlineRectanngleElement extends ResizableElement:
+class OutlineRectangleElement extends ResizableElement:
   thickness_/int := ?
 
   constructor x/int y/int --w/int --h/int --color/int --thickness/int=1:
@@ -356,28 +362,32 @@ class TextElement extends ColoredElement:
       if alignment_ != TEXT_TEXTURE_ALIGN_LEFT:
         displacement = -(font_.pixel_width text_)
         if alignment_ == TEXT_TEXTURE_ALIGN_CENTER: displacement >>= 1
+      l := extent[2] - displacement
+      r := extent[2] - displacement + extent[0]
+      t := -extent[1] - extent[3]
+      b := extent[3]
       if orientation_ == ORIENTATION_0:
-        left_   = x_ + extent[2] + displacement
-        top_    = y_ - extent[3] - extent[1]
+        left_   = l
+        top_    = t
         width_  = extent[0]
         height_ = extent[1]
       else if orientation_ == ORIENTATION_90:
-        left_   = x_ - extent[3] - extent[1]
-        top_    = y_ - extent[2] - displacement
+        left_   = t
+        top_    = -r
         width_  = extent[1]
         height_ = extent[0]
       else if orientation_ == ORIENTATION_180:
-        left_   = x_ - extent[2] - displacement
-        top_    = y_ + extent[3] + extent[1]
+        left_   = -r
+        top_    = b
         width_  = extent[0]
         height_ = extent[1]
       else:
         assert: orientation_ == ORIENTATION_270
-        left_   = x_ + extent[3] + extent[1]
-        top_    = y_ + extent[2] + displacement
+        left_   = b
+        top_    = -l
         width_  = extent[1]
         height_ = extent[0]
-    block.call left_ top_ width_ height_
+    block.call (x_ + left_) (y_ + top_) width_ height_
 
   invalidate:
     if change_tracker and text_:

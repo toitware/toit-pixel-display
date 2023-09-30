@@ -48,15 +48,15 @@ class TwoBitCanvas_ extends AbstractCanvas:
   rectangle x/int y/int --w/int --h/int --color/int:
     transform.xywh x y w h: | x2 y2 w2 h2 |
       c2 := (color & 2) >> 1
-      bitmap_rectangle x y (color & 1) w2 h2 plane_0_ width_
-      bitmap_rectangle x y c2          w2 h2 plane_1_ width_
+      bitmap_rectangle x2 y2 (color & 1) w2 h2 plane_0_ width_
+      bitmap_rectangle x2 y2 c2          w2 h2 plane_1_ width_
 
   text x/int y/int --text/string --color/int --font/Font --orientation/int=ORIENTATION_0:
     transform.xyo x y orientation: | x2 y2 o2 |
       b0 := color & 1
       b1 := (color >> 1) & 1
-      bitmap_draw_text x y b0 o2 text font plane_0_ width_
-      bitmap_draw_text x y b1 o2 text font plane_1_ width_
+      bitmap_draw_text x2 y2 b0 o2 text font plane_0_ width_
+      bitmap_draw_text x2 y2 b1 o2 text font plane_1_ width_
 
 class TwoBitFilledRectangle_ extends FilledRectangle_:
   color_ := ?

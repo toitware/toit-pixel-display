@@ -306,9 +306,16 @@ abstract class PixelDisplay implements Window:
       canvas.x_offset_ = 0
       canvas.y_offset_ = top
       // For the Elements.
-      canvas.transform = (transform_.translate 0 -top).invert
+      // To get the translation for this tile in the driver coordinates instead
+      // of the display coordinates, we invert the 2d transform, then translate
+      // it, then invert it again.
+      canvas.transform = (transform_.invert.translate 0 top).invert
       canvas.set_all_pixels background_
-      textures_.do: it.write canvas
+      textures_.do:
+        if it is SizedTexture:
+          it.write canvas
+        else:
+          it.draw canvas
       draw_ 0 top driver_.width bottom canvas
     driver_.commit 0 0 driver_.width driver_.height
 
@@ -406,7 +413,10 @@ abstract class PixelDisplay implements Window:
     canvas.x_offset_ = left
     canvas.y_offset_ = top
     // For the Elements:
-    canvas.transform = (transform_.translate -left -top).invert
+    // To get the translation for this tile in the driver coordinates instead
+    // of the display coordinates, we invert the 2d transform, then translate
+    // it, then invert it again.
+    canvas.transform = (transform_.invert.translate left top).invert
 
     canvas.set_all_pixels background_
     textures_.do:
@@ -445,9 +455,8 @@ This class keeps track of the list of things to draw, and
 See https://docs.toit.io/language/sdk/display
 */
 class TwoColorPixelDisplay extends PixelDisplay:
-
-  constructor driver/AbstractDriver:
-    super driver
+  constructor driver/AbstractDriver --inverted/bool=false --portrait/bool=false --transform/Transform?=null:
+    super driver --inverted=inverted --portrait=portrait --transform=transform
     background_ = two_color.WHITE
 
   default_draw_color_ -> int:
@@ -696,8 +705,8 @@ class ThreeColorPixelDisplay extends TwoBitPixelDisplay_:
 abstract class TwoBitPixelDisplay_ extends PixelDisplay:
   background_ := three_color.WHITE
 
-  constructor driver/AbstractDriver:
-    super driver
+  constructor driver/AbstractDriver --inverted/bool=false --portrait/bool=false --transform/Transform?=null:
+    super driver --inverted=inverted --portrait=portrait --transform=transform
 
   max_canvas_height_ width:
     width_rounded := round_up width 8
@@ -729,8 +738,8 @@ This class keeps track of the list of things to draw, and
 See https://docs.toit.io/language/sdk/display
 */
 class GrayScalePixelDisplay extends PixelDisplay:
-  constructor driver/AbstractDriver:
-    super driver
+  constructor driver/AbstractDriver --inverted/bool=false --portrait/bool=false --transform/Transform?=null:
+    super driver --inverted=inverted --portrait=portrait --transform=transform
     background_ = gray_scale.WHITE
 
   background= color/int -> none:
@@ -809,8 +818,8 @@ This class keeps track of the list of things to draw, and
 See https://docs.toit.io/language/sdk/display
 */
 class SeveralColorPixelDisplay extends PixelDisplay:
-  constructor driver/AbstractDriver:
-    super driver
+  constructor driver/AbstractDriver --inverted/bool=false --portrait/bool=false --transform/Transform?=null:
+    super driver --inverted=inverted --portrait=portrait --transform=transform
     background_ = 0
 
   background= color/int -> none:
@@ -889,8 +898,8 @@ This class keeps track of the list of things to draw, and
 See https://docs.toit.io/language/sdk/display
 */
 class TrueColorPixelDisplay extends PixelDisplay:
-  constructor driver/AbstractDriver:
-    super driver
+  constructor driver/AbstractDriver --inverted/bool=false --portrait/bool=false --transform/Transform?=null:
+    super driver --inverted=inverted --portrait=portrait --transform=transform
     background_ = true_color.WHITE
 
   background= color/int -> none:

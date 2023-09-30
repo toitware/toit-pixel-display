@@ -354,6 +354,14 @@ abstract class PngVisualizingDriver_ extends AbstractDriver:
 
     writeable.close
 
+SEVERAL_WHITE ::= 0
+SEVERAL_BLACK ::= 1
+SEVERAL_RED ::= 2
+SEVERAL_GREEN ::= 3
+SEVERAL_BLUE ::= 4
+SEVERAL_YELLOW ::= 5
+SEVERAL_ORANGE ::= 6
+
 byte_swap_ ba/ByteArray -> ByteArray:
   result := ba.copy
   byte_swap_32 result
