@@ -244,11 +244,8 @@ abstract class PixelDisplay implements Window:
   */
   add texture/Texture -> none:
     textures_.add texture
-    if texture is SizedTexture or texture is Element:
-      texture.change_tracker = this
-      texture.invalidate
-    else:
-      throw "Not a valid texture"
+    texture.change_tracker = this
+    texture.invalidate
 
   /**
   Removes a texture that was previously added.  You cannot remove a background
@@ -303,9 +300,13 @@ abstract class PixelDisplay implements Window:
     step := round_up
         max_canvas_height_ driver_.width
         8
-    canvas := create_canvas_ 0 0 w step
+    canvas := create_canvas_ w step
     List.chunk_up 0 (round_up driver_.height 8) step: | top bottom |
+      // For the Textures.
+      canvas.x_offset_ = 0
       canvas.y_offset_ = top
+      // For the Elements.
+      canvas.transform = (transform_.translate 0 -top).invert
       canvas.set_all_pixels background_
       textures_.do: it.write canvas
       draw_ 0 top driver_.width bottom canvas
@@ -400,16 +401,27 @@ abstract class PixelDisplay implements Window:
             redraw_rect_ dirty_left dirty_top dirty_right+8 dirty_bottom+8
 
   redraw_rect_ left/int top/int right/int bottom/int -> none:
-    canvas := create_canvas_ left top (right - left) (bottom - top)
+    canvas := create_canvas_ (right - left) (bottom - top)
+    // For the Textures:
+    canvas.x_offset_ = left
+    canvas.y_offset_ = top
+    // For the Elements:
+    canvas.transform = (transform_.translate -left -top).invert
+
     canvas.set_all_pixels background_
-    textures_.do: it.write canvas
+    textures_.do:
+      if it is SizedTexture:
+        it.write canvas
+      else:
+        it.draw canvas
+
     draw_ left top right bottom canvas
 
   abstract max_canvas_height_ width/int -> int
 
   canvas_height_rounding_: return 1
 
-  abstract create_canvas_ x/int y/int w/int h/int -> AbstractCanvas
+  abstract create_canvas_ w/int h/int -> AbstractCanvas
 
   abstract draw_ x y w h canvas/AbstractCanvas -> none
 
@@ -530,8 +542,8 @@ class TwoColorPixelDisplay extends PixelDisplay:
 
   canvas_height_rounding_: return 8
 
-  create_canvas_ x/int y/int w/int h/int -> AbstractCanvas:
-    return two_color.Canvas w h x y
+  create_canvas_ w/int h/int -> AbstractCanvas:
+    return two_color.Canvas w h
 
   draw_ x/int y/int w/int h/int canvas/two_color.Canvas -> none:
       driver_.draw_two_color x y w h canvas.pixels_
@@ -702,8 +714,8 @@ abstract class TwoBitPixelDisplay_ extends PixelDisplay:
 
   canvas_height_rounding_: return 8
 
-  create_canvas_ x/int y/int w/int h/int -> AbstractCanvas:
-    return three_color.Canvas w h x y
+  create_canvas_ w/int h/int -> AbstractCanvas:
+    return three_color.Canvas w h
 
   draw_ x/int y/int w/int h/int canvas/three_color.Canvas -> none:
     driver_.draw_two_bit x y w h canvas.plane_0_ canvas.plane_1_
@@ -782,8 +794,8 @@ class GrayScalePixelDisplay extends PixelDisplay:
     // We can't work well with canvases that are less than 4 pixels tall.
     return height < 8 ? 4 : height
 
-  create_canvas_ x/int y/int w/int h/int -> AbstractCanvas:
-    return gray_scale.Canvas w h x y
+  create_canvas_ w/int h/int -> AbstractCanvas:
+    return gray_scale.Canvas w h
 
   draw_ x/int y/int w/int h/int canvas/gray_scale.Canvas -> none:
     driver_.draw_gray_scale x y w h canvas.pixels_
@@ -862,8 +874,8 @@ class SeveralColorPixelDisplay extends PixelDisplay:
     // We can't work well with canvases that are less than 4 pixels tall.
     return height < 8 ? 4 : height
 
-  create_canvas_ x/int y/int w/int h/int -> AbstractCanvas:
-    return several_color.Canvas w h x y
+  create_canvas_ w/int h/int -> AbstractCanvas:
+    return several_color.Canvas w h
 
   draw_ x/int y/int w/int h/int canvas/several_color.Canvas -> none:
     driver_.draw_several_color x y w h canvas.pixels_
@@ -943,8 +955,8 @@ class TrueColorPixelDisplay extends PixelDisplay:
     // We can't work well with canvases that are less than 4 pixels tall.
     return max 4 height
 
-  create_canvas_ x/int y/int w/int h/int -> AbstractCanvas:
-    return true_color.Canvas w h x y
+  create_canvas_ w/int h/int -> AbstractCanvas:
+    return true_color.Canvas w h
 
   draw_ x/int y/int w/int h/int canvas/true_color.Canvas -> none:
     driver_.draw_true_color x y w h canvas.red_ canvas.green_ canvas.blue_

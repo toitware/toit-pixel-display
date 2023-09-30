@@ -41,6 +41,23 @@ class Transform:
               a1 * o4 + a3 * o5 + array_[5]]
     return Transform.with_ array
 
+  invert -> Transform:
+    a0 := array_[0]
+    a1 := array_[1]
+    a2 := array_[2]
+    a3 := array_[3]
+    // The scaling of the transform is always 1, so we don't need to do anything about that.
+    assert: a0 * a3 - a1 * a2 == 1
+    return Transform.with_ [a3, -a1, -a2, a0, -a3 * array_[4] + a2 * array_[5], a1 * array_[4] - a0 * array_[5]]
+
+  operator == other/Transform -> bool:
+    return array_[0] == other.array_[0] and
+           array_[1] == other.array_[1] and
+           array_[2] == other.array_[2] and
+           array_[3] == other.array_[3] and
+           array_[4] == other.array_[4] and
+           array_[5] == other.array_[5]
+
   /**
   Finds the extent of a rectangle after it has been transformed with the transform.
     $x_in: The left edge before the transformation is applied.
@@ -63,6 +80,23 @@ class Transform:
     w2 := w_transformed.abs
     h2 := h_transformed.abs
     block.call x2 y2 w2 h2
+
+  /**
+  Finds a point and an orientation after it has been transformed with the transform.
+    $x_in: The x coordinate before the transformation is applied.
+    $y_in: The y coordinate before the transformation is applied.
+    $o_in: The orientation before the transformation is applied.
+    $block: A block that is called with arguments x y orientation in the transformed coordinate space.
+  */
+  xyo x_in/int y_in/int o_in/int [block]:
+    x_transformed := x x_in y_in
+    y_transformed := y x_in y_in
+    o_transformed/int := ?
+    if array_[0] > 0: o_transformed = o_in + ORIENTATION_0
+    if array_[1] < 0: o_transformed = o_in + ORIENTATION_90
+    if array_[0] < 0: o_transformed = o_in + ORIENTATION_180
+    else:             o_transformed = o_in + ORIENTATION_270
+    block.call x_transformed y_transformed o_transformed
 
   /**
   Returns a new transform which represents this transform rotated left
@@ -141,15 +175,13 @@ class Transform:
     return width * array_[1] + height * array_[3]
 
 abstract class AbstractCanvas:
-  width_ / int
-  height_ / int
-  x_offset_ / int := ?
-  y_offset_ / int := ?
+  width_ / int                    // Used by both Textures and Elements.
+  height_ / int                   // Only used by Textures.
+  x_offset_ / int := 0            // Only used by Textures.
+  y_offset_ / int := 0            // Only used by Textures.
+  transform / Transform? := null  // Only used by Elements.
 
-  // If we use the drawing operations on the canvas we need this to be set.
-  transform / Transform? := null
-
-  constructor .width_ .height_ .x_offset_ .y_offset_ --.transform=null:
+  constructor .width_ .height_:
 
   abstract create_similar -> AbstractCanvas
 
@@ -175,6 +207,8 @@ abstract class AbstractCanvas:
       throw "LINE_NOT_HORIZONTAL_OR_VERTICAL"
 
   abstract rectangle x/int y/int --w/int --h/int --color/int -> none
+
+  abstract text x/int y/int --text/string --color/int --font/Font --orientation/int
 
 /**
 Something you can draw on a canvas.  It could be a text string, a pixmap or
@@ -314,7 +348,7 @@ class TextElement extends ColoredElement:
   Calls the block with the left, top, width, and height.
   For zero sized objects, doesn't call the block.
   */
-  xywh [block]:
+  xywh_ [block]:
     if not text_: return
     if not left_:
       extent/List := font_.text_extent text_
@@ -347,7 +381,7 @@ class TextElement extends ColoredElement:
 
   invalidate:
     if change_tracker and text_:
-      xywh: | x y w h |
+      xywh_: | x y w h |
         change_tracker.child_invalidated_element x y w h
 
   text= value/string? -> none:
@@ -363,7 +397,11 @@ class TextElement extends ColoredElement:
     invalidate
 
   draw canvas /AbstractCanvas -> none:
-    //canvas.text x_ y_ font_ orientation_ text_ color_
+    if alignment_ != TEXT_TEXTURE_ALIGN_LEFT:
+      text_width := font_.pixel_width text_
+      if alignment_ == TEXT_TEXTURE_ALIGN_CENTER: text_width >>= 1
+      x_ -= text_width
+    canvas.text x_ y_ --text=text_ --color=color_ --font=font_ --orientation=orientation_
 
 /**
 Most $Texture s have a size and know their own position in the scene, and are
@@ -1123,9 +1161,13 @@ abstract class WindowTexture_ extends BorderlessWindow_ implements Window:
     frame_canvas := null
     if not is_all_transparent frame_opacity:
       frame_canvas = canvas.create_similar
+      frame_canvas.x_offset_ = canvas.x_offset_
+      frame_canvas.y_offset_ = canvas.y_offset_
       draw_frame frame_canvas
 
     painting_canvas := canvas.create_similar
+    painting_canvas.x_offset_ = canvas.x_offset_
+    painting_canvas.y_offset_ = canvas.y_offset_
     draw_background painting_canvas
     elements_.do: it.write_ painting_canvas
 

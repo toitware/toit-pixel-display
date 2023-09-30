@@ -168,7 +168,7 @@ test_draw_on_pbm:
     40.repeat: | y |
       texture.clear_pixel x y
 
-  canvas := two_color.Canvas 128 128 0 0
+  canvas := two_color.Canvas 128 128
 
   // Draw on a two color canvas.
   texture.write canvas
@@ -178,6 +178,6 @@ test_draw_on_pbm:
 
   // The same for a byte-oriented texture.
   texture_gray := gray_scale.PbmTexture 0 0 Transform.identity 255 toit_logo
-  canvas_gray := gray_scale.Canvas 128 128 0 0
+  canvas_gray := gray_scale.Canvas 128 128
   texture_gray.write canvas_gray
   canvas_gray.pixels_.do: expect_equals 0 it

@@ -34,12 +34,12 @@ class Canvas extends AbstractCanvas:
   green_ := ?
   blue_ := ?
 
-  constructor width/int height/int x_offset/int y_offset/int:
+  constructor width/int height/int:
     size := width * height
     red_ = ByteArray size
     green_ = ByteArray size
     blue_ = ByteArray size
-    super width height x_offset y_offset
+    super width height
 
   stringify:
     return "true_color.Canvas $(width_)x$height_"
@@ -57,7 +57,7 @@ class Canvas extends AbstractCanvas:
   Creates a blank texture with the same dimensions as this one.
   */
   create_similar:
-    return Canvas width_ height_ x_offset_ y_offset_
+    return Canvas width_ height_
 
   composit frame_opacity frame_canvas/Canvas? painting_opacity painting_canvas/Canvas:
     composit_bytes red_ frame_opacity (frame_canvas ? frame_canvas.red_ : null) painting_opacity painting_canvas.red_ false
@@ -72,6 +72,15 @@ class Canvas extends AbstractCanvas:
       bytemap_rectangle x y r w2 h2 red_   width_
       bytemap_rectangle x y g w2 h2 green_ width_
       bytemap_rectangle x y b w2 h2 blue_  width_
+
+  text x/int y/int --text/string --color/int --font/Font --orientation/int=ORIENTATION_0:
+    transform.xyo x y orientation: | x2 y2 o2 |
+      r := color >> 16
+      g := (color >> 8) & 0xff
+      b := color & 0xff
+      bytemap_draw_text x y r o2 text font red_ width_
+      bytemap_draw_text x y g o2 text font green_ width_
+      bytemap_draw_text x y b o2 text font blue_ width_
 
 class FilledRectangle extends FilledRectangle_:
   color_ := ?

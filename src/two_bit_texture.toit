@@ -16,13 +16,13 @@ class TwoBitCanvas_ extends AbstractCanvas:
   plane_0_ := ?
   plane_1_ := ?
 
-  constructor width/int height/int x_offset/int y_offset/int:
+  constructor width/int height/int:
     assert: height & 7 == 0
     size := (width * height) >> 3
     assert: size <= 4000
     plane_0_ = ByteArray size
     plane_1_ = ByteArray size
-    super width height x_offset y_offset
+    super width height
 
   set_all_pixels color/int -> none:
     bitmap_zap plane_0_ (color & 1)
@@ -39,7 +39,7 @@ class TwoBitCanvas_ extends AbstractCanvas:
   Creates a blank texture with the same dimensions as this one.
   */
   create_similar:
-    return TwoBitCanvas_ width_ height_ x_offset_ y_offset_
+    return TwoBitCanvas_ width_ height_
 
   composit frame_opacity frame_canvas painting_opacity painting_canvas/TwoBitCanvas_:
     composit_bytes plane_0_ frame_opacity (frame_canvas ? frame_canvas.plane_0_ : null) painting_opacity painting_canvas.plane_0_ true
@@ -50,6 +50,13 @@ class TwoBitCanvas_ extends AbstractCanvas:
       c2 := (color & 2) >> 1
       bitmap_rectangle x y (color & 1) w2 h2 plane_0_ width_
       bitmap_rectangle x y c2          w2 h2 plane_1_ width_
+
+  text x/int y/int --text/string --color/int --font/Font --orientation/int=ORIENTATION_0:
+    transform.xyo x y orientation: | x2 y2 o2 |
+      b0 := color & 1
+      b1 := (color >> 1) & 1
+      bitmap_draw_text x y b0 o2 text font plane_0_ width_
+      bitmap_draw_text x y b1 o2 text font plane_1_ width_
 
 class TwoBitFilledRectangle_ extends FilledRectangle_:
   color_ := ?

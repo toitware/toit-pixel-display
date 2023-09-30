@@ -23,12 +23,12 @@ TRANSPARENT ::= 3
 class Canvas extends AbstractCanvas:
   pixels_ := ?
 
-  constructor width/int height/int x_offset/int y_offset/int:
+  constructor width/int height/int:
     assert: height & 7 == 0
     size := (width * height) >> 3
     assert: size <= 4000
     pixels_ = ByteArray size
-    super width height x_offset y_offset
+    super width height
 
   set_all_pixels color/int -> none:
     bitmap_zap pixels_ (color & 1)
@@ -42,7 +42,7 @@ class Canvas extends AbstractCanvas:
   Creates a blank texture with the same dimensions as this one.
   */
   create_similar -> Canvas:
-    return Canvas width_ height_ x_offset_ y_offset_
+    return Canvas width_ height_
 
   composit frame_opacity frame_canvas/Canvas? painting_opacity painting_canvas/Canvas:
     composit_bytes pixels_ frame_opacity (frame_canvas ? frame_canvas.pixels_ : null) painting_opacity painting_canvas.pixels_ true
@@ -50,6 +50,10 @@ class Canvas extends AbstractCanvas:
   rectangle x/int y/int --w/int --h/int --color/int:
     transform.xywh x y w h: | x2 y2 w2 h2 |
       bitmap_rectangle x y color w2 h2 pixels_ width_
+
+  text x/int y/int --text/string --color/int --font/Font --orientation/int=ORIENTATION_0:
+    transform.xyo x y orientation: | x2 y2 o2 |
+      bitmap_draw_text x y color o2 text font pixels_ width_
 
 class FilledRectangle extends FilledRectangle_:
   color_ := ?

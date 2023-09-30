@@ -22,14 +22,14 @@ BLACK ::= 0
 // The canvas contains a ByteArray.
 // Initially all pixels have the 0 color.
 class Canvas extends OneByteCanvas_:
-  constructor width/int height/int x_offset/int y_offset/int:
-    super width height x_offset y_offset
+  constructor width/int height/int:
+    super width height
 
   /**
   Creates a blank texture with the same dimensions as this one.
   */
   create_similar:
-    return Canvas width_ height_ x_offset_ y_offset_
+    return Canvas width_ height_
 
 class FilledRectangle extends OneByteFilledRectangle_:
   constructor color/int x/int y/int w/int h/int transform/Transform:

@@ -147,20 +147,24 @@ histogram_factory version x y w h color orientation:
   unreachable
 
 canvas_factory version w h x y:
+  result := ?
   if version == THREE_COLOR:
-    return three_color.Canvas w h x y
+    result = three_color.Canvas w h
   else if version == TWO_COLOR:
-    return two_color.Canvas w h x y
+    result = two_color.Canvas w h
   else if version == FOUR_GRAY:
-    return four_gray.Canvas w h x y
+    result = four_gray.Canvas w h
   else:
-    return true_color.Canvas w h x y
+    result = true_color.Canvas w h
+  result.x_offset_ = x
+  result.y_offset_ = y
+  return result
 
 test_simple_three_color:
   red_bg := three_color.RED
 
   // A little 8x8 canvas to draw on.
-  canvas := three_color.Canvas 8 8 0 0
+  canvas := three_color.Canvas 8 8
 
   // Fill the canvas with red.
   canvas.set_all_pixels red_bg
@@ -170,7 +174,7 @@ test_simple_three_color:
 
 test_simple_four_gray:
   // A little 8x8 canvas to draw on.
-  canvas := four_gray.Canvas 8 8 0 0
+  canvas := four_gray.Canvas 8 8
 
   // Fill the canvas with light gray.
   canvas.set_all_pixels four_gray.LIGHT_GRAY
@@ -180,7 +184,7 @@ test_simple_four_gray:
 
 test_simple_two_color:
   // A little 8x8 canvas to draw on.
-  canvas := two_color.Canvas 8 8 0 0
+  canvas := two_color.Canvas 8 8
 
   8.repeat: | x | 8.repeat: | y |
     expect (canvas.get_pixel_ x y) == two_color.WHITE
@@ -195,7 +199,7 @@ test_simple_true_color:
   bluish := true_color.get_rgb 0x12 0x34 0x56
 
   // A little 8x8 canvas to draw on.
-  canvas := true_color.Canvas 8 8 0 0
+  canvas := true_color.Canvas 8 8
 
   black := true_color.get_rgb 0 0 0
 
@@ -269,7 +273,9 @@ test_with_transparency:
     3.repeat: | xi | 3.repeat: | yi |
       x := (xi - 1) * 8
       y := (yi - 1) * 8
-      canvas := three_color.Canvas 16 16 x y  // Starts off white.
+      canvas := three_color.Canvas 16 16  // Starts off white.
+      canvas.x_offset_ = x
+      canvas.y_offset_ = y
       // The canvas is placed in various places (8-aligned) and we render our scene onto it.
       red_circle.write canvas
       prime_image.write canvas
@@ -432,7 +438,7 @@ barcode_test:
   if not bitmap_primitives_present:
     return
   barcode := three_color.BarCodeEan13 "5017239191589" 10 10 Transform.identity
-  canvas := three_color.Canvas 128 104 0 0  // Starts off white.
+  canvas := three_color.Canvas 128 104  // Starts off white.
   barcode.write canvas
 
   expect (barcode.l_ 0) == 0x0d

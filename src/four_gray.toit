@@ -26,8 +26,8 @@ BLACK ::= 3
 //   1    1   Black
 // Starts off with all pixels white.
 class Canvas extends TwoBitCanvas_:
-  constructor width/int height/int x_offset/int y_offset/int:
-    super width height x_offset y_offset
+  constructor width/int height/int:
+    super width height
 
 class FilledRectangle extends TwoBitFilledRectangle_:
   constructor color x/int y/int w/int h/int transform/Transform:
