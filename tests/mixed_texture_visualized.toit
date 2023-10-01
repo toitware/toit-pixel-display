@@ -17,7 +17,7 @@ main args:
     exit 1
   driver := SeveralColorPngVisualizer 160 64 args[0] --outline=SEVERAL_WHITE
   display := SeveralColorPixelDisplay driver
-  display.background = SEVERAL_BLACK
+  display.background = SEVERAL_GRAY
 
   ctx := display.context --landscape --color=SEVERAL_ORANGE
 

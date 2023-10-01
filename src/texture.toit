@@ -102,7 +102,7 @@ class Transform:
     else if array_[1] < 0: o_transformed = o_in + ORIENTATION_90
     else if array_[0] < 0: o_transformed = o_in + ORIENTATION_180
     else:                  o_transformed = o_in + ORIENTATION_270
-    block.call x_transformed y_transformed o_transformed
+    block.call x_transformed y_transformed (o_transformed & 3)
 
   /**
   Returns a new transform which represents this transform rotated left
@@ -360,7 +360,7 @@ class TextElement extends ColoredElement:
       extent/List := font_.text_extent text_
       displacement := 0
       if alignment_ != TEXT_TEXTURE_ALIGN_LEFT:
-        displacement = -(font_.pixel_width text_)
+        displacement = (font_.pixel_width text_)
         if alignment_ == TEXT_TEXTURE_ALIGN_CENTER: displacement >>= 1
       l := extent[2] - displacement
       r := extent[2] - displacement + extent[0]
@@ -384,7 +384,7 @@ class TextElement extends ColoredElement:
       else:
         assert: orientation_ == ORIENTATION_270
         left_   = b
-        top_    = -l
+        top_    = l
         width_  = extent[1]
         height_ = extent[0]
     block.call (x_ + left_) (y_ + top_) width_ height_
@@ -406,12 +406,28 @@ class TextElement extends ColoredElement:
     left_ = null  // Trigger recalculation.
     invalidate
 
+  alignment= value/int -> none:
+    invalidate
+    alignment_ = value
+    left_ = null  // Trigger recalculation.
+    invalidate
+
   draw canvas /AbstractCanvas -> none:
+    x := x_
+    y := y_
     if alignment_ != TEXT_TEXTURE_ALIGN_LEFT:
       text_width := font_.pixel_width text_
       if alignment_ == TEXT_TEXTURE_ALIGN_CENTER: text_width >>= 1
-      x_ -= text_width
-    canvas.text x_ y_ --text=text_ --color=color_ --font=font_ --orientation=orientation_
+      if orientation_ == ORIENTATION_0:
+        x -= text_width
+      else if orientation_ == ORIENTATION_90:
+        y += text_width
+      else if orientation_ == ORIENTATION_180:
+        x += text_width
+      else:
+        assert: orientation_ == ORIENTATION_270
+        y -= text_width
+    canvas.text x y --text=text_ --color=color_ --font=font_ --orientation=orientation_
 
 /**
 Most $Texture s have a size and know their own position in the scene, and are

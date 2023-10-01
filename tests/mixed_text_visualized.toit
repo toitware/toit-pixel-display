@@ -19,7 +19,7 @@ main args:
     exit 1
   driver := SeveralColorPngVisualizer 192 96 args[0] --outline=SEVERAL_WHITE
   display := SeveralColorPixelDisplay driver
-  display.background = SEVERAL_BLACK
+  display.background = SEVERAL_GRAY
 
   sans10 := Font.get "sans10"
 
@@ -48,17 +48,26 @@ main args:
   element_text.orientation = ORIENTATION_90
   display.draw
 
-  element_text_2.orientation = ORIENTATION_90
-  display.draw
-
   element_text.orientation = ORIENTATION_180
-  display.draw
-
-  element_text_2.orientation = ORIENTATION_180
   display.draw
 
   element_text.orientation = ORIENTATION_270
   display.draw
 
-  element_text_2.orientation = ORIENTATION_270
+  element_text.orientation = ORIENTATION_0
+  display.draw
+
+  element_text.alignment = TEXT_TEXTURE_ALIGN_CENTER
+  display.draw
+
+  element_text.alignment = TEXT_TEXTURE_ALIGN_RIGHT
+  display.draw
+
+  element_text.orientation = ORIENTATION_90
+  display.draw
+
+  element_text.orientation = ORIENTATION_180
+  display.draw
+
+  element_text.orientation = ORIENTATION_270
   display.draw
