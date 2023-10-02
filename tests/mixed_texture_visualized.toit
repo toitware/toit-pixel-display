@@ -8,7 +8,6 @@
 import expect show *
 import pixel_display show *
 import pixel_display.texture show *
-import pixel_display.true_color show *
 import .png-visualizer
 
 main args:
