@@ -4,6 +4,7 @@
 
 // Mixes texture-based and element-based text on the same display to test
 // that they are positioned in the same way and the redraw boxes are right.
+// Uses a rotated frame (portrait mode).
 
 import bitmap show *
 import expect show *
@@ -28,7 +29,7 @@ main args:
   // Texture-based text.
   texture_text := display.text (ctx.with --color=SEVERAL_BLUE) 10 20 "Texture 1"
   texture_text_2 := display.text (ctx.with --color=SEVERAL_BLUE) 10 65 "Texture 2"
-  // Slightlly smaller element-based rectangle.
+  // Element-based text.
   element_text := TextElement 10 30 --color=SEVERAL_GREEN --font=sans10 --text="Element 1"
   element_text_2 := TextElement 10 110 --color=SEVERAL_GREEN --font=sans10 --text="Element 2"
   display.add element_text

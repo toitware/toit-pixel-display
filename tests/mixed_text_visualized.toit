@@ -2,7 +2,7 @@
 // Use of this source code is governed by a Zero-Clause BSD license that can
 // be found in the TESTS_LICENSE file.
 
-// Mixes texture-based and element-based rectangles on the same display to test
+// Mixes texture-based and element-based text on the same display to test
 // that they are positioned in the same way and the redraw boxes are right.
 
 import bitmap show *
@@ -28,7 +28,7 @@ main args:
   // Texture-based text.
   texture_text := display.text (ctx.with --color=SEVERAL_BLUE) 30 20 "Texture"
   texture_text_2 := display.text (ctx.with --color=SEVERAL_BLUE) 80 20 "Texture"
-  // Slightlly offset element-based rectangle.
+  // Element-based rectangles.
   element_text := TextElement 30 30 --color=SEVERAL_ORANGE --text="joo%" --font=sans10
   element_text_2 := TextElement 130 20 --color=SEVERAL_ORANGE --text="joo%" --font=sans10
   display.add element_text

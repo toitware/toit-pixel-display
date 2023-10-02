@@ -4,6 +4,7 @@
 
 // Mixes texture-based and element-based rectangles on the same display to test
 // that they are positioned in the same way and the redraw boxes are right.
+// Uses a rotated frame (portrait mode).
 
 import expect show *
 import pixel_display show *
@@ -24,7 +25,7 @@ main args:
   // Texture-based rectangle.
   texture_rect := display.filled_rectangle (ctx.with --color=SEVERAL_BLUE) 10 20 30 20
   texture_rect_2 := display.filled_rectangle (ctx.with --color=SEVERAL_BLUE) 10 65 30 20
-  // Slightlly smaller element-based rectangle.
+  // Slightly smaller element-based rectangle.
   element_rect := RectangleElement 11 21 --w=28 --h=18 --color=SEVERAL_BLACK
   element_rect_2 := RectangleElement 10 110 --w=30 --h=20 --color=SEVERAL_GREEN
   display.add element_rect

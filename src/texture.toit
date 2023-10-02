@@ -278,6 +278,7 @@ abstract class ColoredElement extends Element:
   color -> int?: return color_
 
   color= value/int -> none:
+    if value == color_: return
     invalidate
     color_ = value
 
@@ -395,18 +396,28 @@ class TextElement extends ColoredElement:
         change_tracker.child_invalidated_element x y w h
 
   text= value/string? -> none:
+    if value == text_: return
+    if orientation_ == ORIENTATION_0 and change_tracker and text_:
+      TextTexture_.get_bounding_boxes_ text_ value alignment_ font_: | old/TextExtent_ new/TextExtent_ |
+        change_tracker.child_invalidated_element (x_ + old.x) (y_ + old.y) old.w old.h
+        change_tracker.child_invalidated_element (x_ + new.x) (y_ + new.y) new.w new.h
+        text_ = value
+        left_ = null  // Trigger recalculation.
+        return
     invalidate
     text_ = value
     left_ = null  // Trigger recalculation.
     invalidate
 
   orientation= value/int -> none:
+    if value == orientation_: return
     invalidate
     orientation_ = value
     left_ = null  // Trigger recalculation.
     invalidate
 
   alignment= value/int -> none:
+    if value == alignment_: return
     invalidate
     alignment_ = value
     left_ = null  // Trigger recalculation.
@@ -823,9 +834,8 @@ abstract class TextTexture_ extends SizedTexture:
     left_doesnt_move  := alignment == TEXT_TEXTURE_ALIGN_LEFT
     right_doesnt_move := alignment == TEXT_TEXTURE_ALIGN_RIGHT
     // If the rendered length does not change then both ends don't move.
-    // for center alignment it gets a little harder to detect which part of the
-    // display to invalidate so we don't bother with this case for now.
-    if alignment != TEXT_TEXTURE_ALIGN_CENTER and (font.pixel_width old) == (font.pixel_width new):
+    pixel_width_old := font.pixel_width old
+    if pixel_width_old == (font.pixel_width new):
       left_doesnt_move = true
       right_doesnt_move = true
     l := min old.size new.size
@@ -853,14 +863,22 @@ abstract class TextTexture_ extends SizedTexture:
       changed_new := new.copy unchanged_left (new.size - unchanged_right)
       changed_extent_old := TextExtent_ changed_old font alignment
       changed_extent_new := TextExtent_ changed_new font alignment
-      unchanged_width := 0
       if alignment == TEXT_TEXTURE_ALIGN_LEFT:
-        unchanged_width = font.pixel_width (old.copy 0 unchanged_left)
+        unchanged_width := font.pixel_width old[..unchanged_left]
+        changed_extent_old.x += unchanged_width
+        changed_extent_new.x += unchanged_width
+      else if alignment == TEXT_TEXTURE_ALIGN_RIGHT:
+        unchanged_width := font.pixel_width old[old.size - unchanged_right..]
+        // Make x relative to the text origin, which is the right edge.
+        changed_extent_old.x -= unchanged_width
+        changed_extent_new.x -= unchanged_width
       else:
-        assert: alignment == TEXT_TEXTURE_ALIGN_RIGHT
-        unchanged_width = -(font.pixel_width (old.copy old.size - unchanged_right old.size))
-      changed_extent_old.x += unchanged_width
-      changed_extent_new.x += unchanged_width
+        assert: alignment == TEXT_TEXTURE_ALIGN_CENTER
+        assert: pixel_width_old == (font.pixel_width new)
+        // Make x relative to the text origin, which is the middle.
+        unchanged_width := (pixel_width_old >> 1) - (font.pixel_width old[..unchanged_left])
+        changed_extent_old.x -= unchanged_width + changed_extent_old.displacement
+        changed_extent_new.x -= unchanged_width + changed_extent_new.displacement
       block.call changed_extent_old changed_extent_new
 
   invalidate_extent_ ex:
