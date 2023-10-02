@@ -215,6 +215,7 @@ abstract class AbstractCanvas:
   abstract rectangle x/int y/int --w/int --h/int --color/int -> none
 
   abstract text x/int y/int --text/string --color/int --font/Font --orientation/int
+  abstract text x/int y/int --text/string --color/int --font/Font
 
 /**
 Something you can draw on a canvas.  It could be a text string, a pixmap or
@@ -439,6 +440,128 @@ class TextElement extends ColoredElement:
         assert: orientation_ == ORIENTATION_270
         y -= text_width
     canvas.text x y --text=text_ --color=color_ --font=font_ --orientation=orientation_
+
+/**
+A superclass for elements that can draw themselves.  Override the
+  $draw method in your subclass to draw on the canvas.  The $w
+  and $h methods/fields are used to determine the size of the element
+  for redrawing purposes.
+
+Drawing operations are not automatically clipped to w and h, but if you
+  draw outside the area then partial screen updates will be broken.
+*/
+abstract class CustomElement extends Element:
+  abstract w -> int
+  abstract h -> int
+
+  constructor x/int?=null y/int?=null:
+    super x y
+
+  invalidate:
+    if change_tracker:
+      change_tracker.child_invalidated_element x y w h
+
+// Element that draws a standard EAN-13 bar code.  TODO: Other scales.
+class BarCodeEanElement extends CustomElement:
+  w/int
+  h/int
+  foreground/int
+  background/int
+  sans10_ ::= Font.get "sans10"
+  number_height_ := EAN_13_BOTTOM_SPACE
+
+  code_ := ?  // 13 digit code as a string.
+
+  code= value/string -> none:
+    if value != code_: invalidate
+    code_ = value
+
+  code -> string: return code_
+
+  /**
+  $code_: The 13 digit product code.
+  $x: The left edge of the barcode in the coordinate system of the transform.
+  $y: The top edge of the barcode in the coordinate system of the transform.
+  $background should normally be white and foreground should normally be black.
+  */
+  constructor .code_/string x/int y/int --.background/int --.foreground/int:
+    // The numbers go below the bar code in a way that depends on the size
+    // of the digits, so we need to take that into account when calculating
+    // the bounding box.
+    number_height_ = (sans10_.text_extent "8")[1]
+    height := EAN_13_HEIGHT + number_height_ - EAN_13_BOTTOM_SPACE
+    w = EAN_13_WIDTH
+    h = height + 1
+    super x y
+
+  l_ digit:
+    return EAN_13_L_CODES_[digit & 0xf]
+
+  g_ digit:
+    return EAN_13_G_CODES_[digit & 0xf]
+
+  r_ digit:
+    return (l_ digit) ^ 0x7f
+
+  // Make a white background behind the bar code and draw the digits along the bottom.
+  draw_background_ canvas/AbstractCanvas:
+    canvas.rectangle x_ y_ --w=w --h=h --color=background
+
+    // Bar code coordinates.
+    text_x := x + EAN_13_QUIET_ZONE_WIDTH + EAN_13_START_WIDTH
+    text_y := y + EAN_13_HEIGHT + number_height_ - EAN_13_BOTTOM_SPACE + 1
+
+    canvas.text (x + 1) text_y --text=code_[..1] --color=foreground --font=sans10_
+
+    code_[1..7].split "":
+      if it != "":
+        canvas.text text_x text_y --text=it --color=foreground --font=sans10_
+        text_x += EAN_13_DIGIT_WIDTH
+    text_x += EAN_13_MIDDLE_WIDTH - 1
+    code_[7..13].split "":
+      if it != "":
+        canvas.text text_x text_y --text=it --color=foreground --font=sans10_
+        text_x += EAN_13_DIGIT_WIDTH
+    marker_width := (sans10_.text_extent ">")[0]
+    text_x += EAN_13_START_WIDTH + EAN_13_QUIET_ZONE_WIDTH - marker_width
+    canvas.text text_x text_y --text=">" --color=foreground --font=sans10_
+
+  // Redraw routine.
+  draw canvas/AbstractCanvas:
+    draw_background_ canvas
+
+    x := x_ + EAN_13_QUIET_ZONE_WIDTH
+    top := y_
+    long_height := EAN_13_HEIGHT
+    short_height := EAN_13_HEIGHT - EAN_13_BOTTOM_SPACE
+    // Start bars: 101.
+    canvas.rectangle x     top --w=1 --h=long_height --color=foreground
+    canvas.rectangle x + 2 top --w=1 --h=long_height --color=foreground
+    x += 3
+    first_code := EAN_13_FIRST_CODES_[code_[0] & 0xf]
+    // Left digits using the L or G mapping.
+    for i := 1; i < 7; i++:
+      digit := code_[i]
+      code := ((first_code >> (6 - i)) & 1) == 0 ? (l_ digit) : (g_ digit)
+      for b := 6; b >= 0; b--:
+        if ((1 << b) & code) != 0:
+          canvas.rectangle x top --w=1 --h=short_height --color=foreground
+        x++
+    // Middle bars: 01010
+    canvas.rectangle x + 1 top --w=1 --h=long_height --color=foreground
+    canvas.rectangle x + 3 top --w=1 --h=long_height --color=foreground
+    x += 5
+    // Left digits using the R mapping.
+    for i := 7; i < 13; i++:
+      digit := code_[i]
+      code := r_ digit
+      for b := 6; b >= 0; b--:
+        if ((1 << b) & code) != 0:
+          canvas.rectangle x top --w=1 --h=short_height --color=foreground
+        x++
+    // End bars: 101.
+    canvas.rectangle x     top --w=1 --h=long_height --color=foreground
+    canvas.rectangle x + 2 top --w=1 --h=long_height --color=foreground
 
 /**
 Most $Texture s have a size and know their own position in the scene, and are
