@@ -269,28 +269,18 @@ abstract class Element extends Texture:
 
   abstract draw texture/Texture -> none
 
-abstract class ColoredElement extends Element:
-  color_/int? := ?
+interface ColoredElement:
+  color -> int?
+  color= value/int -> none
 
-  constructor x/int y/int --color/int?=null:
-    color_ = color
-    super x y
-
-  color -> int?: return color_
-
-  color= value/int -> none:
-    if value == color_: return
-    invalidate
-    color_ = value
-
-abstract class ResizableElement extends ColoredElement:
+abstract class ResizableElement extends Element:
   w_ /int? := null
   h_ /int? := null
 
-  constructor x/int?=null y/int?=null --color/int --w/int?=null --h/int?=null:
+  constructor x/int?=null y/int?=null --w/int?=null --h/int?=null:
     w_ = w
     h_ = h
-    super x y --color=color
+    super x y
 
   invalidate:
     if change_tracker:
@@ -315,19 +305,50 @@ abstract class ResizableElement extends ColoredElement:
     h_ = h
     invalidate
 
-class RectangleElement extends ResizableElement:
+abstract class RectangleElement extends ResizableElement implements ColoredElement:
+  color_ /int := ?
+
+  color -> int: return color_
+
+  color= value/int -> none:
+    if color_ != value:
+      color_ = value
+      invalidate
+
+  constructor x/int?=null y/int?=null --w/int --h/int --color/int:
+    color_ = color
+    super x y --w=w --h=h
+
+class FilledRectangleElement extends RectangleElement:
   constructor x/int y/int --w/int --h/int --color/int:
-    super x y --color=color --w=w --h=h
+    super x y --w=w --h=h --color=color
 
   draw canvas/AbstractCanvas -> none:
     canvas.rectangle x_ y_ --w=w_ --h=h_ --color=color_
 
-class OutlineRectangleElement extends ResizableElement:
+class OutlineRectangleElement extends RectangleElement:
   thickness_/int := ?
 
   constructor x/int y/int --w/int --h/int --color/int --thickness/int=1:
+    if thickness > (min h w): throw "INVALID_ARGUMENT"
     thickness_ = thickness
-    super x y --color=color --w=w --h=h
+    super x y --w=w --h=h --color=color
+
+  thickness -> int: return thickness_
+
+  thickness= value/int -> none:
+    if thickness_ != value:
+      if value > (min h_ w_): throw "INVALID_ARGUMENT"
+      thickness_ = max thickness_ value
+      invalidate
+      thickness_ = value
+
+  invalidate -> none:
+    if change_tracker:
+      change_tracker.child_invalidated_element x y w thickness
+      change_tracker.child_invalidated_element x y thickness h
+      change_tracker.child_invalidated_element x (y + h - thickness) w thickness
+      change_tracker.child_invalidated_element (x + w - thickness) y thickness h
 
   draw canvas /AbstractCanvas -> none:
     canvas.rectangle x_ y_                     --w=thickness_ --h=h_         --color=color_
@@ -335,7 +356,8 @@ class OutlineRectangleElement extends ResizableElement:
     canvas.rectangle (x_ + w_ - thickness_) y_ --w=thickness_ --h=h_         --color=color_
     canvas.rectangle x_ (y + h_ - thickness_)  --w=w_         --h=thickness_ --color=color_
 
-class TextElement extends ColoredElement:
+class TextElement extends Element implements ColoredElement:
+  color_/int := ?
   text_/string? := null
   alignment_/int := ?
   orientation_/int := ?
@@ -345,12 +367,20 @@ class TextElement extends ColoredElement:
   width_/int? := null
   height_/int? := null
 
+  color -> int: return color_
+
+  color= value/int -> none:
+    if color_ != value:
+      color_ = value
+      invalidate
+
   constructor x/int y/int --color/int --text/string?=null --font/Font --orientation/int=ORIENTATION_0 --alignment/int=TEXT_TEXTURE_ALIGN_LEFT:
+    color_ = color
     text_ = text
     alignment_ = alignment
     orientation_ = orientation
     font_ = font
-    super x y --color=color
+    super x y
 
   /**
   Calls the block with the left, top, width, and height.
