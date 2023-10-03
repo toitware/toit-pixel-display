@@ -319,6 +319,58 @@ abstract class RectangleElement extends ResizableElement implements ColoredEleme
     color_ = color
     super x y --w=w --h=h
 
+class GradientSpecifier:
+  color/int
+  percent/int
+
+  constructor --.color/int .percent/int:
+
+/**
+GradientElements are similar to CSS linear gradients and SVG gradients.
+They are given a list of $GradientSpecifiers, each of which has a color and
+  a percentage, indicating where in the gradient the color should appear.
+  The specifiers should be ordered in increasing order of perentage.
+Angles are as in CSS, with 0 degrees being up and 90 degrees being to the right
+  (this is different from text orientations, which go anti-clockwise).
+Example:
+```
+  gradient = GradientElement --w=200 --h=100 --angle=45
+      --specifiers=[
+          GradientSpecifier --color=0xff0000 10,    // Red from 0-10%, red-to-green from 10-50%.
+          GradientSpecifier --color=0x00ff00 50,    // Green-to-blue from 50-90%.
+          GradientSpecifier --color=0x0000ff 90,    // Blue from 90-100%.
+      ]
+  display.add gradient
+```
+*/
+class GradientElement extends ResizableElement:
+  angle_/int
+  specifiers_/List := ? // Of GradientSpecifiers.
+
+  constructor x/int?=null y/int?=null --w/int --h/int --angle/int --specifiers/List:
+    angle_ = angle
+    if specifiers.size == 0: throw "INVALID_ARGUMENT"
+    specifiers_ = specifiers.copy
+    validate_specifiers_ specifiers_
+    super x y --w=w --h=h
+
+  specifiers -> List: return specifiers_.copy
+
+  specifiers= value/List -> none:
+    validate_specifiers_ value
+    specifiers_ = value.copy
+    invalidate
+
+  static validate_specifiers_ specifiers -> none:
+    last_percent := 0
+    specifiers.do: | specifier/GradientSpecifier |
+      if specifier.percent < last_percent: throw "INVALID_ARGUMENT"
+      last_percent = specifier.percent
+      if last_percent > 100: throw "INVALID_ARGUMENT"
+
+  draw canvas/AbstractCanvas -> none:
+    // TODO
+
 class FilledRectangleElement extends RectangleElement:
   constructor x/int y/int --w/int --h/int --color/int:
     super x y --w=w --h=h --color=color
