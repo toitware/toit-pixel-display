@@ -1,4 +1,4 @@
-// Copyright (C) 2018 Toitware ApS. All rights reserved.
+// Copyright (C) 2023 Toitware ApS. All rights reserved.
 // Use of this source code is governed by an MIT-style license that can be
 // found in the LICENSE file.
 
@@ -554,54 +554,66 @@ abstract class TextTexture_ extends SizedTexture:
       string_ = new_string
       fix_bounding_box_
       return
-    left_doesnt_move  := alignment_ == TEXT_TEXTURE_ALIGN_LEFT
-    right_doesnt_move := alignment_ == TEXT_TEXTURE_ALIGN_RIGHT
-    // If the rendered length does not change then both ends don't move.
-    // for center alignment it gets a little harder to detect which part of the
-    // display to invalidate so we don't bother with this case for now.
-    if alignment_ != TEXT_TEXTURE_ALIGN_CENTER and (font_.pixel_width string_) == (font_.pixel_width new_string):
-      left_doesnt_move = true
-      right_doesnt_move = true
-    l := min string_.size new_string.size
-    unchanged_left := 0
-    unchanged_right := 0
-    if left_doesnt_move:
-      // Find out how many bytes are unchanged at the start of the string.
-      unchanged_left = l
-      for i := 0; i < l; i++:
-        if string_[i] != new_string[i]:
-          unchanged_left = i
-          break
-    if right_doesnt_move:
-      // Find out how many bytes are unchanged at the end of the string.
-      unchanged_right = l
-      last_character_start := 0  // Location (counting from end) of the start of the last UTF-8 sequence.
-      for i := 0; i < l; i++:
-        if string_[string_.size - 1 - i] != new_string[new_string.size - 1 - i]:
-          unchanged_right = last_character_start
-          break
-        else if string_[string_.size - 1 - i]:
-          last_character_start = i + 1
-    if unchanged_right != 0 or unchanged_left != 0:
-      changed_old := string_.copy unchanged_left (string_.size - unchanged_right)
-      changed_new := new_string.copy unchanged_left (new_string.size - unchanged_right)
-      changed_extent_old := TextExtent_ changed_old font_ alignment_
-      changed_extent_new := TextExtent_ changed_new font_ alignment_
-      unchanged_width := 0
-      if alignment_ == TEXT_TEXTURE_ALIGN_LEFT:
-        unchanged_width = font_.pixel_width (string_.copy 0 unchanged_left)
-      else:
-        assert: alignment_ == TEXT_TEXTURE_ALIGN_RIGHT
-        unchanged_width = -(font_.pixel_width (string_.copy string_.size - unchanged_right string_.size))
-      changed_extent_old.x += unchanged_width
-      changed_extent_new.x += unchanged_width
+
+    get_bounding_boxes_ string_ new_string alignment_ font_: | changed_extent_old/TextExtent_ changed_extent_new/TextExtent_ |
       invalidate_extent_ changed_extent_old
       invalidate_extent_ changed_extent_new
       string_ = new_string
       fix_bounding_box_
-    else:
-      string_ = new_string
-      update_
+      return
+    string_ = new_string
+    update_
+
+  static get_bounding_boxes_ old/string new/string alignment/int font/Font [block]:
+    left_doesnt_move  := alignment == TEXT_TEXTURE_ALIGN_LEFT
+    right_doesnt_move := alignment == TEXT_TEXTURE_ALIGN_RIGHT
+    // If the rendered length does not change then both ends don't move.
+    pixel_width_old := font.pixel_width old
+    if pixel_width_old == (font.pixel_width new):
+      left_doesnt_move = true
+      right_doesnt_move = true
+    length := min old.size new.size
+    unchanged_left := 0
+    unchanged_right := 0
+    if left_doesnt_move:
+      // Find out how many bytes are unchanged at the start of the string.
+      unchanged_left = length
+      for i := 0; i < length; i++:
+        if old[i] != new[i]:
+          unchanged_left = i
+          break
+    if right_doesnt_move:
+      // Find out how many bytes are unchanged at the end of the string.
+      unchanged_right = length
+      last_character_start := 0  // Location (counting from end) of the start of the last UTF-8 sequence.
+      for i := 0; i < length; i++:
+        if old[old.size - 1 - i] != new[new.size - 1 - i]:
+          unchanged_right = last_character_start
+          break
+        else if old[old.size - 1 - i]:
+          last_character_start = i + 1
+    if unchanged_right != 0 or unchanged_left != 0:
+      changed_old := old.copy unchanged_left (old.size - unchanged_right)
+      changed_new := new.copy unchanged_left (new.size - unchanged_right)
+      changed_extent_old := TextExtent_ changed_old font alignment
+      changed_extent_new := TextExtent_ changed_new font alignment
+      if alignment == TEXT_TEXTURE_ALIGN_LEFT:
+        unchanged_width := font.pixel_width old[..unchanged_left]
+        changed_extent_old.x += unchanged_width
+        changed_extent_new.x += unchanged_width
+      else if alignment == TEXT_TEXTURE_ALIGN_RIGHT:
+        unchanged_width := font.pixel_width old[old.size - unchanged_right..]
+        // Make x relative to the text origin, which is the right edge.
+        changed_extent_old.x -= unchanged_width
+        changed_extent_new.x -= unchanged_width
+      else:
+        assert: alignment == TEXT_TEXTURE_ALIGN_CENTER
+        assert: pixel_width_old == (font.pixel_width new)
+        // Make x relative to the text origin, which is the middle.
+        unchanged_width := (pixel_width_old >> 1) - (font.pixel_width old[..unchanged_left])
+        changed_extent_old.x -= unchanged_width + changed_extent_old.displacement
+        changed_extent_new.x -= unchanged_width + changed_extent_new.displacement
+      block.call changed_extent_old changed_extent_new
 
   invalidate_extent_ ex:
     invalidate
