@@ -26,7 +26,7 @@ main:
   driver := TestDriver
   display := GrayScalePixelDisplay driver
   display.background = 1
-  
+
   sans10 := Font.get "sans10"
 
   ctx := display.context --landscape --color=250 --font=sans10
@@ -46,7 +46,7 @@ main:
       bottom_half := (driver.pixel_at x y + 1) < 128
       line += "$(top_half ? (bottom_half ? " " : "▄") : (bottom_half ? "▀" : "█"))"
     print line
-      
+
   50.repeat: | x |
     driver.height.repeat: | y |
       if x < 10 or y < 20 or x >= 40 or y >= 60:
