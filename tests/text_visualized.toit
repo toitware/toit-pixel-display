@@ -18,7 +18,7 @@ main args:
     exit 1
   driver := SeveralColorPngVisualizer 192 96 args[0] --outline=SEVERAL_WHITE
   display := SeveralColorPixelDisplay driver
-  display.background = SEVERAL_GRAY
+  display.background = SEVERAL_DARK_GRAY
 
   sans10 := Font.get "sans10"
 

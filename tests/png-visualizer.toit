@@ -314,11 +314,14 @@ abstract class PngVisualizingDriver_ extends AbstractDriver:
           0xff, 0xff, 0xff,         // 0 is white.
           0, 0, 0,                  // 1 is black.
           0xff, 0, 0,               // 2 is red.
-          0, 0xff, 0,               // 3 is green
-          0, 0, 0xff,               // 4 is blue
-          0xff, 0xff, 0,            // 5 is yellow
-          0xff, 0xc0, 0,            // 6 is orange
-          0x40, 0x40, 0x40,         // 7 is gray  (This one is not available on the 7-color e-paper display.)
+          0, 0xff, 0,               // 3 is green.
+          0, 0, 0xff,               // 4 is blue.
+          0xff, 0xff, 0,            // 5 is yellow.
+          0xff, 0xc0, 0,            // 6 is orange.
+          // The next three are not available on the 7-color e-paper display.
+          0x40, 0x40, 0x40,         // 7 is dark gray.
+          0x80, 0x80, 0x80,         // 8 is gray.
+          0xc0, 0xc0, 0xc0,         // 9 is light gray.
         ]
 
     compressor := zlib.RunLengthZlibEncoder
@@ -340,7 +343,7 @@ abstract class PngVisualizingDriver_ extends AbstractDriver:
       if gray:
         line = ByteArray line.size: line[it] ^ 0xff
       else if several_color:
-        line = ByteArray line.size: min 7 line[it]
+        line = ByteArray line.size: min 9 line[it]
       compressor.write line
 
     compressor.close
@@ -362,7 +365,9 @@ SEVERAL_GREEN ::= 3
 SEVERAL_BLUE ::= 4
 SEVERAL_YELLOW ::= 5
 SEVERAL_ORANGE ::= 6
-SEVERAL_GRAY ::= 7
+SEVERAL_DARK_GRAY ::= 7
+SEVERAL_GRAY ::= 8
+SEVERAL_LIGHT_GRAY ::= 9
 
 byte_swap_ ba/ByteArray -> ByteArray:
   result := ba.copy

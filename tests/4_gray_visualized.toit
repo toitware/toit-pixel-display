@@ -15,7 +15,7 @@ main args:
   driver := FourGrayPngVisualizer 160 64 args[0] --outline=WHITE
   display := FourGrayPixelDisplay driver
   display.background = BLACK
-  
+
   sans10 := Font.get "sans10"
 
   ctx := display.context --landscape --color=LIGHT_GRAY --font=sans10

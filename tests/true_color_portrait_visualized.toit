@@ -15,7 +15,7 @@ main args:
   driver := TrueColorPngVisualizer 129 89 args[0] --outline=0xffff00
   display := TrueColorPixelDisplay driver
   display.background = get_rgb 0 1 2
-  
+
   sans10 := Font.get "sans10"
 
   ctx := display.context --landscape=false --color=(get_rgb 255 120 0) --font=sans10

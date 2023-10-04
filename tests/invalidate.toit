@@ -54,7 +54,7 @@ small_test:
   expect_equals driver.height driver.last_bottom
 
   driver.reset
-  
+
   ctx := display.context --landscape --color=(get_rgb 255 120 0)
 
   display.filled_rectangle ctx 16 24 32 40
