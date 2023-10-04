@@ -1,4 +1,4 @@
-// Copyright (C) 2018 Toitware ApS. All rights reserved.
+// Copyright (C) 2023 Toitware ApS. All rights reserved.
 // Use of this source code is governed by an MIT-style license that can be
 // found in the LICENSE file.
 
@@ -1043,21 +1043,21 @@ abstract class TextTexture_ extends SizedTexture:
     if pixel_width_old == (font.pixel_width new):
       left_doesnt_move = true
       right_doesnt_move = true
-    l := min old.size new.size
+    length := min old.size new.size
     unchanged_left := 0
     unchanged_right := 0
     if left_doesnt_move:
       // Find out how many bytes are unchanged at the start of the string.
-      unchanged_left = l
-      for i := 0; i < l; i++:
+      unchanged_left = length
+      for i := 0; i < length; i++:
         if old[i] != new[i]:
           unchanged_left = i
           break
     if right_doesnt_move:
       // Find out how many bytes are unchanged at the end of the string.
-      unchanged_right = l
+      unchanged_right = length
       last_character_start := 0  // Location (counting from end) of the start of the last UTF-8 sequence.
-      for i := 0; i < l; i++:
+      for i := 0; i < length; i++:
         if old[old.size - 1 - i] != new[new.size - 1 - i]:
           unchanged_right = last_character_start
           break
