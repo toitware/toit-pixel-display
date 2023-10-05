@@ -20,11 +20,15 @@ class Canvas extends OneByteCanvas_:
   constructor width/int height/int:
     super width height
 
-  /**
-  Creates a blank texture with the same dimensions as this one.
-  */
-  create_similar:
-    return Canvas width_ height_
+  static NO_MIXING_ := ByteArray 0x100: it < 0x80 ? 0 : 0xff
+
+  composit frame_opacity frame_canvas/OneByteCanvas_? painting_opacity painting_canvas/OneByteCanvas_:
+    fo := frame_opacity is ByteArray ? frame_opacity : frame_opacity.pixels_
+    po := painting_opacity is ByteArray ? painting_opacity : painting_opacity.pixels_
+    // We can't mix pixels on a palette-based display so all pixels must be 0 or 0xff.
+    blit fo fo fo.size --lookup_table=NO_MIXING_
+    blit po po fo.size --lookup_table=NO_MIXING_
+    composit_bytes pixels_ fo (frame_canvas ? frame_canvas.pixels_ : null) po painting_canvas.pixels_ false
 
 class FilledRectangle extends OneByteFilledRectangle_:
   constructor color/int x/int y/int w/int h/int transform/Transform:

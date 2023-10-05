@@ -4,7 +4,10 @@
 
 import binary show LITTLE_ENDIAN
 import bitmap show *
+import .true_color as true_color
+import .one_byte as one_byte
 import font show Font
+import math
 
 TRANSFORM_IDENTITY_ ::= Transform.with_ [1, 0, 0, 1, 0, 0]
 TRANSFORM_90_ ::= Transform.with_ [0, -1, 1, 0, 0, 0]
@@ -190,6 +193,9 @@ abstract class AbstractCanvas:
 
   abstract set_all_pixels color/int -> none
 
+  abstract make_alpha_map -> AbstractCanvas
+  abstract make_alpha_map --padding/int -> AbstractCanvas
+
   abstract composit frame_opacity frame_canvas/AbstractCanvas painting_opacity painting_canvas/AbstractCanvas
 
   // draw a Line from x1,y1 (inclusive) to x2,y2 (exclusive) using the transform.
@@ -241,7 +247,7 @@ abstract class Element extends Texture:
   x -> int: return x_
   y -> int: return y_
 
-  constructor x/int?=null y/int?=null:
+  constructor --x/int?=null --y/int?=null:
     x_ = x
     y_ = y
 
@@ -255,7 +261,7 @@ abstract class Element extends Texture:
     y_ = value
     invalidate
 
-  move-to x/int y/int:
+  move_to x/int y/int:
     invalidate
     x_ = x
     y_ = y
@@ -274,10 +280,10 @@ abstract class ResizableElement extends Element:
   w_ /int? := null
   h_ /int? := null
 
-  constructor x/int?=null y/int?=null --w/int?=null --h/int?=null:
+  constructor --x/int?=null --y/int?=null --w/int?=null --h/int?=null:
     w_ = w
     h_ = h
-    super x y
+    super --x=x --y=y
 
   invalidate:
     if change_tracker:
@@ -296,7 +302,7 @@ abstract class ResizableElement extends Element:
     h_ = value
     invalidate
 
-  set-size w/int h/int -> none:
+  set_size w/int h/int -> none:
     invalidate
     w_ = w
     h_ = h
@@ -312,9 +318,9 @@ abstract class RectangleElement extends ResizableElement implements ColoredEleme
       color_ = value
       invalidate
 
-  constructor x/int?=null y/int?=null --w/int --h/int --color/int:
+  constructor --x/int?=null --y/int?=null --w/int --h/int --color/int:
     color_ = color
-    super x y --w=w --h=h
+    super --x=x --y=y --w=w --h=h
 
 class GradientSpecifier:
   color/int
@@ -341,36 +347,209 @@ Example:
 ```
 */
 class GradientElement extends ResizableElement:
-  angle_/int
-  specifiers_/List := ? // Of GradientSpecifiers.
+  angle_/int := ?
+  specifiers_/List? := ?
+  red_pixels_/ByteArray? := null
+  green_pixels_/ByteArray? := null
+  blue_pixels_/ByteArray? := null
+  draw_vertical_/bool? := null
 
-  constructor x/int?=null y/int?=null --w/int --h/int --angle/int --specifiers/List:
-    angle_ = angle
+  constructor --x/int?=null --y/int?=null --w/int --h/int --angle/int --specifiers/List:
+    angle_ = normalize_angle_ angle
     if specifiers.size == 0: throw "INVALID_ARGUMENT"
-    specifiers_ = specifiers.copy
-    validate_specifiers_ specifiers_
-    super x y --w=w --h=h
+    validate_specifiers_ specifiers
+    specifiers_ = specifiers
+    super --x=x --y=y --w=w --h=h
+    recalculate_texture_
 
-  specifiers -> List: return specifiers_.copy
+  static normalize_angle_ angle/int -> int:
+    if 0 <= angle < 360:
+      return angle
+    else if angle < 0:
+      return angle % 360 + 360
+    else:
+      return angle % 360
 
   specifiers= value/List -> none:
     validate_specifiers_ value
-    specifiers_ = value.copy
+    specifiers_ = value
+    recalculate_texture_
     invalidate
+
+  angle= value/int -> none:
+    if value != angle_:
+      invalidate
+      angle_ = normalize_angle_ value
+      recalculate_texture_
+
+  w= value/int -> none:
+    super = value
+    recalculate_texture_
+
+  h= value/int -> none:
+    super = value
+    recalculate_texture_
+
+  recalculate_texture_ -> none:
+    if h == 0 or w == 0: return
+
+    // CSS gradient angles are:
+    //    0 bottom to top.
+    //   90 left to right
+    //  180 top to bottom
+    //  270 right to left
+
+    // Create an angle that is between 0 and 90 degrees and has the same amount of
+    // verticalness as the gradient.
+    gangle := angle_
+    if gangle >= 180: gangle = 360 - gangle
+    if gangle >= 90: gangle = 180 - gangle
+    // Create an angle from the center of the rectangle to the top right corner.
+    // This is the angle that we will use to calculate the verticalness of the
+    // rectangle.
+    rangle := math.atan (w.to_float / h)  // From 0 to PI/2.
+    rangle *= 180.0 / math.PI            // From 0 to 90.
+    draw_vertical_ = gangle < rangle
+    texture_length/int := ?
+    if draw_vertical_:
+      // The gradient is more vertical than the rectangle, so we will draw
+      // vertical lines on the rectangle.
+      texture_length = (h + w * (math.tan (gangle * math.PI / 180.0)) + 0.01).round
+    else:
+      // The gradient is more horizontal than the rectangle, so we will draw
+      // horizontal lines on the rectangle.
+      texture_length = (w + h * (math.tan ((90 - gangle) * math.PI / 180.0)) + 0.01).round
+
+    red_pixels_ = ByteArray texture_length
+    green_pixels_ = ByteArray texture_length
+    blue_pixels_ = ByteArray texture_length
+    ranges/List := extract_ranges_ specifiers_
+    ranges.do: | range |
+      get_colors range texture_length: | index red green blue |
+        red_pixels_[index] = red
+        green_pixels_[index] = green
+        blue_pixels_[index] = blue
 
   static validate_specifiers_ specifiers -> none:
     last_percent := 0
+    if specifiers.size == 0: throw "INVALID_ARGUMENT"
     specifiers.do: | specifier/GradientSpecifier |
       if specifier.percent < last_percent: throw "INVALID_ARGUMENT"
       last_percent = specifier.percent
       if last_percent > 100: throw "INVALID_ARGUMENT"
 
+  /// Returns a list of quadruples of the form starting-percent ending-percent start-color end-color.
+  static extract_ranges_ specifiers/List -> List:
+    result := []
+    for i := -1; i < specifiers.size; i++:
+      from := i < 0 ? 0 : specifiers[i].percent
+      to := i >= specifiers.size - 1 ? 100 : specifiers[i + 1].percent
+      if to != from:
+        from_color := specifiers[max i 0].color
+        to_color := specifiers[min (i + 1) (specifiers.size - 1)].color
+        result.add [from, to, from_color, to_color]
+    return result
+
+  static get_colors range/List h/int [block] -> none:
+    from_y := range[0] * h / 100
+    to_y := range[1] * h / 100
+    if to_y == from_y: return
+    divisor := to_y - from_y
+    from_color := range[2]
+    // Use 8.16 fixed point arithmetic to avoid floating point.
+    r := from_color & 0xff0000
+    g := (from_color & 0xff00) << 8
+    b := (from_color & 0xff) << 16
+    to_color := range[3]
+    to_r := to_color & 0xff0000
+    to_g := (to_color & 0xff00) << 8
+    to_b := (to_color & 0xff) << 16
+    step_r := (to_r - r) / divisor
+    step_g := (to_g - g) / divisor
+    step_b := (to_b - b) / divisor
+    for y := from_y; y < to_y; y++:
+      block.call y (r >> 16) (g >> 16) (b >> 16)
+      r += step_r
+      g += step_g
+      b += step_b
+
   draw canvas/AbstractCanvas -> none:
-    // TODO
+    if h == 0 or w == 0: return
+
+    // CSS gradient angles are:
+    //    0 bottom to top.
+    //   90 left to right
+    //  180 top to bottom
+    //  270 right to left
+
+    if draw_vertical_:
+      // The gradient goes broadly vertically, and we draw in vertical strips.
+      up/bool := ?
+      orientation/int := ?
+      x2/int := ?
+      y2/int := ?
+      if 90 < angle_ < 270:  // Top to bottom.
+        up = angle_ <= 180
+        x2 = x + 1
+        y2 = y
+        orientation = ORIENTATION_270
+      else:  // Bottom to top.
+        up = angle_ < 90
+        x2 = x
+        y2 = y + h
+        orientation=ORIENTATION_90
+      start/int := w - 1
+      stop/int := -1
+      i_step/int := -1
+      if up:
+        start = 0
+        stop = w
+        i_step = 1
+      offset := 0
+      step := ((red_pixels_.size - h) << 16) / w  // n.16 fixed point.
+      for i := start; i != stop; i += i_step:
+        o := offset >> 16
+        if canvas is true_color.Canvas:
+          (canvas as true_color.Canvas).draw_rgb_pixmap (i + x2) y2 --r=red_pixels_[o .. o + h] --g=green_pixels_[o .. o + h] --b=blue_pixels_[o .. o + h] --pixmap_width=h --orientation=orientation
+        else:
+          (canvas as one_byte.OneByteCanvas_).draw_pixmap (i + x2) y2 --pixels=blue_pixels_[o .. o + h] --pixmap_width=h --orientation=orientation
+        offset += step
+    else:
+      // The gradient goes broadly horizontally, and we draw in horizontal strips.
+      up/bool := ?
+      orientation/int := ?
+      x2/int := ?
+      y2/int := ?
+      if angle_ < 180:  // Left to right.
+        up = angle_ > 90
+        x2 = x
+        y2 = y
+        orientation=ORIENTATION_0
+      else:  // Right to left.
+        up = angle_ < 270
+        x2 = x + w
+        y2 = y + 1
+        orientation = ORIENTATION_180
+      start := h - 1
+      stop := -1
+      i_step := -1
+      if up:
+        start = 0
+        stop = h
+        i_step = 1
+      offset := 0
+      step := ((red_pixels_.size - w) << 16) / h  // n.16 fixed point.
+      for i := start; i != stop; i += i_step:
+        o := offset >> 16
+        if canvas is true_color.Canvas:
+          (canvas as true_color.Canvas).draw_rgb_pixmap x2 (i + y2) --r=red_pixels_[o .. o + w] --g=green_pixels_[o .. o + w] --b=blue_pixels_[o .. o + w] --pixmap_width=w --orientation=orientation
+        else:
+          (canvas as one_byte.OneByteCanvas_).draw_pixmap x2 (i + y2) --pixels=blue_pixels_[o .. o + w] --pixmap_width=w --orientation=orientation
+        offset += step
 
 class FilledRectangleElement extends RectangleElement:
-  constructor x/int y/int --w/int --h/int --color/int:
-    super x y --w=w --h=h --color=color
+  constructor --x/int --y/int --w/int --h/int --color/int:
+    super --x=x --y=y --w=w --h=h --color=color
 
   draw canvas/AbstractCanvas -> none:
     canvas.rectangle x_ y_ --w=w_ --h=h_ --color=color_
@@ -378,10 +557,10 @@ class FilledRectangleElement extends RectangleElement:
 class OutlineRectangleElement extends RectangleElement:
   thickness_/int := ?
 
-  constructor x/int y/int --w/int --h/int --color/int --thickness/int=1:
+  constructor --x/int --y/int --w/int --h/int --color/int --thickness/int=1:
     if thickness > (min h w): throw "INVALID_ARGUMENT"
     thickness_ = thickness
-    super x y --w=w --h=h --color=color
+    super --x=x --y=y --w=w --h=h --color=color
 
   thickness -> int: return thickness_
 
@@ -423,13 +602,13 @@ class TextElement extends Element implements ColoredElement:
       color_ = value
       invalidate
 
-  constructor x/int y/int --color/int --text/string?=null --font/Font --orientation/int=ORIENTATION_0 --alignment/int=TEXT_TEXTURE_ALIGN_LEFT:
+  constructor --x/int --y/int --color/int --text/string?=null --font/Font --orientation/int=ORIENTATION_0 --alignment/int=TEXT_TEXTURE_ALIGN_LEFT:
     color_ = color
     text_ = text
     alignment_ = alignment
     orientation_ = orientation
     font_ = font
-    super x y
+    super --x=x --y=y
 
   /**
   Calls the block with the left, top, width, and height.
@@ -533,8 +712,8 @@ abstract class CustomElement extends Element:
   abstract w -> int
   abstract h -> int
 
-  constructor x/int?=null y/int?=null:
-    super x y
+  constructor --x/int?=null --y/int?=null:
+    super --x=x --y=y
 
   invalidate:
     if change_tracker:
@@ -571,7 +750,7 @@ class BarCodeEanElement extends CustomElement:
     height := EAN_13_HEIGHT + number_height_ - EAN_13_BOTTOM_SPACE
     w = EAN_13_WIDTH
     h = height + 1
-    super x y
+    super --x=x --y=y
 
   l_ digit:
     return EAN_13_L_CODES_[digit & 0xf]
@@ -1249,17 +1428,22 @@ interface Window:
   // Called by elements that have been added to this.
   child_invalidated_element x/int y/int w/int h/int ->none
 
-abstract class BorderlessWindow_ extends ResizableTexture implements Window:
-  constructor x/int y/int w/int h/int transform:
-    this.transform = transform.translate x y
-    super x y w h transform
+abstract class BorderlessWindowElement extends Element implements Window:
+  inner_w_/int := ?
+  inner_h_/int := ?
+  elements_ := {}
 
-  add element/Texture -> none:
+  constructor --x/int --y/int --w/int --h/int:
+    inner_w_ = w
+    inner_h_ = h
+    super --x=x --y=y
+
+  add element/Element -> none:
     elements_.add element
     element.change_tracker = this
     element.invalidate
 
-  remove element/Texture -> none:
+  remove element/Element -> none:
     elements_.remove element
     element.invalidate
     element.change_tracker = null
@@ -1270,79 +1454,86 @@ abstract class BorderlessWindow_ extends ResizableTexture implements Window:
       it.change_tracker = null
     elements_.remove_all
 
-  transform /Transform := ?
-  elements_ := {}
+  /**
+  Calls the block with x, y, w, h, which includes the frame/border.
+  */
+  extent [block] -> none:
+    block.call x_ y_ inner_w_ inner_h_
 
   child_invalidated_element x/int y/int w/int h/int -> none:
-    throw "NOT_IMPLEMENTED"
+    if change_tracker:
+      x2 := max x_ (x_ + x)
+      y2 := max y_ (y_ + y)
+      right := min (x_ + inner_w_) (x_ + x + w)
+      bottom := min (y_ + inner_h_) (y_ + y + h)
+      if x2 < right and y2 < bottom:
+        change_tracker.child_invalidated_element x2 y2 (right - x2) (bottom - y2)
 
   child_invalidated x/int y/int w/int h/int -> none:
-    right := x + w
-    bottom := y + h
-    // We got the dimensions of the invalidation in driver frame of reference.
-    // We must trim them to fit the window, and pass them on.
-    transform_.xywh x_ y_ w_ h_: | x2 y2 w2 h2 |
-      // Now we have our own coordinates in driver frame of reference.
-      left2 := max x x2
-      top2 := max y y2
-      right2 := min right (x2 + w2)
-      bottom2 := min bottom (y2 + h2)
-      if right2 > left2 and bottom2 > top2:
-        if change_tracker:
-          change_tracker.child_invalidated left2 top2 (right2 - left2) (bottom2 - top2)
+    throw "NOT_IMPLEMENTED"  // This is only for textures, but we don't allow those.
+
+  invalidate:
+    if change_tracker:
+      extent: | outer_x outer_y outer_w outer_h |
+        change_tracker.child_invalidated_element outer_x outer_y outer_w outer_h
 
 /**
-A WindowTexture_ is a collections of textures.  It is modeled like a painting hung on
+A WindowElement is a collections of elements.  It is modeled like a painting hung on
   a wall.  It consists (from back to front) of a wall, a frame and the painting
   itself. The optional frame extends around and behind the picture, and can be
   partially transparent on true-color displays, which enables drop shadows.  The
   painting can also be partially transparent.
 */
-abstract class WindowTexture_ extends BorderlessWindow_ implements Window:
-  inner_x_ /int := ?
-  inner_y_ /int := ?
-  inner_w_ /int := ?
-  inner_h_ /int := ?
-
+abstract class WindowElement extends BorderlessWindowElement implements Window:
   /**
   Changes the inner width (without any borders) of the window.
   */
-  width= new_width/int:
+  w= new_width/int:
     if new_width != inner_w_:
+      invalidate
       inner_w_ = new_width
-      update_
+      invalidate
 
   /**
   Changes the inner height (without any borders) of the window.
   */
-  height= new_height/int:
+  h= new_height/int:
     if new_height != inner_h_:
+      invalidate
       inner_h_ = new_height
-      update_
+      invalidate
+
+  /**
+  Gets the inner width (without any borders) of the window.
+  */
+  w -> int:
+    return inner_w_
+
+  /**
+  Gets the inner height (without any borders) of the window.
+  */
+  h -> int:
+    return inner_h_
 
   /**
   Changes the top left corner (without any borders) of the window.
   */
   move_to new_x/int new_y/int -> none:
-    if new_x != inner_x_ or new_y != inner_y_:
-      inner_x_ = new_x
-      inner_y_ = new_y
-      update_
-
-  update_ -> none:
-    invalidate
-    fix_bounding_box_
-    invalidate
-
-  abstract fix_bounding_box_ -> none
+    if new_x != x_ or new_y != y_:
+      invalidate
+      x_ = new_x
+      y_ = new_y
+      invalidate
 
   static ALL_TRANSPARENT ::= ByteArray 1: 0
   static ALL_OPAQUE ::= ByteArray 1: 0xff
 
-  static is_all_transparent opacity/ByteArray -> bool:
+  static is_all_transparent opacity -> bool:
+    if opacity is not ByteArray: return false
     return opacity.size == 1 and opacity[0] == 0
 
-  static is_all_opaque opacity/ByteArray -> bool:
+  static is_all_opaque opacity -> bool:
+    if opacity is not ByteArray: return false
     return opacity.size == 1 and opacity[0] == 0xff
 
   /**
@@ -1353,6 +1544,8 @@ abstract class WindowTexture_ extends BorderlessWindow_ implements Window:
     gray-scale textures it is a bytemap with 0 for transparent and 0xff for
     opaque.  As a special case it may return a single-entry byte array, which
     means all pixels have the same transparency.
+  The coordinate system of the canvas is the coordinate system of the window, so
+    the top and left edges will normally be plotted at negative coordinates.
   */
   abstract frame_map canvas/AbstractCanvas -> ByteArray
 
@@ -1364,6 +1557,7 @@ abstract class WindowTexture_ extends BorderlessWindow_ implements Window:
     a bytemap with 0 for transparent and 0xff for opaque.  As a special case it
     may return a single-entry byte array, which means all pixels have the same
     transparency.
+  The coordinate system of the canvas is the coordinate system of the window.
   */
   abstract painting_map canvas/AbstractCanvas -> ByteArray
 
@@ -1372,6 +1566,7 @@ abstract class WindowTexture_ extends BorderlessWindow_ implements Window:
     and other interior objects will be draw on top of this.  Does not need to
     take the frame_map or painting_map into account: The canvas this function
     draws on will be composited using them afterwards.
+  The coordinate system of the canvas is the coordinate system of the window.
   */
   abstract draw_background canvas/AbstractCanvas -> none
 
@@ -1379,16 +1574,18 @@ abstract class WindowTexture_ extends BorderlessWindow_ implements Window:
   Expected to draw the frame on the canvas.  This represents the window frame
     color.  Does not need to take the frame_map or painting_map into account: The
     return value from this function will be composited using them afterwards.
+  The coordinate system of the canvas is the coordinate system of the window, so
+    the top and left edges will normally be plotted at negative coordinates.
   */
   abstract draw_frame canvas
 
-  constructor .inner_x_ .inner_y_ .inner_w_ .inner_h_ x/int y/int w/int h/int transform:
-    super x y w h transform
+  constructor --x/int --y/int --w/int --h/int:
+    super --x=x --y=y --w=w --h=h
 
   // After the textures under us have drawn themselves, we draw on top.
-  write2_ canvas/AbstractCanvas:
-    win_w := canvas.width_
-    win_h := canvas.height_
+  draw canvas/AbstractCanvas -> none:
+    old_transform := canvas.transform
+    canvas.transform = old_transform.translate x_ y_
 
     painting_opacity := painting_map canvas
 
@@ -1397,138 +1594,171 @@ abstract class WindowTexture_ extends BorderlessWindow_ implements Window:
     // the window background color and then draw the textures.
     if is_all_opaque painting_opacity:
       draw_background canvas
-      elements_.do: it.write_ canvas
+      elements_.do: it.draw canvas
+      canvas.transform = old_transform
       return
 
     frame_opacity := frame_map canvas
+
+    if is_all_transparent frame_opacity and is_all_transparent painting_opacity:
+      canvas.transform = old_transform
+      return
 
     // The complicated case where we have to composite the tile from the wall,
     // the frame, and the painting_opacity.
     frame_canvas := null
     if not is_all_transparent frame_opacity:
       frame_canvas = canvas.create_similar
-      frame_canvas.x_offset_ = canvas.x_offset_
-      frame_canvas.y_offset_ = canvas.y_offset_
       draw_frame frame_canvas
 
     painting_canvas := canvas.create_similar
-    painting_canvas.x_offset_ = canvas.x_offset_
-    painting_canvas.y_offset_ = canvas.y_offset_
     draw_background painting_canvas
-    elements_.do: it.write_ painting_canvas
+    elements_.do: it.draw painting_canvas
 
     canvas.composit frame_opacity frame_canvas painting_opacity painting_canvas
+
+    canvas.transform = old_transform
 
 /**
 A rectangular window with a fixed width colored border.  The border is
   added to the visible area inside the window.
 */
-abstract class SimpleWindow_ extends WindowTexture_:
-  border_width_ := 0
-  abstract make_alpha_map_ canvas
-  abstract make_opaque_ x y w h map map_width
+class SimpleWindowElement extends WindowElement:
+  border_width_/int := ?
+  border_color_/int? := ?
+  background_color_/int? := ?
 
-  constructor x y w h transform .border_width_:
-    super x y w h  // Inner dimensions.
-        // Actual dimensions.
+  constructor --x/int --y/int --w/int --h/int --border_width/int --border_color/int?=null --background_color/int?=null:
+    if border_width < 0 or (border_width != 0 and border_color == null): throw "INVALID_ARGUMENT"
+    border_width_ = border_width
+    border_color_ = border_color
+    background_color_ = background_color
+
+    super --x=x --y=y --w=w --h=h  // Inner dimensions.
+
+  extent [block]:
+    block.call
         x - border_width_
         y - border_width_
         w + border_width_ * 2
         h + border_width_ * 2
-        transform
 
   border_width -> int: return border_width_
 
-  border_width= new_width/int -> none:
-    if new_width != border_width_:
-      border_width_ = new_width
-      update_
+  border_color -> int: return border_color_
 
-  fix_bounding_box_ -> none:
-    // The border is on the outside of the drawable area.
-    x_ = inner_x_ - border_width_
-    y_ = inner_y_ - border_width_
-    w_ = inner_w_ + border_width_ * 2
-    h_ = inner_h_ + border_width_ * 2
+  background_color -> int?: return background_color_
+
+  border_width= new_width/int -> none:
+    if new_width < 0 or (new_width != 0 and border_color_ == null): throw "INVALID_ARGUMENT"
+    if new_width > border_width_:
+      border_width_ = new_width
+      invalidate
+    else if new_width < border_width_:
+      invalidate
+      border_width_ = new_width
+
+  border_color= new_color/int -> none:
+    if new_color != border_color_:
+      if border_width_ != 0: invalidate
+      border_color_ = new_color
+
+  background_color= new_color/int? -> none:
+    if new_color != background_color_:
+      if change_tracker:
+        change_tracker.child_invalidated_element x_ y_ inner_w_ inner_h_
+      background_color_ = new_color
 
   // Draws 100% opacity for the frame shape, a filled rectangle.
   // (The frame is behind the painting, so this doesn't mean we only
   // see the frame.)
   frame_map canvas/AbstractCanvas:
-    if border_width_ == 0: return WindowTexture_.ALL_TRANSPARENT  // The frame is not visible anywhere.
+    if border_width_ == 0: return WindowElement.ALL_TRANSPARENT  // The frame is not visible anywhere.
     // Transform inner dimensions not including border
-    transform_.xywh inner_x_ inner_y_ inner_w_ inner_h_: | x y w2 h2 |
-      x2 := x - canvas.x_offset_
-      y2 := y - canvas.y_offset_
+    canvas.transform.xywh 0 0 inner_w_ inner_h_: | x2 y2 w2 h2 |
       if x2 <= 0 and y2 <= 0 and x2 + w2 >= canvas.width_ and y2 + h2 >= canvas.height_:
         // In the middle, the window content is 100% opaque and draw on top of the
         // frame.  There is no need to provide a frame alpha map, so for efficiency we
         // just return 0 which indicates the frame is 100% transparent.
-        return WindowTexture_.ALL_TRANSPARENT
+        return WindowElement.ALL_TRANSPARENT
     // Transform outer dimensions including border.
-    transform_.xywh x_ y_ w_ h_: | x y w2 h2 |
-      x2 := x - canvas.x_offset_
-      y2 := y - canvas.y_offset_
-      // We need to create a bitmap to describe the frame's extent.
-      transparency_map := make_alpha_map_ canvas
-      // Declare the whole area inside the frame's extent opaque.  The window content will
-      // draw on top of this as needed.
-      make_opaque_ x2 y2 w2 h2 transparency_map canvas.width_
-      return transparency_map
-    unreachable
+    outer_w := inner_w_ + 2 * border_width_
+    outer_h := inner_h_ + 2 * border_width_
+    canvas.transform.xywh -border_width_ -border_width_ outer_w outer_h: | x2 y2 w2 h2 |
+      right := x2 + w2
+      bottom := y2 + h2
+      if right <= 0 or bottom <= 0 or x2 >= canvas.width_ or y2 >= canvas.height_:
+        // The frame is completely outside the window, so it is 100% transparent.
+        return WindowElement.ALL_TRANSPARENT
+    // We need to create a bitmap to describe the frame's extent.
+    transparency_map := canvas.make_alpha_map
+    // Declare the whole area inside the frame's extent opaque.  The window content will
+    // draw on top of this as needed.
+    transparency_map.rectangle -border_width -border_width_
+        --w=outer_w
+        --h=outer_h
+        --color=0xffffff
+    return transparency_map
 
   // Draws 100% opacity for the window content, a filled rectangle.
   painting_map canvas/AbstractCanvas:
-    transform_.xywh inner_x_ inner_y_ inner_w_ inner_h_: | x y w2 h2 |
-      x2 := x - canvas.x_offset_
-      y2 := y - canvas.y_offset_
+    canvas.transform.xywh 0 0 inner_w_ inner_h_: | x2 y2 w2 h2 |
       if x2 <= 0 and y2 <= 0 and x2 + w2 >= canvas.width_ and y2 + h2 >= canvas.height_:
-        return WindowTexture_.ALL_OPAQUE  // The content is 100% opaque in the middle.
-      // We need to create a bitmap to describe the content's extent.
-      transparency_map := make_alpha_map_ canvas
-      make_opaque_ x2 y2 w2 h2 transparency_map canvas.width_
-      return transparency_map
-    unreachable
+        return WindowElement.ALL_OPAQUE  // The content is 100% opaque in the middle.
+      right := x2 + w2
+      bottom := y2 + h2
+      if right <= 0 or bottom <= 0 or x2 >= canvas.width_ or y2 >= canvas.height_:
+        return WindowElement.ALL_TRANSPARENT  // The content is 100% transparent outside the window.
+    // We need to create a bitmap to describe the content's extent.
+    transparency_map := canvas.make_alpha_map
+    // Declare the whole area inside the content's extent opaque.  The window content will
+    // draw on top of this as needed.
+    transparency_map.rectangle 0 0
+      --w=inner_w_
+      --h=inner_h_
+      --color=0xffffff
+    return transparency_map
 
-/** A rectangular window with rounded corners.  */
-abstract class RoundedCornerWindow_ extends WindowTexture_:
-  corner_radius_ := 0
+  draw_frame canvas/AbstractCanvas:
+    if border_width_ != 0: canvas.set_all_pixels border_color_
+
+  draw_background canvas/AbstractCanvas:
+    if background_color_: canvas.set_all_pixels background_color_
+
+/** A rectangular window with rounded corners. */
+class RoundedCornerWindowElement extends WindowElement:
+  corner_radius_/int := ?
+  background_color_/int? := ?
   opacities_ := null
-  abstract make_alpha_map_ canvas/AbstractCanvas padding
-  abstract make_opaque_ x y w h map map_width --frame/bool
-  abstract set_opacity_ x y opacity map map_width --frame/bool
+  bit_opacities_ := null
+  shadow_palette_/ByteArray := #[]
 
-  constructor x y w h transform .corner_radius_:
-    if corner_radius_ > TABLE_SIZE_: throw "OUT_OF_RANGE"
-    super x y w h x y w h transform
-
-  constructor.protected_ inner_x inner_y inner_w inner_h x y w h transform .corner_radius_:
-    if corner_radius_ > TABLE_SIZE_: throw "OUT_OF_RANGE"
-    super inner_x inner_y inner_w inner_h x y w h transform
+  constructor --x/int --y/int --w/int --h/int --corner_radius/int=5 --background_color/int?=null:
+    if not 0 <= corner_radius <= TABLE_SIZE_: throw "OUT_OF_RANGE"
+    corner_radius_ = corner_radius
+    background_color_ = background_color
+    super --x=x --y=y --w=w --h=h
 
   corner_radius -> int: return corner_radius_
 
   corner_radius= new_radius/int -> none:
     if not 0 <= new_radius <= TABLE_SIZE_: throw "OUT_OF_RANGE"
     if new_radius != corner_radius_:
+      opacities_ = null
       invalid_radius := max corner_radius_ new_radius
       corner_radius_ = new_radius
       if change_tracker:
-        transform_.xywh x_ y_ w_ h_: | x2 y2 w2 h2 |
-          change_tracker.child_invalidated x2                       y2                       invalid_radius invalid_radius
-          change_tracker.child_invalidated x2 + w2 - invalid_radius y2                       invalid_radius invalid_radius
-          change_tracker.child_invalidated x2                       y2 + h2 - invalid_radius invalid_radius invalid_radius
-          change_tracker.child_invalidated x2 + w2 + invalid_radius y2 + h2 - invalid_radius invalid_radius invalid_radius
+        change_tracker.child_invalidated_element x                      y                      invalid_radius invalid_radius
+        change_tracker.child_invalidated_element x + w - invalid_radius y                      invalid_radius invalid_radius
+        change_tracker.child_invalidated_element x                      y + h - invalid_radius invalid_radius invalid_radius
+        change_tracker.child_invalidated_element x + w + invalid_radius y + h - invalid_radius invalid_radius invalid_radius
 
-  fix_bounding_box_ -> none:
-    // There's no border outside the drawable area.
-    x_ = inner_x_
-    y_ = inner_y_
-    w_ = inner_w_
-    h_ = inner_h_
+  extent [block]:
+    block.call x y w h   // Does not protrude beyond the inner bounds.
 
   ensure_opacities_:
     if opacities_: return
+
     opacities_ = ByteArray corner_radius_ * corner_radius_
     downsample := TABLE_SIZE_ / corner_radius_  // For example 81 for a corner_radius of 3.
     steps := List corner_radius_:
@@ -1555,9 +1785,22 @@ abstract class RoundedCornerWindow_ extends WindowTexture_:
             else if extent > a:
               total += extent - a
           opacities_[idx] = (0xff * total) / (downsample * downsample)
+    // Generate a bit version of the opacities in case we have to use it on a
+    // 2-color or 3-color display.
+    bitmap_width := round_up corner_radius_ 8
+    bit_opacities_ = ByteArray (opacities_.size / corner_radius_) * (bitmap_width >> 3)
+    destination_line_stride := bitmap_width >> 3
+    8.repeat: | bit |
+      blit opacities_[bit..] bit_opacities_ ((corner_radius_ + 7 - bit) >> 3)
+          --source_pixel_stride=8
+          --source_line_stride=corner_radius_
+          --destination_line_stride=destination_line_stride
+          --shift=bit
+          --mask=(0x80 >> bit)
+          --operation=OR
 
   frame_map canvas/AbstractCanvas:
-    return WindowTexture_.ALL_TRANSPARENT  // No frame on these windows.
+    return WindowElement.ALL_TRANSPARENT  // No frame on these windows.
 
   static TABLE_SIZE_ ::= 256
   // The heights of a top-right quarter circle of radius [TABLE_SIZE_].
@@ -1572,108 +1815,179 @@ abstract class RoundedCornerWindow_ extends WindowTexture_:
 
   // Draws 100% opacity for the window content, a filled rounded-corner rectangle.
   painting_map canvas/AbstractCanvas:
-    transform_.xywh inner_x_ inner_y_ inner_w_ inner_h_: | x y w2 h2 |
-      x2 := x - canvas.x_offset_
-      y2 := y - canvas.y_offset_
-      if x2 + corner_radius_ <= 0 and y2 + corner_radius_ <= 0 and x2 + w2 - corner_radius_ >= canvas.width_ and y2 + h2 - corner_radius_ >= canvas.height_:
-        return WindowTexture_.ALL_OPAQUE  // The content is 100% opaque in the middle.
-      // We need to create a bitmap to describe the content's extent.
-      transparency_map := make_alpha_map_ canvas 0
-      draw_rounded_corners_ transparency_map canvas.width_ x2 y2 w2 h2 --frame=false
-      return transparency_map
-    unreachable
+    canvas.transform.xywh 0 0 inner_w_ inner_h_: | x2 y2 w2 h2 |
+      right := x2 + w2
+      bottom := y2 + h2
+      if x2 >= canvas.width_ or y2 >= canvas.height_ or right <= 0 or bottom <= 0:
+        return WindowElement.ALL_TRANSPARENT  // The content is 100% transparent outside the window.
+      if x2                  <= 0 and y2 + corner_radius_ <= 0 and right                  >= canvas.width_ and bottom - corner_radius_ >= canvas.height_ or
+         x2 + corner_radius_ <= 0 and y2                  <= 0 and right - corner_radius_ >= canvas.width_ and bottom                  >= canvas.height_:
+        return WindowElement.ALL_OPAQUE  // The content is 100% opaque in the cross in the middle where there are no corners.
+    // We need to create a bitmap to describe the content's extent.
+    transparency_map := canvas.make_alpha_map
+    draw_rounded_corners_ transparency_map 0 0 inner_w_ inner_h_ 0xff
+    return transparency_map
 
-  draw_rounded_corners_ transparency_map map_width x2 y2 w2 h2 --frame/bool:
+  draw_rounded_corners_ transparency_map x2/int y2/int w2/int h2/int opacity/int -> none:
     // Part 1 of a cross of opacity (the rounded rectangle minus its corners).
-    make_opaque_ (x2 + corner_radius_) y2 (w2 - 2 * corner_radius_) h2 transparency_map map_width --frame=frame
-    if corner_radius_ <= 0: return
+    transparency_map.rectangle (x2 + corner_radius_) y2 --w=(w2 - 2 * corner_radius_) --h=h2 --color=opacity
+    if corner_radius_ == 0: return
     ensure_opacities_
     // Part 2 of the cross.
-    make_opaque_ x2 (y2 + corner_radius_) w2 (h2 - 2 * corner_radius_) transparency_map map_width --frame=frame
-    // The rounded corners:
+    transparency_map.rectangle x2 (y2 + corner_radius_) --w=w2 --h=(h2 - 2 * corner_radius_) --color=opacity
+    // The rounded corners.
+    // opacity_ has an alpha map shaped like this (only rounder).
+    // ______
+    // |    |
+    // |    /
+    // |___/
+
     left := x2 + corner_radius_ - 1
     right := x2 + w2 - corner_radius_
     top := y2 + corner_radius_ - 1
     bottom := y2 + h2 - corner_radius_
-    corner_radius_.repeat: | j |
-      corner_radius_.repeat: | i |
-        opacity := opacities_[i + j * corner_radius_]
-        set_opacity_ (left - i) (top - j) opacity transparency_map map_width --frame=frame
-        set_opacity_ (right + i) (top - j) opacity transparency_map map_width --frame=frame
-        set_opacity_ (left - i) (bottom + j) opacity transparency_map map_width --frame=frame
-        set_opacity_ (right + i) (bottom + j) opacity transparency_map map_width --frame=frame
+    if transparency_map is one_byte.OneByteCanvas_:
+      palette := opacity == 0xff ? #[] : shadow_palette_
+      draw_corners_ x2 y2 right bottom corner_radius_: | x y orientation |
+        transparency_map.draw_pixmap x y --pixels=opacities_ --palette=palette --pixmap_width=corner_radius_ --orientation=orientation
+    else:
+      draw_corners_ x2 y2 right bottom corner_radius_: | x y orientation |
+        transparency_map.draw_bitmap x y --pixels=bit_opacities_ --color=1 --pixmap_width=corner_radius_ --orientation=orientation
 
-/** A rectangular window with rounded corners and a drop shadow  */
-abstract class DropShadowWindow_ extends RoundedCornerWindow_:
-  blur_radius := 0
-  drop_distance_x := 0
-  drop_distance_y := 0
+  draw_corners_ left/int top/int right/int bottom/int corner_radius/int [block]:
+    // Top left corner:
+    block.call (left + corner_radius) (top + corner_radius) ORIENTATION_180
+    // Top right corner:
+    block.call right (top + corner_radius) ORIENTATION_90
+    // Bottom left corner:
+    block.call (left + corner_radius) bottom ORIENTATION_270
+    // Bottom right corner:
+    block.call right bottom ORIENTATION_0
 
-  constructor x y w h transform corner_radius .blur_radius .drop_distance_x .drop_distance_y:
+  draw_frame canvas/AbstractCanvas:
+    throw "NOT_IMPLEMENTED"  // There's no frame.
+
+  draw_background canvas/AbstractCanvas:
+    if background_color_: canvas.set_all_pixels background_color_
+
+class DropShadowWindowElement extends RoundedCornerWindowElement:
+  blur_radius_/int := ?
+  drop_distance_x_/int := ?
+  drop_distance_y_/int := ?
+  shadow_opacity_percent_/int := ?
+
+  constructor --x/int --y/int --w/int --h/int --corner_radius/int=5 --blur_radius/int=5 --drop_distance_x/int=10 --drop_distance_y/int=10 --shadow_opacity_percent/int=25:
     if not 0 <= blur_radius <= 6: throw "OUT_OF_RANGE"
-    extension_left := blur_radius > drop_distance_x ?  blur_radius - drop_distance_x : 0
-    extension_top := blur_radius > drop_distance_y ?  blur_radius - drop_distance_y : 0
-    extension_right := blur_radius > -drop_distance_x ? blur_radius + drop_distance_x : 0
-    extension_bottom := blur_radius > -drop_distance_y ? blur_radius + drop_distance_y : 0
-    super.protected_
-      x
-      y
-      w
-      h
-      x - extension_left
-      y - extension_top
-      w + extension_left + extension_right
-      h + extension_top + extension_bottom
-      transform
-      corner_radius
+    blur_radius_ = blur_radius
+    drop_distance_x_ = drop_distance_x
+    drop_distance_y_ = drop_distance_y
+    shadow_opacity_percent_ = shadow_opacity_percent
+    super --x=x --y=y --w=w --h=h --corner_radius=corner_radius
+    update_shadow_palette_
+
+  extent_helper_ [block]:
+    extension_left := blur_radius_ > drop_distance_x_ ?  blur_radius_ - drop_distance_x_ : 0
+    extension_top := blur_radius_ > drop_distance_y_ ?  blur_radius_ - drop_distance_y_ : 0
+    extension_right := blur_radius_ > -drop_distance_x_ ? blur_radius_ + drop_distance_x_ : 0
+    extension_bottom := blur_radius_ > -drop_distance_y_ ? blur_radius_ + drop_distance_y_ : 0
+    block.call extension_left extension_top extension_right extension_bottom
+
+  extent [block]:
+    extent_helper_: | left top right bottom |
+      block.call
+          x - left
+          y - top
+          w + left + right
+          h + top + bottom
+
+  blur_radius -> int: return blur_radius_
+
+  drop_distance_x -> int: return drop_distance_x_
+
+  drop_distance_y -> int: return drop_distance_y_
+
+  shadow_opacity_percent -> int: return shadow_opacity_percent_
+
+  blur_radius= new_radius/int -> none:
+    if not 0 <= new_radius <= 6: throw "OUT_OF_RANGE"
+    if new_radius > blur_radius_:
+      blur_radius_ = new_radius
+      invalidate
+    else if new_radius < blur_radius_:
+      invalidate
+      blur_radius_ = new_radius
+
+  drop_distance_x= new_distance/int -> none:
+    if new_distance != drop_distance_x_:
+      invalidate
+      drop_distance_x_ = new_distance
+      invalidate
+
+  drop_distance_y= new_distance/int -> none:
+    if new_distance != drop_distance_y_:
+      invalidate
+      drop_distance_y_ = new_distance
+      invalidate
+
+  shadow_opacity_percent= new_percent/int -> none:
+    if new_percent != shadow_opacity_percent_:
+      invalidate
+      shadow_opacity_percent_ = new_percent
+      update_shadow_palette_
+
+  update_shadow_palette_ -> none:
+    max_shadow_opacity := (shadow_opacity_percent_ * 2.5500001).to_int
+    shadow_palette_ = #[]
+    if max_shadow_opacity != 0xff:
+      shadow_palette_ = ByteArray 0x300: ((it / 3) * max_shadow_opacity) / 0xff
 
   frame_map canvas/AbstractCanvas:
-    win_x := canvas.x_offset_
-    win_y := canvas.y_offset_
-
     // Transform inner dimensions excluding shadow to determine if the canvas
     // is wholly inside the window.
-    transform_.xywh inner_x_ inner_y_ inner_w_ inner_h_: | x y w2 h2 |
-      x2 := x - win_x
-      y2 := y - win_y
-      if x2 + corner_radius_ <= 0 and y2 + corner_radius_ <= 0 and x2 + w2 - corner_radius_ >= canvas.width_ and y2 + h2 - corner_radius_ >= canvas.height_:
+    canvas.transform.xywh 0 0 inner_w_ inner_h_: | x2 y2 w2 h2 |
+      right := x2 + w2
+      bottom := y2 + h2
+      if x2                  <= 0 and y2 + corner_radius_ <= 0 and right                  >= canvas.width_ and bottom - corner_radius_ >= canvas.height_ or
+         x2 + corner_radius_ <= 0 and y2                  <= 0 and right - corner_radius_ >= canvas.width_ and bottom                  >= canvas.height_:
         // In the middle, the window content is 100% opaque and draw on top of the
         // frame.  There is no need to provide a frame alpha map, so for efficiency we
         // just return 0 which indicates the frame is 100% transparent.
-        return WindowTexture_.ALL_TRANSPARENT
+        return WindowElement.ALL_TRANSPARENT
 
     // Transform outer dimensions including border to determine if the canvas
     // is wholly outside the window and its shadow.
-    transform_.xywh x_ y_ w_ h_: | x y w2 h2 |
-      x2 := x - win_x
-      y2 := y - win_y
-      if x2 + w2 <= 0 or y2 + h2 <= 0 or x2 >= canvas.width_ or y2 >= canvas.height_:
-        return WindowTexture_.ALL_TRANSPARENT  // The frame is not opaque outside the shadow
+    extent_helper_: | left top right bottom |
+      canvas.transform.xywh -left -top (inner_w_ + left + right) (inner_h_ + top + bottom): | x2 y2 w2 h2 |
+        if x2 + w2 <= 0 or y2 + h2 <= 0 or x2 >= canvas.width_ or y2 >= canvas.height_:
+          return WindowElement.ALL_TRANSPARENT  // The frame is not opaque outside the shadow
 
     // Create a bitmap to describe the frame's extent.  It needs to be padded
     // relative to the canvas size so we can use the Gaussian blur.
-    transparency_map := make_alpha_map_ canvas blur_radius * 2
-    map_width := canvas.width_ + blur_radius * 2
+    transparency_map := canvas.make_alpha_map --padding=(blur_radius * 2)
+    transparency_map.transform = (canvas.transform.invert.translate -blur_radius -blur_radius).invert
 
-    transform_.xywh (inner_x_ + drop_distance_x) (inner_y_ + drop_distance_y) inner_w_ inner_h_: | x y w2 h2 |
-      x2 := x + blur_radius - win_x
-      y2 := y + blur_radius - win_y
+    max_shadow_opacity := (shadow_opacity_percent * 2.5500001).to_int
+    draw_rounded_corners_ transparency_map drop_distance_x_ drop_distance_y_ inner_w_ inner_h_ max_shadow_opacity
 
-      // Transform the unblurred dimensions of the shadow so we can plot that on the
-      // transparency map.
-      draw_rounded_corners_ transparency_map map_width x2 y2 w2 h2 --frame=true
+    if blur_radius == 0 or transparency_map is not one_byte.OneByteCanvas_:
+      return transparency_map
 
-    if blur_radius == 0: return transparency_map
+    one_byte_map := transparency_map as one_byte.OneByteCanvas_
 
     // Blur the shadow.
-    bytemap_blur transparency_map map_width blur_radius
+    bytemap_blur one_byte_map.pixels_ transparency_map.width_ blur_radius
 
     // Crop off the extra that was added to blur.
-    transparency_map_unpadded := make_alpha_map_ canvas 0
-    canvas.height_.repeat:
-      source_index := (it + blur_radius) * map_width + blur_radius
-      transparency_map_unpadded.replace (it*canvas.width_) transparency_map source_index source_index + canvas.width_
+    transparency_map_unpadded := canvas.make_alpha_map
+    blit
+        one_byte_map.pixels_[blur_radius + blur_radius * one_byte_map.width_..]   // Source.
+        (transparency_map_unpadded as one_byte.OneByteCanvas_).pixels_  // Destination.
+        transparency_map_unpadded.width_   // Bytes per line.
+        --source_line_stride=transparency_map.width_
     return transparency_map_unpadded
+
+  draw_frame canvas/AbstractCanvas:
+    canvas.set_all_pixels 0
 
 abstract class BitmapTextureBase_ extends SizedTexture:
   w := 0

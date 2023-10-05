@@ -10,7 +10,7 @@ import expect show *
 import font show *
 import pixel_display show *
 import pixel_display.texture show *
-import .png-visualizer
+import .png_visualizer
 
 main args:
   if args.size != 1:
@@ -28,8 +28,8 @@ main args:
   texture_text := display.text (ctx.with --color=SEVERAL_BLUE) 30 20 "Texture"
   texture_text_2 := display.text (ctx.with --color=SEVERAL_BLUE) 80 20 "Texture"
   // Element-based rectangles.
-  element_text := TextElement 30 30 --color=SEVERAL_ORANGE --text="joo%" --font=sans10
-  element_text_2 := TextElement 130 20 --color=SEVERAL_ORANGE --text="joo%" --font=sans10
+  element_text := TextElement --x=30 --y=30 --color=SEVERAL_ORANGE --text="joo%" --font=sans10
+  element_text_2 := TextElement --x=130 --y=20 --color=SEVERAL_ORANGE --text="joo%" --font=sans10
   display.add element_text
   display.add element_text_2
   display.draw
@@ -70,3 +70,5 @@ main args:
 
   element_text.orientation = ORIENTATION_270
   display.draw
+
+  driver.write_png

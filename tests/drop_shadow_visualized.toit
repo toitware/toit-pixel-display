@@ -7,7 +7,7 @@ import font show Font
 import pixel_display show *
 import pixel_display.texture show *
 import pixel_display.true_color show *
-import .png-visualizer
+import .png_visualizer
 
 main args:
   sans10 := Font.get "sans10"
@@ -36,3 +36,5 @@ main args:
   text.move_to 15 37
 
   display.draw
+
+  driver.write_png

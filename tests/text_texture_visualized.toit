@@ -10,7 +10,7 @@ import expect show *
 import font show *
 import pixel_display show *
 import pixel_display.texture show *
-import .png-visualizer
+import .png_visualizer
 
 main args:
   if args.size != 1:
@@ -45,3 +45,5 @@ main args:
   texture_text_2.text = "Test the Folketïng"
   texture_text_3.text = "Test * For the win"  // Both ends move because its centered.
   display.draw
+
+  driver.write_png

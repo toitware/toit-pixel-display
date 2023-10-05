@@ -13,6 +13,7 @@ import font show Font
 import icons show Icon
 import .pixel_display show FourGrayPixelDisplay  // For the doc comment.
 import .texture
+import .legacy
 
 WHITE ::= 0
 LIGHT_GRAY ::= 1

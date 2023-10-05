@@ -12,6 +12,7 @@ import font show Font
 import icons show Icon
 import .pixel_display show GrayScalePixelDisplay  // For the doc comment.
 import .texture
+import .legacy
 import .one_byte
 
 WHITE ::= 255
@@ -24,12 +25,6 @@ BLACK ::= 0
 class Canvas extends OneByteCanvas_:
   constructor width/int height/int:
     super width height
-
-  /**
-  Creates a blank texture with the same dimensions as this one.
-  */
-  create_similar:
-    return Canvas width_ height_
 
 class FilledRectangle extends OneByteFilledRectangle_:
   constructor color/int x/int y/int w/int h/int transform/Transform:
@@ -237,8 +232,8 @@ class DropShadowWindow extends DropShadowWindow_:
         else:
           map[x + y_offset] = opacity
 
-  draw_background canvas/Canvas:
+  draw_background canvas/OneByteCanvas_:
     bytemap_zap canvas.pixels_ background_color
 
-  draw_frame canvas/Canvas:
+  draw_frame canvas/OneByteCanvas_:
     bytemap_zap canvas.pixels_ 0

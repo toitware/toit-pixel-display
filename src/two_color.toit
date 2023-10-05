@@ -11,8 +11,10 @@ For use with e-paper displays and the SSD1306 128x64 display
 import bitmap show *
 import font show Font
 import icons show Icon
+import .two_color as two_color
 import .pixel_display show TwoColorPixelDisplay  // For the doc comment.
 import .texture
+import .legacy
 
 WHITE ::= 0
 BLACK ::= 1
@@ -42,10 +44,19 @@ class Canvas extends AbstractCanvas:
   Creates a blank texture with the same dimensions as this one.
   */
   create_similar -> Canvas:
-    return Canvas width_ height_
+    result := Canvas width_ height_
+    result.transform = transform
+    return result
+
+  make_alpha_map --padding/int=0 -> AbstractCanvas:
+    result := Canvas (width_ + padding) (height_ + padding)
+    result.transform = transform
+    return result
 
   composit frame_opacity frame_canvas/Canvas? painting_opacity painting_canvas/Canvas:
-    composit_bytes pixels_ frame_opacity (frame_canvas ? frame_canvas.pixels_ : null) painting_opacity painting_canvas.pixels_ true
+    fo := frame_opacity is ByteArray ? frame_opacity : frame_opacity.pixels_
+    po := painting_opacity is ByteArray ? painting_opacity : painting_opacity.pixels_
+    composit_bytes pixels_ fo (frame_canvas ? frame_canvas.pixels_ : null) po painting_canvas.pixels_ true
 
   rectangle x/int y/int --w/int --h/int --color/int:
     transform.xywh x y w h: | x2 y2 w2 h2 |
@@ -54,6 +65,16 @@ class Canvas extends AbstractCanvas:
   text x/int y/int --text/string --color/int --font/Font --orientation/int=ORIENTATION_0:
     transform.xyo x y orientation: | x2 y2 o2 |
       bitmap_draw_text x2 y2 color o2 text font pixels_ width_
+
+  draw_bitmap x/int y/int
+      --pixels/ByteArray
+      --color/int
+      --pixmap_width/int
+      --orientation/int:
+    transform.xyo x y orientation: | x2 y2 o2 |
+      bytewise := false
+      offset := 0
+      bitmap_draw_bitmap x2 y2 1 o2 pixels offset pixmap_width pixels_ width_ bytewise
 
 class FilledRectangle extends FilledRectangle_:
   color_ := ?

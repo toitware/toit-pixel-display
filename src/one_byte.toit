@@ -10,10 +10,11 @@ import bitmap show *
 import font show Font
 import icons show Icon
 import .texture
+import .legacy
 
 // The canvas contains a ByteArray.
 // Initially all pixels are 0.
-abstract class OneByteCanvas_ extends AbstractCanvas:
+class OneByteCanvas_ extends AbstractCanvas:
   pixels_ := ?
 
   constructor width/int height/int:
@@ -27,8 +28,23 @@ abstract class OneByteCanvas_ extends AbstractCanvas:
   get_pixel_ x y:
     return pixels_[x + width_ * y]
 
+  /**
+  Creates a blank texture with the same dimensions as this one.
+  */
+  create_similar:
+    result := OneByteCanvas_ width_ height_
+    result.transform=transform
+    return result
+
+  make_alpha_map --padding/int=0 -> AbstractCanvas:
+    result := OneByteCanvas_ (width_ + padding) (height_ + padding)
+    result.transform=transform
+    return result
+
   composit frame_opacity frame_canvas/OneByteCanvas_? painting_opacity painting_canvas/OneByteCanvas_:
-    composit_bytes pixels_ frame_opacity (frame_canvas ? frame_canvas.pixels_ : null) painting_opacity painting_canvas.pixels_ false
+    fo := frame_opacity is ByteArray ? frame_opacity : frame_opacity.pixels_
+    po := painting_opacity is ByteArray ? painting_opacity : painting_opacity.pixels_
+    composit_bytes pixels_ fo (frame_canvas ? frame_canvas.pixels_ : null) po painting_canvas.pixels_ false
 
   rectangle x/int y/int --w/int --h/int --color/int:
     transform.xywh x y w h: | x2 y2 w2 h2 |
@@ -37,6 +53,13 @@ abstract class OneByteCanvas_ extends AbstractCanvas:
   text x/int y/int --text/string --color/int --font/Font --orientation/int=ORIENTATION_0:
     transform.xyo x y orientation: | x2 y2 o2 |
       bytemap_draw_text x2 y2 color o2 text font pixels_ width_
+
+  draw_pixmap x/int y/int --pixels/ByteArray
+      --palette/ByteArray=#[]
+      --pixmap_width/int
+      --orientation/int=ORIENTATION_0:
+    transform.xyo x y orientation: | x2 y2 o2 |
+      bitmap_draw_bytemap x2 y2 -1 o2 pixels pixmap_width palette pixels_ width_
 
 class OneByteFilledRectangle_ extends FilledRectangle_:
   color_ := ?

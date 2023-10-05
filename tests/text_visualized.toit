@@ -10,7 +10,7 @@ import expect show *
 import font show *
 import pixel_display show *
 import pixel_display.texture show *
-import .png-visualizer
+import .png_visualizer
 
 main args:
   if args.size != 1:
@@ -22,9 +22,9 @@ main args:
 
   sans10 := Font.get "sans10"
 
-  element_text := TextElement 30 20 --color=SEVERAL_ORANGE --text="Testing 123" --font=sans10
-  element_text_2 := TextElement 180 50 --color=SEVERAL_ORANGE --text="123 Testing" --font=sans10 --alignment=TEXT_TEXTURE_ALIGN_RIGHT
-  element_text_3 := TextElement 96 80 --color=SEVERAL_ORANGE --text="T 123 For the win" --font=sans10 --alignment=TEXT_TEXTURE_ALIGN_CENTER
+  element_text := TextElement --x=30 --y=20 --color=SEVERAL_ORANGE --text="Testing 123" --font=sans10
+  element_text_2 := TextElement --x=180 --y=50 --color=SEVERAL_ORANGE --text="123 Testing" --font=sans10 --alignment=TEXT_TEXTURE_ALIGN_RIGHT
+  element_text_3 := TextElement --x=96 --y=80 --color=SEVERAL_ORANGE --text="T 123 For the win" --font=sans10 --alignment=TEXT_TEXTURE_ALIGN_CENTER
   display.add element_text
   display.add element_text_2
   display.add element_text_3
@@ -46,3 +46,5 @@ main args:
   element_text_2.text = "Test the Folketlng"
   element_text_3.text = "Test * For the win"  // Both ends move because its centered.
   display.draw
+
+  driver.write_png

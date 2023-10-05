@@ -9,8 +9,10 @@ Classes useful for RGB $TrueColorPixelDisplay.
 import bitmap show *
 import font show Font
 import icons show Icon
+import .one_byte show OneByteCanvas_
 import .pixel_display show TrueColorPixelDisplay  // For the doc comment.
 import .texture
+import .legacy
 
 get_rgb r/int g/int b/int -> int:
   return (r << 16) | (g << 8) | b
@@ -57,12 +59,21 @@ class Canvas extends AbstractCanvas:
   Creates a blank texture with the same dimensions as this one.
   */
   create_similar:
-    return Canvas width_ height_
+    result := Canvas width_ height_
+    result.transform = transform
+    return result
+
+  make_alpha_map --padding/int=0 -> AbstractCanvas:
+    result := OneByteCanvas_ (width_ + padding) (height_ + padding)
+    result.transform = transform
+    return result
 
   composit frame_opacity frame_canvas/Canvas? painting_opacity painting_canvas/Canvas:
-    composit_bytes red_ frame_opacity (frame_canvas ? frame_canvas.red_ : null) painting_opacity painting_canvas.red_ false
-    composit_bytes green_ frame_opacity (frame_canvas ? frame_canvas.green_ : null) painting_opacity painting_canvas.green_ false
-    composit_bytes blue_ frame_opacity (frame_canvas ? frame_canvas.blue_ : null) painting_opacity painting_canvas.blue_ false
+    fo := frame_opacity is ByteArray ? frame_opacity : frame_opacity.pixels_
+    po := painting_opacity is ByteArray ? painting_opacity : painting_opacity.pixels_
+    composit_bytes red_ fo (frame_canvas ? frame_canvas.red_ : null) po painting_canvas.red_ false
+    composit_bytes green_ fo (frame_canvas ? frame_canvas.green_ : null) po painting_canvas.green_ false
+    composit_bytes blue_ fo (frame_canvas ? frame_canvas.blue_ : null) po painting_canvas.blue_ false
 
   rectangle x/int y/int --w/int --h/int --color/int:
     transform.xywh x y w h: | x2 y2 w2 h2 |
@@ -81,6 +92,14 @@ class Canvas extends AbstractCanvas:
       bytemap_draw_text x2 y2 r o2 text font red_ width_
       bytemap_draw_text x2 y2 g o2 text font green_ width_
       bytemap_draw_text x2 y2 b o2 text font blue_ width_
+
+  draw_rgb_pixmap x/int y/int --r/ByteArray --g/ByteArray --b/ByteArray
+      --pixmap_width/int
+      --orientation/int=ORIENTATION_0:
+    transform.xyo x y orientation: | x2 y2 o2 |
+      bitmap_draw_bytemap x2 y2 -1 o2 r pixmap_width #[] red_ width_
+      bitmap_draw_bytemap x2 y2 -1 o2 g pixmap_width #[] green_ width_
+      bitmap_draw_bytemap x2 y2 -1 o2 b pixmap_width #[] blue_ width_
 
 class FilledRectangle extends FilledRectangle_:
   color_ := ?

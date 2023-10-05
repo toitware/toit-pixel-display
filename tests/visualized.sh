@@ -12,16 +12,4 @@ mkdir -p tests/out
 
 $TOIT_EXE -Xenable_asserts tests/$TOIT_PROGRAM tests/out/$TOIT_PROGRAM
 
-for outfilename in tests/out/$TOIT_PROGRAM-*.png
-do
-  echo $outfilename
-  goldfilename=${outfilename/out/gold}
-  cmp $goldfilename $outfilename
-done
-
-for goldfilename in tests/gold/$TOIT_PROGRAM-*.png
-do
-  outfilename=${goldfilename/gold/out}
-  cmp $goldfilename $outfilename
-done
-
+pngdiff tests/out/$TOIT_PROGRAM.png tests/gold/$TOIT_PROGRAM.png

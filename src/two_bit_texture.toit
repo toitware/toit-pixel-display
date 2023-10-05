@@ -8,7 +8,9 @@
 
 import bitmap show *
 import font show Font
+import .two_color as two_color
 import .texture
+import .legacy
 
 // The canvas contains two bitmapped ByteArrays, for up to 4 colors or gray
 // scales per pixel.  Starts off with all pixels 0, 0.
@@ -39,11 +41,20 @@ class TwoBitCanvas_ extends AbstractCanvas:
   Creates a blank texture with the same dimensions as this one.
   */
   create_similar:
-    return TwoBitCanvas_ width_ height_
+    result := TwoBitCanvas_ width_ height_
+    result.transform = transform
+    return result
+
+  make_alpha_map --padding/int=0 -> AbstractCanvas:
+    result := two_color.Canvas (width_ + padding) (height_ + padding)
+    result.transform = transform
+    return result
 
   composit frame_opacity frame_canvas painting_opacity painting_canvas/TwoBitCanvas_:
-    composit_bytes plane_0_ frame_opacity (frame_canvas ? frame_canvas.plane_0_ : null) painting_opacity painting_canvas.plane_0_ true
-    composit_bytes plane_1_ frame_opacity (frame_canvas ? frame_canvas.plane_1_ : null) painting_opacity painting_canvas.plane_1_ true
+    fo := frame_opacity is ByteArray ? frame_opacity : frame_opacity.pixels_
+    po := painting_opacity is ByteArray ? painting_opacity : painting_opacity.pixels_
+    composit_bytes plane_0_ fo (frame_canvas ? frame_canvas.plane_0_ : null) po painting_canvas.plane_0_ true
+    composit_bytes plane_1_ fo (frame_canvas ? frame_canvas.plane_1_ : null) po painting_canvas.plane_1_ true
 
   rectangle x/int y/int --w/int --h/int --color/int:
     transform.xywh x y w h: | x2 y2 w2 h2 |

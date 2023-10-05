@@ -6,7 +6,7 @@ import expect show *
 import font show Font
 import pixel_display show *
 import pixel_display.two_color show *
-import .png-visualizer
+import .png_visualizer
 
 main args:
   if args.size != 1:
@@ -33,3 +33,5 @@ main args:
 
   middle_line.text = "the DISPLAY"
   display.draw
+
+  driver.write_png
