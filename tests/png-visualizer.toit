@@ -368,10 +368,7 @@ SEVERAL_ORANGE ::= 6
 SEVERAL_DARK_GRAY ::= 7
 SEVERAL_GRAY ::= 8
 SEVERAL_LIGHT_GRAY ::= 9
-<<<<<<< HEAD
-=======
 SEVERAL_MAX_COLOR_ ::= 9
->>>>>>> origin/main
 
 byte_swap_ ba/ByteArray -> ByteArray:
   result := ba.copy
