@@ -15,7 +15,7 @@ main args:
   driver := TwoColorPngVisualizer 160 64 args[0] --outline=WHITE
   display := TwoColorPixelDisplay driver
   display.background = BLACK
-  
+
   sans10 := Font.get "sans10"
 
   ctx := display.context --landscape --color=WHITE --font=sans10

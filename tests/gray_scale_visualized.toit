@@ -15,7 +15,7 @@ main args:
   driver := GrayScalePngVisualizer 160 64 args[0] --outline=0xff
   display := GrayScalePixelDisplay driver
   display.background = 0x40
-  
+
   sans10 := Font.get "sans10"
 
   ctx := display.context --landscape --color=0xc0 --font=sans10
