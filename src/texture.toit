@@ -51,12 +51,9 @@ class Transform:
     return Transform.with_ [a3, -a1, -a2, a0, -a3 * array_[4] + a2 * array_[5], a1 * array_[4] - a0 * array_[5]]
 
   operator == other/Transform -> bool:
-    return array_[0] == other.array_[0] and
-           array_[1] == other.array_[1] and
-           array_[2] == other.array_[2] and
-           array_[3] == other.array_[3] and
-           array_[4] == other.array_[4] and
-           array_[5] == other.array_[5]
+    6.repeat: | i |
+      if array_[i] != other.array_[i]: return false
+    return true
 
   /**
   Finds the extent of a rectangle after it has been transformed with the transform.
