@@ -41,6 +41,20 @@ class Transform:
               a1 * o4 + a3 * o5 + array_[5]]
     return Transform.with_ array
 
+  invert -> Transform:
+    a0 := array_[0]
+    a1 := array_[1]
+    a2 := array_[2]
+    a3 := array_[3]
+    // The scaling of the transform is always 1, so we don't need to do anything about that.
+    assert: a0 * a3 - a1 * a2 == 1
+    return Transform.with_ [a3, -a1, -a2, a0, -a3 * array_[4] + a2 * array_[5], a1 * array_[4] - a0 * array_[5]]
+
+  operator == other/Transform -> bool:
+    6.repeat: | i |
+      if array_[i] != other.array_[i]: return false
+    return true
+
   /**
   Finds the extent of a rectangle after it has been transformed with the transform.
     $x_in: The left edge before the transformation is applied.
