@@ -343,7 +343,7 @@ abstract class PngVisualizingDriver_ extends AbstractDriver:
       if gray:
         line = ByteArray line.size: line[it] ^ 0xff
       else if several_color:
-        line = ByteArray line.size: min 9 line[it]
+        line = ByteArray line.size: min SEVERAL_MAX_COLOR_ line[it]
       compressor.write line
 
     compressor.close
@@ -368,6 +368,10 @@ SEVERAL_ORANGE ::= 6
 SEVERAL_DARK_GRAY ::= 7
 SEVERAL_GRAY ::= 8
 SEVERAL_LIGHT_GRAY ::= 9
+<<<<<<< HEAD
+=======
+SEVERAL_MAX_COLOR_ ::= 9
+>>>>>>> origin/main
 
 byte_swap_ ba/ByteArray -> ByteArray:
   result := ba.copy
