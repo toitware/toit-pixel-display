@@ -196,6 +196,19 @@ abstract class AbstractCanvas:
   abstract make_alpha_map -> AbstractCanvas
   abstract make_alpha_map --padding/int -> AbstractCanvas
 
+  static ALL_OUTSIDE ::= 0
+  static ALL_INSIDE ::= 1
+  static MIXED_BOUNDS ::= 2
+
+  bounds_analysis x/int y/int w/int h/int -> int:
+    if h == 0 or w == 0: return ALL_OUTSIDE
+    transform.xywh x y w h: | x2 y2 w2 h2 |
+      right := x2 + w2
+      bottom := y2 + h2
+      if right < 0 or bottom < 0 or x2 >= width_ or y2 >= height_: return ALL_OUTSIDE
+      if x2 >= 0 and y2 >= 0 and right <= width_ and bottom <= height_: return ALL_INSIDE
+    return MIXED_BOUNDS
+
   abstract composit frame_opacity frame_canvas/AbstractCanvas painting_opacity painting_canvas/AbstractCanvas
 
   // draw a Line from x1,y1 (inclusive) to x2,y2 (exclusive) using the transform.
@@ -474,7 +487,13 @@ class GradientElement extends ResizableElement:
       b += step_b
 
   draw canvas/AbstractCanvas -> none:
-    if h == 0 or w == 0: return
+    analysis := canvas.bounds_analysis x y w h
+    if analysis == AbstractCanvas.ALL_OUTSIDE: return
+    // Determine whether the draw operations will be automatically cropped for
+    // us, or whether we need to do it ourselves by using slices for drawing
+    // operations.  We could also check whether we are inside a window that will
+    // use compositing to crop everything.
+    auto_crop := analysis == AbstractCanvas.ALL_INSIDE
 
     // CSS gradient angles are:
     //    0 bottom to top.
@@ -484,20 +503,15 @@ class GradientElement extends ResizableElement:
 
     if draw_vertical_:
       // The gradient goes broadly vertically, and we draw in vertical strips.
-      up/bool := ?
-      orientation/int := ?
-      x2/int := ?
-      y2/int := ?
+      up/bool := angle_ < 90
+      orientation/int := ORIENTATION_90
+      x2/int := x
+      y2/int := y + h
       if 90 < angle_ < 270:  // Top to bottom.
         up = angle_ <= 180
-        x2 = x + 1
-        y2 = y
         orientation = ORIENTATION_270
-      else:  // Bottom to top.
-        up = angle_ < 90
-        x2 = x
-        y2 = y + h
-        orientation=ORIENTATION_90
+        x2++
+        y2 = y
       start/int := w - 1
       stop/int := -1
       i_step/int := -1
@@ -509,27 +523,36 @@ class GradientElement extends ResizableElement:
       step := ((red_pixels_.size - h) << 16) / w  // n.16 fixed point.
       for i := start; i != stop; i += i_step:
         o := offset >> 16
-        if canvas is true_color.Canvas:
-          (canvas as true_color.Canvas).draw_rgb_pixmap (i + x2) y2 --r=red_pixels_[o .. o + h] --g=green_pixels_[o .. o + h] --b=blue_pixels_[o .. o + h] --pixmap_width=h --orientation=orientation
+        y3 := ?
+        r := red_pixels_
+        g := green_pixels_
+        b := blue_pixels_
+        if auto_crop:
+          if orientation == ORIENTATION_90:
+            y3 = y2 + o
+          else:
+            y3 = y2 - o
         else:
-          (canvas as one_byte.OneByteCanvas_).draw_pixmap (i + x2) y2 --pixels=blue_pixels_[o .. o + h] --pixmap_width=h --orientation=orientation
+          y3 = y2
+          r = r[o .. o + h]
+          g = g[o .. o + h]
+          b = b[o .. o + h]
+        if canvas is true_color.Canvas:
+          (canvas as true_color.Canvas).draw_rgb_pixmap (i + x2) y3 --r=r --g=g --b=b --pixmap_width=h --orientation=orientation
+        else:
+          (canvas as one_byte.OneByteCanvas_).draw_pixmap (i + x2) y3 --pixels=b --pixmap_width=h --orientation=orientation
         offset += step
     else:
       // The gradient goes broadly horizontally, and we draw in horizontal strips.
-      up/bool := ?
-      orientation/int := ?
-      x2/int := ?
-      y2/int := ?
-      if angle_ < 180:  // Left to right.
-        up = angle_ > 90
-        x2 = x
-        y2 = y
-        orientation=ORIENTATION_0
-      else:  // Right to left.
+      up/bool := angle_ > 90
+      orientation/int := ORIENTATION_0
+      x2/int := x
+      y2/int := y
+      if angle_ >= 180:  // Right to left.
         up = angle_ < 270
-        x2 = x + w
-        y2 = y + 1
         orientation = ORIENTATION_180
+        x2 += w
+        y2++
       start := h - 1
       stop := -1
       i_step := -1
@@ -541,10 +564,24 @@ class GradientElement extends ResizableElement:
       step := ((red_pixels_.size - w) << 16) / h  // n.16 fixed point.
       for i := start; i != stop; i += i_step:
         o := offset >> 16
-        if canvas is true_color.Canvas:
-          (canvas as true_color.Canvas).draw_rgb_pixmap x2 (i + y2) --r=red_pixels_[o .. o + w] --g=green_pixels_[o .. o + w] --b=blue_pixels_[o .. o + w] --pixmap_width=w --orientation=orientation
+        x3 := ?
+        r := red_pixels_
+        g := green_pixels_
+        b := blue_pixels_
+        if auto_crop:
+          if orientation == ORIENTATION_0:
+            x3 = x2 - o
+          else:
+            x3 = x2 + o
         else:
-          (canvas as one_byte.OneByteCanvas_).draw_pixmap x2 (i + y2) --pixels=blue_pixels_[o .. o + w] --pixmap_width=w --orientation=orientation
+          x3 = x2
+          r = r[o .. o + w]
+          g = g[o .. o + w]
+          b = b[o .. o + w]
+        if canvas is true_color.Canvas:
+          (canvas as true_color.Canvas).draw_rgb_pixmap x3 (i + y2) --r=r --g=g --b=b --pixmap_width=w --orientation=orientation
+        else:
+          (canvas as one_byte.OneByteCanvas_).draw_pixmap x3 (i + y2) --pixels=b --pixmap_width=w --orientation=orientation
         offset += step
 
 class FilledRectangleElement extends RectangleElement:
@@ -786,6 +823,7 @@ class BarCodeEanElement extends CustomElement:
 
   // Redraw routine.
   draw canvas/AbstractCanvas:
+    if (canvas.bounds_analysis x y w h) == AbstractCanvas.ALL_OUTSIDE: return
     draw_background_ canvas
 
     x := x_ + EAN_13_QUIET_ZONE_WIDTH
@@ -1584,6 +1622,9 @@ abstract class WindowElement extends BorderlessWindowElement implements Window:
 
   // After the textures under us have drawn themselves, we draw on top.
   draw canvas/AbstractCanvas -> none:
+    extent: | x2 y2 w2 h2 |
+      if (canvas.bounds_analysis x2 y2 w2 h2) == AbstractCanvas.ALL_OUTSIDE: return
+
     old_transform := canvas.transform
     canvas.transform = old_transform.translate x_ y_
 
