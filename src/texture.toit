@@ -348,6 +348,8 @@ They are given a list of $GradientSpecifiers, each of which has a color and
   The specifiers should be ordered in increasing order of perentage.
 Angles are as in CSS, with 0 degrees being up and 90 degrees being to the right
   (this is different from text orientations, which go anti-clockwise).
+See https://cssgradient.io/ for a visual explanation and playground for CSS
+  gradients.
 Example:
 ```
   gradient = GradientElement --w=200 --h=100 --angle=45
