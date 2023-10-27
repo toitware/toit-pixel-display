@@ -9,6 +9,8 @@ import crypto.crc show *
 import host.file
 import monitor show Latch
 import pixel_display show *
+import png_tools.png_writer
+import png_tools.png_reader show *
 import zlib
 
 class TwoColorPngVisualizer extends PngVisualizingDriver_:
@@ -287,22 +289,22 @@ abstract class PngVisualizingDriver_ extends AbstractDriver:
     color_type := ?
     if true_color:
       bit_depth = 8
-      color_type = 2  // True color.
+      color_type = COLOR-TYPE-TRUECOLOR
     else if gray_scale:
       bit_depth = 8
-      color_type = 0  // Gray scale.
+      color_type = COLOR-TYPE-GREYSCALE
     else if three_color:
       bit_depth = 2
-      color_type = 3  // Palette.
+      color_type = COLOR-TYPE-INDEXED
     else if several_color:
       bit_depth = 8
-      color_type = 3  // Palette.
+      color_type = COLOR-TYPE-INDEXED
     else if gray:
       bit_depth = 2
-      color_type = 0  // Grayscale.
+      color_type = COLOR-TYPE-GREYSCALE
     else:
       bit_depth = 1
-      color_type = 0  // Grayscale
+      color_type = COLOR-TYPE-GREYSCALE
 
     for y := 0; y < frames_down; y++:
       for x := 0; x < frames_across; x++:
@@ -326,28 +328,22 @@ abstract class PngVisualizingDriver_ extends AbstractDriver:
             --destination_line_stride=(width_to_byte_width mega_width)
             --source_line_stride=(width_to_byte_width width_)
 
-    write_ writeable HEADER
-
-    ihdr := #[
-      0, 0, 0, 0,          // Width.
-      0, 0, 0, 0,          // Height.
-      bit_depth,
-      color_type,
-      0, 0, 0,
-    ]
-    BIG_ENDIAN.put_uint32 ihdr 0 mega_width
-    BIG_ENDIAN.put_uint32 ihdr 4 mega_height
-    write_chunk writeable "IHDR" ihdr
+    png_writer := png_writer.PngWriter
+        writeable
+        mega_width
+        mega_height
+        --bit_depth=bit_depth
+        --color_type=color_type
 
     if three_color:
-      write_chunk writeable "PLTE" #[  // Palette.
+      png_writer.write_chunk "PLTE" #[  // Palette.
           0xff, 0xff, 0xff,         // 0 is white.
           0, 0, 0,                  // 1 is black.
           0xff, 0, 0,               // 2 is red.
         ]
     else if several_color:
       // Use color palette of 7-color epaper display.
-      write_chunk writeable "PLTE" #[  // Palette.
+      png_writer.write_chunk "PLTE" #[  // Palette.
           0xff, 0xff, 0xff,         // 0 is white.
           0, 0, 0,                  // 1 is black.
           0xff, 0, 0,               // 2 is red.
@@ -361,38 +357,20 @@ abstract class PngVisualizingDriver_ extends AbstractDriver:
           0xc0, 0xc0, 0xc0,         // 9 is light gray.
         ]
 
-    compressor := zlib.Encoder
-    done := Latch
-    compressed := Buffer
-
-    task::
-      while data := compressor.reader.read:
-        compressed.write data
-      done.set null
-
     zero_byte := #[0]
     line_size := width_to_byte_width mega_width
     line_step := width_to_byte_width mega_width
     mega_height.repeat: | y |
-      compressor.write zero_byte  // Adaptive scheme.
+      png_writer.write_uncompressed zero_byte  // Adaptive scheme.
       index := y * line_step
       line := mega_buffer[index..index + line_size]
       if gray:
         line = ByteArray line.size: line[it] ^ 0xff
       else if several_color:
         line = ByteArray line.size: min SEVERAL_MAX_COLOR_ line[it]
-      compressor.write line
+      png_writer.write_uncompressed line
 
-    compressor.close
-
-    // Wait for the reader task to finish.
-    done.get
-
-    if compressed.size != 0:
-      write_chunk writeable "IDAT" compressed.bytes  // Compressed pixel data.
-
-    write_chunk writeable "IEND" #[]  // End chunk.
-
+    png_writer.close
     writeable.close
 
 SEVERAL_WHITE ::= 0

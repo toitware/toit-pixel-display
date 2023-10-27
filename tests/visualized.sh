@@ -12,4 +12,4 @@ mkdir -p tests/out
 
 $TOIT_EXE -Xenable_asserts tests/$TOIT_PROGRAM tests/out/$TOIT_PROGRAM
 
-pngdiff tests/out/$TOIT_PROGRAM.png tests/gold/$TOIT_PROGRAM.png
+$TOIT_EXE ../toit-png-reader/bin/pngdiff.toit tests/out/$TOIT_PROGRAM.png tests/gold/$TOIT_PROGRAM.png
