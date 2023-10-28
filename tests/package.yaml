@@ -5,4 +5,4 @@ dependencies:
   pixel_display:
     path: ..
   png-tools:
-    path: ../../toit-png-reader/
+    path: ../../toit-png-tools/

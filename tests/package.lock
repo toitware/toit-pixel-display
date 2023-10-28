@@ -2,7 +2,7 @@ sdk: ^2.0.0-alpha.64
 prefixes:
   host: pkg-host
   pixel_display: ..
-  png-tools: toit-png-reader
+  png-tools: toit-png-tools
 packages:
   ..:
     path: ..
@@ -11,7 +11,5 @@ packages:
     name: host
     version: 1.10.0
     hash: e1c11a0e0bf65fe810520e8d893e554a8fe33b78
-  toit-png-reader:
-    path: ../../toit-png-reader
-    prefixes:
-      host: pkg-host
+  toit-png-tools:
+    path: ../../toit-png-tools
