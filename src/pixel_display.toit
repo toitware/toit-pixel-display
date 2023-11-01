@@ -110,6 +110,10 @@ abstract class PixelDisplay implements Window:
   static DIRTY_ ::= 1
   dirty_bytes_per_line_ := 0
   dirty_ := null
+  dirty_left_ := 0
+  dirty_top_ := 0
+  dirty_right_ := 0
+  dirty_bottom_ := 0
 
   dirty_accumulator_ := ByteArray 1
 
@@ -268,6 +272,10 @@ abstract class PixelDisplay implements Window:
 
   child_invalidated x/int y/int w/int h/int -> none:
     if not dirty_: return  // Some devices don't use the dirty array to track changes.
+    dirty_left_ = min dirty_left_ x
+    dirty_right_ = max dirty_right_ (x + w)
+    dirty_top_ = min dirty_top_ y
+    dirty_bottom_ = max dirty_bottom_ (y + h)
 
     // Round up the invalidated area.
     rx := x & 7
@@ -333,7 +341,7 @@ abstract class PixelDisplay implements Window:
       return
 
     // Send data for the whole screen, even if only part of it changed.
-    if speed < 50: bitmap_zap dirty_ DIRTY_
+    if speed < 50: all_is_dirty_
 
     // TODO(kasper): Once we've started a partial update, we need to make sure we refresh,
     // because otherwise the lock in the display code in the kernel will not be released.
@@ -347,7 +355,21 @@ abstract class PixelDisplay implements Window:
     finally:
       if not refreshed: refresh_ 0 0 0 0
 
+    all_is_clean_
+
+  all_is_clean_ -> none:
     bitmap_zap dirty_ CLEAN_
+    dirty_left_ = driver_.width
+    dirty_right_ = 0
+    dirty_top_ = driver_.height
+    dirty_bottom_ = 0
+
+  all_is_dirty_ -> none:
+    bitmap_zap dirty_ DIRTY_
+    dirty_left_ = 0
+    dirty_right_ = driver_.width
+    dirty_top_ = 0
+    dirty_bottom_ = driver_.height
 
   // Clean determines if we should clean or draw the dirty area.
   update_frame_buffer clean/bool refresh_dimensions -> none:
@@ -397,15 +419,22 @@ abstract class PixelDisplay implements Window:
               dirty_right = max dirty_right ix
               dirty_top = min dirty_top iy
               dirty_bottom = max dirty_bottom iy
+        dirty_left = max dirty_left dirty_left_
+        dirty_right = min (dirty_right + 8) dirty_right_
+        if not canvas_height_rounding_ == 1:
+          dirty_top = max dirty_top dirty_top_
+          dirty_bottom = min (dirty_bottom + 8) dirty_bottom_
+        else:
+          dirty_bottom += 8
         if dirty_left <= dirty_right:
           if dirty_top < refresh_dimensions[2]: refresh_dimensions[2] = dirty_top
           if dirty_bottom > refresh_dimensions[3]: refresh_dimensions[3] = dirty_bottom
           if dirty_left < refresh_dimensions[0]: refresh_dimensions[0] = dirty_left
           if dirty_right > refresh_dimensions[1]: refresh_dimensions[1] = dirty_right
           if clean:
-            clean_rect_ dirty_left dirty_top dirty_right+8 dirty_bottom+8
+            clean_rect_ dirty_left dirty_top dirty_right dirty_bottom
           else:
-            redraw_rect_ dirty_left dirty_top dirty_right+8 dirty_bottom+8
+            redraw_rect_ dirty_left dirty_top dirty_right dirty_bottom
 
   redraw_rect_ left/int top/int right/int bottom/int -> none:
     canvas := create_canvas_ (right - left) (bottom - top)

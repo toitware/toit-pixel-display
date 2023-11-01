@@ -6,6 +6,7 @@ import expect show *
 import font show Font
 import pixel_display show *
 import pixel_display.four_gray show *
+import pixel_display.texture show *
 import .png_visualizer
 
 main args:
