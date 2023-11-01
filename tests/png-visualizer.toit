@@ -17,37 +17,49 @@ class TwoColorPngVisualizer extends PngVisualizingDriver_:
   flags ::= FLAG_2_COLOR | FLAG_PARTIAL_UPDATES
   constructor width height basename --outline/int?=null: super width height basename --outline=outline
   width_to_byte_width w: return (round_up w 8) >> 3
+  x_rounding := 8  // 8 pixels per byte in PNG.
+  y_rounding := 8  // 8 pixels per byte in canvas.
 
 class ThreeColorPngVisualizer extends PngVisualizingDriver_:
   flags ::= FLAG_3_COLOR | FLAG_PARTIAL_UPDATES
   constructor width height basename --outline/int?=null: super width height basename --outline=outline
   width_to_byte_width w: return (round_up w 4) >> 2
+  x_rounding := 4  // 4 pixels per byte.
+  y_rounding := 8  // 8 pixels per byte in canvas.
 
 class FourGrayPngVisualizer extends PngVisualizingDriver_:
   flags ::= FLAG_4_COLOR | FLAG_PARTIAL_UPDATES
   constructor width height basename --outline/int?=null: super width height basename --outline=outline
   width_to_byte_width w: return (round_up w 4) >> 2
+  x_rounding := 4  // 4 pixels per byte.
+  y_rounding := 8  // 8 pixels per byte in canvas.
 
 class TrueColorPngVisualizer extends PngVisualizingDriver_:
   flags ::= FLAG_TRUE_COLOR | FLAG_PARTIAL_UPDATES
   constructor width height basename --outline/int?=null: super width height basename --outline=outline
   width_to_byte_width w: return w * 3
+  x_rounding := 1
+  y_rounding := 1
 
 class GrayScalePngVisualizer extends PngVisualizingDriver_:
   flags ::= FLAG_GRAY_SCALE | FLAG_PARTIAL_UPDATES
   constructor width height basename --outline/int?=null: super width height basename --outline=outline
   width_to_byte_width w: return w
+  x_rounding := 1
+  y_rounding := 1
 
 class SeveralColorPngVisualizer extends PngVisualizingDriver_:
   flags ::= FLAG_SEVERAL_COLOR | FLAG_PARTIAL_UPDATES
   constructor width height basename --outline/int?=null: super width height basename --outline=outline
   width_to_byte_width w: return w
+  x_rounding := 1
+  y_rounding := 1
 
 abstract class PngVisualizingDriver_ extends AbstractDriver:
   width /int ::= ?
   height /int ::= ?
-  width_ /int ::= ?  // Rounded up to a multiple of 8.
-  height_ /int ::= ?  // Rounded up to a multiple of 8.
+  width_ /int := 0  // Rounded up to a multiple of 8.
+  height_ /int := 0  // Rounded up to a multiple of 8.
   outline_buffer_ /ByteArray? := null
   buffer_ /ByteArray := #[]
   temp_buffer_/ByteArray := #[]
@@ -60,9 +72,10 @@ abstract class PngVisualizingDriver_ extends AbstractDriver:
   static INVERT_ := ByteArray 0x100: 0xff - it
 
   constructor .width .height basename/string --.outline/int?=null:
-    width_ = round_up width 8
-    height_ = round_up height 8
     png_basename_ = basename
+    ///
+    width_ = round_up width x_rounding
+    height_ = round_up height y_rounding
     buffer_ = ByteArray
         (width_to_byte_width width_) * height_
     if outline:
@@ -207,7 +220,7 @@ abstract class PngVisualizingDriver_ extends AbstractDriver:
 
   write_png_two_bit buffer/ByteArray left/int top/int right/int bottom/int plane_0/ByteArray plane_1/ByteArray -> none:
     patch_width := right - left
-    assert: patch_width == (round_up patch_width 8)
+    assert: patch_width == (round_up patch_width 4)
     patch_height := bottom - top
     assert: patch_height == (round_up patch_height 8)
 

@@ -38,6 +38,8 @@ abstract class AbstractDriver:
   abstract width -> int
   abstract height -> int
   abstract flags -> int
+  abstract x_rounding -> int
+  abstract y_rounding -> int
   start_partial_update speed/int -> none:
   start_full_update speed/int -> none:
   clean left/int top/int right/int bottom/int -> none:
@@ -110,8 +112,15 @@ abstract class PixelDisplay implements Window:
   static DIRTY_ ::= 1
   dirty_bytes_per_line_ := 0
   dirty_ := null
+  dirty_left_ := 0
+  dirty_top_ := 0
+  dirty_right_ := 0
+  dirty_bottom_ := 0
 
   dirty_accumulator_ := ByteArray 1
+
+  x_rounding_ := 1
+  y_rounding_ := 1
 
   driver_ /AbstractDriver := ?
   speed_ := 50  // Speed-quality of current screen update.
@@ -124,7 +133,9 @@ abstract class PixelDisplay implements Window:
   //   that the display driver is exactly square, a rotated orientation is used.
   // The orientation is rotated by 180 degrees if $inverted is true.
   constructor .driver_ --transform/Transform?=null --portrait/bool?=null --inverted/bool=false:
-    height := round_up driver_.height 8
+    x_rounding_ = driver_.x_rounding
+    y_rounding_ = driver_.y_rounding
+    height := round_up driver_.height y_rounding_
     if driver_.flags & FLAG_PARTIAL_UPDATES != 0:
       dirty_bytes_per_line_ = (driver_.width >> 3) + 1
       dirty_strips := (height >> 6) + 1  // 8-tall strips of dirty bits.
@@ -268,6 +279,10 @@ abstract class PixelDisplay implements Window:
 
   child_invalidated x/int y/int w/int h/int -> none:
     if not dirty_: return  // Some devices don't use the dirty array to track changes.
+    dirty_left_ = min dirty_left_ x
+    dirty_right_ = max dirty_right_ (x + w)
+    dirty_top_ = min dirty_top_ y
+    dirty_bottom_ = max dirty_bottom_ (y + h)
 
     // Round up the invalidated area.
     rx := x & 7
@@ -299,9 +314,9 @@ abstract class PixelDisplay implements Window:
     w := driver_.width
     step := round_up
         max_canvas_height_ driver_.width
-        8
+        y_rounding_
     canvas := create_canvas_ w step
-    List.chunk_up 0 (round_up driver_.height 8) step: | top bottom |
+    List.chunk_up 0 (round_up driver_.height y_rounding_) step: | top bottom |
       // For the Textures.
       canvas.x_offset_ = 0
       canvas.y_offset_ = top
@@ -333,7 +348,7 @@ abstract class PixelDisplay implements Window:
       return
 
     // Send data for the whole screen, even if only part of it changed.
-    if speed < 50: bitmap_zap dirty_ DIRTY_
+    if speed < 50: all_is_dirty_
 
     // TODO(kasper): Once we've started a partial update, we need to make sure we refresh,
     // because otherwise the lock in the display code in the kernel will not be released.
@@ -347,14 +362,70 @@ abstract class PixelDisplay implements Window:
     finally:
       if not refreshed: refresh_ 0 0 0 0
 
+    all_is_clean_
+
+  all_is_clean_ -> none:
     bitmap_zap dirty_ CLEAN_
+    dirty_left_ = driver_.width
+    dirty_right_ = 0
+    dirty_top_ = driver_.height
+    dirty_bottom_ = 0
+
+  all_is_dirty_ -> none:
+    bitmap_zap dirty_ DIRTY_
+    dirty_left_ = 0
+    dirty_right_ = driver_.width
+    dirty_top_ = 0
+    dirty_bottom_ = driver_.height
 
   // Clean determines if we should clean or draw the dirty area.
   update_frame_buffer clean/bool refresh_dimensions -> none:
     width := min driver_.width 120
     max_height := max
-        round_down (max_canvas_height_ width) 8
-        canvas_height_rounding_
+        round_down (max_canvas_height_ width) y_rounding_
+        y_rounding_
+
+    // Perhaps we can do it all with one canvas.
+    l := round_down (max 0 dirty_left_) x_rounding_
+    r := round_up (min driver_.width dirty_right_) x_rounding_
+    t := round_down (max 0 dirty_top_) y_rounding_
+    b := round_up (min driver_.height dirty_bottom_) y_rounding_
+
+    if r - l <= width:
+      if (max_canvas_height_ (r - l)) >= b - t:
+        if clean:
+          clean_rect_ l t r b
+        else:
+          redraw_rect_ l t r b
+        return
+
+      // Perhaps we can do it in two canvases, split to be as square as
+      // possible.
+      if r - l > b - t and r - l >= x_rounding_ * 2:
+        w := round_up ((r - l) >> 1) x_rounding_
+        if (max_canvas_height_ w) >= b - t:
+          if clean:
+            clean_rect_ l t (l + w) b
+            clean_rect_ (l + w) t r b
+          else:
+            redraw_rect_ l t (l + w) b
+            redraw_rect_ (l + w) t r b
+          return
+      // Perhaps we can do it in two canvases, split vertically.
+      else if b - t >= y_rounding_ * 2:
+        h := round_up ((b - t) >> 1) y_rounding_
+        if (max_canvas_height_ (r - l)) >= h:
+          if clean:
+            clean_rect_ l t r (t + h)
+            clean_rect_ l (t + h) r b
+          else:
+            redraw_rect_ l t r (t + h)
+            redraw_rect_ l (t + h) r b
+          return
+
+    // The algorithm below requires that x aligns with 8 pixels, the resolution
+    // of the dirty map.
+    start_x := round_down (max 0 dirty_left_) 8
 
     // Outer loop - the coarse rectangles that are the max size of
     // update patches.
@@ -363,11 +434,11 @@ abstract class PixelDisplay implements Window:
         y = (y + 8) & ~7  // Move on to next factor of 8.
         if y >= driver_.height: break
       if y >= driver_.height: break
-      for x := 0; x < driver_.width; x += width:
+      for x := start_x; x < driver_.width; x += width:
         left := x
-        right := min x + width driver_.width
+        right := min (x + width) driver_.width
         top := y
-        bottom := min y + max_height driver_.height
+        bottom := min (y + max_height) driver_.height
 
         // Quick check if the whole rectangle is clean.  This is a little
         // imprecise because the same mask is used for all lines.
@@ -394,18 +465,22 @@ abstract class PixelDisplay implements Window:
           for ix := left; ix < right; ix += 8:
             if is_dirty_ ix iy:
               dirty_left = min dirty_left ix
-              dirty_right = max dirty_right ix
+              dirty_right = max dirty_right (ix + 8)
               dirty_top = min dirty_top iy
-              dirty_bottom = max dirty_bottom iy
-        if dirty_left <= dirty_right:
+              dirty_bottom = max dirty_bottom (iy + 8)
+        dirty_left = max dirty_left (round_down (max 0 dirty_left_) x_rounding_)
+        dirty_right = min dirty_right (round_up (min driver_.width dirty_right_) x_rounding_)
+        dirty_top = max dirty_top (round_down (max 0 dirty_top_) y_rounding_)
+        dirty_bottom = min dirty_bottom (round_up (min driver_.height dirty_bottom_) y_rounding_)
+        if dirty_left <= dirty_right and dirty_top <= dirty_bottom:
           if dirty_top < refresh_dimensions[2]: refresh_dimensions[2] = dirty_top
           if dirty_bottom > refresh_dimensions[3]: refresh_dimensions[3] = dirty_bottom
           if dirty_left < refresh_dimensions[0]: refresh_dimensions[0] = dirty_left
           if dirty_right > refresh_dimensions[1]: refresh_dimensions[1] = dirty_right
           if clean:
-            clean_rect_ dirty_left dirty_top dirty_right+8 dirty_bottom+8
+            clean_rect_ dirty_left dirty_top dirty_right dirty_bottom
           else:
-            redraw_rect_ dirty_left dirty_top dirty_right+8 dirty_bottom+8
+            redraw_rect_ dirty_left dirty_top dirty_right dirty_bottom
 
   redraw_rect_ left/int top/int right/int bottom/int -> none:
     canvas := create_canvas_ (right - left) (bottom - top)
@@ -428,8 +503,6 @@ abstract class PixelDisplay implements Window:
     draw_ left top right bottom canvas
 
   abstract max_canvas_height_ width/int -> int
-
-  canvas_height_rounding_: return 1
 
   abstract create_canvas_ w/int h/int -> AbstractCanvas
 
@@ -548,8 +621,6 @@ class TwoColorPixelDisplay extends PixelDisplay:
       height = (4000 / width_rounded) << 3
     // We can't work well with canvases that are less than 8 pixels tall.
     return max 8 height
-
-  canvas_height_rounding_: return 8
 
   create_canvas_ w/int h/int -> AbstractCanvas:
     return two_color.Canvas w h
@@ -720,8 +791,6 @@ abstract class TwoBitPixelDisplay_ extends PixelDisplay:
       height = (4000 / width_rounded) << 3
     // We can't work well with canvases that are less than 8 pixels tall.
     return max 8 height
-
-  canvas_height_rounding_: return 8
 
   create_canvas_ w/int h/int -> AbstractCanvas:
     return three_color.Canvas w h
