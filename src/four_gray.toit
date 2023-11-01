@@ -25,10 +25,6 @@ BLACK ::= 3
 //   1    0   Dark gray
 //   1    1   Black
 // Starts off with all pixels white.
-class Canvas extends TwoBitCanvas_:
-  constructor width/int height/int x_offset/int y_offset/int:
-    super width height x_offset y_offset
-
 class InfiniteBackground extends TwoBitInfiniteBackground_:
   constructor color:
     super color
@@ -120,7 +116,7 @@ class OpaquePixmapTexture extends BitmapTextureBase_:
     bitmap_zap bytes_ color & 1
     bitmap_zap bytes_2_ (color & 2) >> 1
 
-  write2_ canvas/Canvas:
+  write2_ canvas/TwoBitCanvas_:
     transform_.xywh x_ y_ w_ h_: | x2 y2 w2 h2 |
       x := x2 - canvas.x_offset_
       y := y2 - canvas.y_offset_
@@ -129,7 +125,7 @@ class OpaquePixmapTexture extends BitmapTextureBase_:
       bitmap_rectangle x y 0 w2 h2 canvas.plane_1_ canvas.width_
     super canvas  // Calls draw_
 
-  draw_ bx by orientation canvas/Canvas:
+  draw_ bx by orientation canvas/TwoBitCanvas_:
     // The area was already zeroed, add in the 1s as needed.
     bitmap_draw_bitmap bx by 1 orientation bytes_ 0 w canvas.plane_0_ canvas.width_ false
     bitmap_draw_bitmap bx by 1 orientation bytes_2_ 0 w canvas.plane_1_ canvas.width_ false
@@ -164,8 +160,8 @@ class RoundedCornerWindow extends RoundedCornerWindow_:
   constructor x y w h transform corner_radius .background_color:
     super x y w h transform corner_radius
 
-  make_alpha_map_ canvas/Canvas padding:
-    return ByteArray (canvas.width_ + padding) * (canvas.height_ + padding)
+  make_alpha_map_ canvas/TwoBitCanvas_ padding:
+    return ByteArray ((canvas.width_ + padding) * (canvas.height_ + padding)) >> 3
 
   make_opaque_ x y w h map map_width --frame/bool:
     assert: not frame
@@ -178,11 +174,11 @@ class RoundedCornerWindow extends RoundedCornerWindow_:
       if 0 <= y_offset < map.size:
         map[x + y_offset] = opacity
 
-  draw_background canvas/Canvas:
+  draw_background canvas/TwoBitCanvas_:
     bytemap_zap canvas.plane_0_ (background_color & 1)
     bytemap_zap canvas.plane_1_ (background_color & 2) >> 1
 
-  draw_frame canvas/Canvas:
+  draw_frame canvas/TwoBitCanvas_:
     throw "UNREACHABLE"
 
 class DropShadowWindow extends DropShadowWindow_:
@@ -195,7 +191,7 @@ class DropShadowWindow extends DropShadowWindow_:
     max_shadow_opacity_ = (shadow_opacity_percent * 2.5500001).to_int
     super x y w h transform corner_radius blur_radius drop_distance_x drop_distance_y
 
-  make_alpha_map_ canvas/Canvas padding:
+  make_alpha_map_ canvas/TwoBitCanvas_ padding:
     return ByteArray (canvas.width_ + padding) * (canvas.height_ + padding)
 
   make_opaque_ x y w h map map_width --frame/bool:
@@ -210,10 +206,10 @@ class DropShadowWindow extends DropShadowWindow_:
         else:
           map[x + y_offset] = opacity
 
-  draw_background canvas/Canvas:
+  draw_background canvas/TwoBitCanvas_:
     bytemap_zap canvas.plane_0_ (background_color & 1)
     bytemap_zap canvas.plane_1_ (background_color & 2) >> 1
 
-  draw_frame canvas/Canvas:
+  draw_frame canvas/TwoBitCanvas_:
     bytemap_zap canvas.plane_0_ 0
     bytemap_zap canvas.plane_1_ 0
