@@ -11,6 +11,7 @@ import pixel_display.histogram show *
 import pixel_display.texture show *
 
 import pixel_display.four_gray
+import pixel_display.two_bit_texture as two_bit
 import pixel_display.three_color
 import pixel_display.true_color
 import pixel_display.two_color
@@ -152,7 +153,7 @@ canvas_factory version w h x y:
   else if version == TWO_COLOR:
     return two_color.Canvas w h x y
   else if version == FOUR_GRAY:
-    return four_gray.Canvas w h x y
+    return two_bit.TwoBitCanvas_ w h x y
   else:
     return true_color.Canvas w h x y
 
@@ -170,7 +171,7 @@ test_simple_three_color:
 
 test_simple_four_gray:
   // A little 8x8 canvas to draw on.
-  canvas := four_gray.Canvas 8 8 0 0
+  canvas := two_bit.TwoBitCanvas_ 8 8 0 0
 
   // Fill the canvas with light gray.
   canvas.set_all_pixels four_gray.LIGHT_GRAY
