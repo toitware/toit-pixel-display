@@ -1,6 +1,6 @@
-// Copyright (C) 2021 Toitware ApS.  All rights reserved.
-// Use of this source code is governed by an MIT-style license that can be
-// found in the LICENSE file.
+// Copyright (C) 2021 Toitware ApS.
+// Use of this source code is governed by a Zero-Clause BSD license that can
+// be found in the TESTS_LICENSE file.
 
 import expect show *
 import font show Font
@@ -34,7 +34,7 @@ main:
   driver := TestDriver
   display := TrueColorPixelDisplay driver
   display.background = get_rgb 0 1 2
-  
+
   sans10 := Font.get "sans10"
 
   ctx := display.context --landscape --color=(get_rgb 255 120 0) --font=sans10
@@ -54,7 +54,7 @@ main:
       bottom_half := (driver.red_at x y + 1) < 128
       line += "$(top_half ? (bottom_half ? " " : "▄") : (bottom_half ? "▀" : "█"))"
     print line
-      
+
   50.repeat: | x |
     driver.height.repeat: | y |
       if x < 10 or y < 20 or x >= 40 or y >= 60:

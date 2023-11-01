@@ -1,6 +1,6 @@
-// Copyright (C) 2019 Toitware ApS. All rights reserved.
-// Use of this source code is governed by an MIT-style license that can be
-// found in the LICENSE file.
+// Copyright (C) 2019 Toitware ApS.
+// Use of this source code is governed by a Zero-Clause BSD license that can
+// be found in the TESTS_LICENSE file.
 
 import expect show *
 
@@ -21,18 +21,30 @@ simple_texture_test:
   expect_equals -42 (r90.y 42 103)
   expect_equals 103 (r90.width 42 103)
   expect_equals -42 (r90.height 42 103)
+  expect_equals id
+      r90.invert.apply r90
+  expect_equals id
+      r90.apply r90.invert
 
   r180 := r90.rotate_left
   expect_equals -42 (r180.x 42 103)
   expect_equals -103 (r180.y 42 103)
   expect_equals -42 (r180.width 42 103)
   expect_equals -103 (r180.height 42 103)
+  expect_equals id
+      r180.invert.apply r180
+  expect_equals id
+      r180.apply r180.invert
 
   r270 := r180.rotate_left
   expect_equals -103 (r270.x 42 103)
   expect_equals 42 (r270.y 42 103)
   expect_equals -103 (r270.width 42 103)
   expect_equals 42 (r270.height 42 103)
+  expect_equals id
+      r270.invert.apply r270
+  expect_equals id
+      r270.apply r270.invert
 
   r270b := id.rotate_right
   expect_equals -103 (r270b.x 42 103)
@@ -58,3 +70,11 @@ simple_texture_test:
   expect_equals -42 (x10l.y 42 103)
   expect_equals 103 (x10l.width 42 103)
   expect_equals -42 (x10l.height 42 103)
+  expect_equals id
+      x10.invert.apply x10
+  expect_equals id
+      x10.apply x10.invert
+  expect_equals id
+      x10l.invert.apply x10l
+  expect_equals id
+      x10l.apply x10l.invert

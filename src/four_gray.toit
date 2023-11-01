@@ -25,9 +25,6 @@ BLACK ::= 3
 //   1    0   Dark gray
 //   1    1   Black
 // Starts off with all pixels white.
-class InfiniteBackground extends TwoBitInfiniteBackground_:
-  constructor color:
-    super color
 
 class FilledRectangle extends TwoBitFilledRectangle_:
   constructor color x/int y/int w/int h/int transform/Transform:

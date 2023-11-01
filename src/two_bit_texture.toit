@@ -24,23 +24,11 @@ class TwoBitCanvas_ extends AbstractCanvas:
     plane_1_ = ByteArray size
     super width height x_offset y_offset
 
-  set_all_pixels color:
+  set_all_pixels color/int -> none:
     bitmap_zap plane_0_ (color & 1)
-    bitmap_zap plane_1_ ((color >> 1) & 1)
+    bitmap_zap plane_1_ ((color & 2) >> 1)
 
-  set_pixel color x y:
-    bit := 1 << (y & 7)
-    idx := x + width_ * (y >> 3)
-    if (color & 1) == 0:
-      plane_0_[idx] &= ~bit
-    else:
-      plane_0_[idx] |= bit
-    if (color & 2) == 0:
-      plane_1_[idx] &= ~bit
-    else:
-      plane_1_[idx] |= bit
-
-  get_pixel x y:
+  get_pixel_ x y:
     bit := 1 << (y & 7)
     idx := x + width_ * (y >> 3)
     bit0 := (plane_0_[idx] & bit) == 0 ? 0 : 1
@@ -57,20 +45,6 @@ class TwoBitCanvas_ extends AbstractCanvas:
     composit_bytes plane_0_ frame_opacity (frame_canvas ? frame_canvas.plane_0_ : null) painting_opacity painting_canvas.plane_0_ true
     composit_bytes plane_1_ frame_opacity (frame_canvas ? frame_canvas.plane_1_ : null) painting_opacity painting_canvas.plane_1_ true
 
-class TwoBitInfiniteBackground_ extends InfiniteBackground_:
-  color_ := ?
-
-  constructor .color_:
-
-  color -> int:
-    return color_
-
-  write canvas/TwoBitCanvas_:
-    bitmap_zap canvas.plane_0_ (color_ & 1)
-    bitmap_zap canvas.plane_1_ (color_ & 2) >> 1
-
-  write_ canvas/TwoBitCanvas_:
-    throw "Not used"
 
 class TwoBitFilledRectangle_ extends FilledRectangle_:
   color_ := ?

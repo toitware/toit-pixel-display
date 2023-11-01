@@ -1,6 +1,6 @@
-// Copyright (C) 2020 Toitware ApS. All rights reserved.
-// Use of this source code is governed by an MIT-style license that can be
-// found in the LICENSE file.
+// Copyright (C) 2020 Toitware ApS.
+// Use of this source code is governed by a Zero-Clause BSD license that can
+// be found in the TESTS_LICENSE file.
 
 import bitmap show *
 import pixel_display.texture show *
@@ -29,7 +29,7 @@ true_color_test -> none:
   48.repeat: | y |
     line := ""
     64.repeat: | x |
-      pixel := canvas.get_pixel x y
+      pixel := canvas.get_pixel_ x y
       line += "$(%3d true_color.red_component pixel) $(%3d true_color.green_component pixel) $(%3d true_color.blue_component pixel)   ";
     print line
 
@@ -42,6 +42,6 @@ gray_scale_test -> none:
   48.repeat: | y |
     line := ""
     64.repeat: | x |
-      pixel := canvas.get_pixel x y
+      pixel := canvas.get_pixel_ x y
       line += "$(%3d pixel) ";
     print line

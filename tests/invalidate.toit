@@ -1,6 +1,6 @@
-// Copyright (C) 2021 Toitware ApS.  All rights reserved.
-// Use of this source code is governed by an MIT-style license that can be
-// found in the LICENSE file.
+// Copyright (C) 2021 Toitware ApS.
+// Use of this source code is governed by a Zero-Clause BSD license that can
+// be found in the TESTS_LICENSE file.
 
 import expect show *
 import pixel_display show *
@@ -54,7 +54,7 @@ small_test:
   expect_equals driver.height driver.last_bottom
 
   driver.reset
-  
+
   ctx := display.context --landscape --color=(get_rgb 255 120 0)
 
   display.filled_rectangle ctx 16 24 32 40
