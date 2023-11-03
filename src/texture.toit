@@ -624,7 +624,7 @@ abstract class TextTexture_ extends SizedTexture:
         assert: alignment == TEXT_TEXTURE_ALIGN_CENTER
         assert: pixel_width_old == (font.pixel_width new)
         // Make x relative to the text origin, which is the middle.
-        unchanged_width := (pixel_width_old >> 1) - (font.pixel_width old[..unchanged_left])
+        unchanged_width := ((pixel_width_old + 1) >> 1) - (font.pixel_width old[..unchanged_left])
         changed_extent_old.x -= unchanged_width + changed_extent_old.displacement
         changed_extent_new.x -= unchanged_width + changed_extent_new.displacement
       block.call changed_extent_old changed_extent_new
