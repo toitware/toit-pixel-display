@@ -345,13 +345,12 @@ abstract class PixelDisplay implements Window:
     speed_ = speed
     if speed < 10 or driver_.flags & FLAG_PARTIAL_UPDATES == 0:
       draw_entire_display_
+      if dirty_: bitmap_zap dirty_ CLEAN_
       return
 
     // Send data for the whole screen, even if only part of it changed.
     if speed < 50: all_is_dirty_
 
-    // TODO(kasper): Once we've started a partial update, we need to make sure we refresh,
-    // because otherwise the lock in the display code in the kernel will not be released.
     driver_.start_partial_update speed
     refreshed := false
     try:

@@ -11,6 +11,7 @@ import pixel_display.histogram show *
 import pixel_display.texture show *
 
 import pixel_display.four_gray
+import pixel_display.two_bit_texture as two_bit
 import pixel_display.three_color
 import pixel_display.true_color
 import pixel_display.two_color
