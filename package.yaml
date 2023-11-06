@@ -1,1 +1,2 @@
-# Toit package.
+name: pixel_display
+description: Common code to drive all pixel-based displays.
