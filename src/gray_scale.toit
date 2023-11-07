@@ -12,7 +12,6 @@ import font show Font
 import icons show Icon
 import .pixel_display show GrayScalePixelDisplay  // For the doc comment.
 import .texture
-import .legacy
 import .one_byte
 
 WHITE ::= 255

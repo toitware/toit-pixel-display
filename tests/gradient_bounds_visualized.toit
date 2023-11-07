@@ -9,7 +9,7 @@ import bitmap show *
 import expect show *
 import font show *
 import pixel_display show *
-import pixel_display.texture show *
+import pixel_display.element show *
 import .png_visualizer
 
 main args:

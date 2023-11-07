@@ -9,8 +9,8 @@
 import bitmap show *
 import font show Font
 import icons show Icon
+import .common
 import .texture
-import .legacy
 
 // The canvas contains a ByteArray.
 // Initially all pixels are 0.

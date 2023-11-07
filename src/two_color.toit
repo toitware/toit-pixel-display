@@ -11,10 +11,9 @@ For use with e-paper displays and the SSD1306 128x64 display
 import bitmap show *
 import font show Font
 import icons show Icon
-import .two_color as two_color
+import .common
 import .pixel_display show TwoColorPixelDisplay  // For the doc comment.
 import .texture
-import .legacy
 
 WHITE ::= 0
 BLACK ::= 1

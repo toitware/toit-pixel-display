@@ -9,10 +9,10 @@ Classes useful for RGB $TrueColorPixelDisplay.
 import bitmap show *
 import font show Font
 import icons show Icon
+import .common
 import .one_byte show OneByteCanvas_
 import .pixel_display show TrueColorPixelDisplay  // For the doc comment.
 import .texture
-import .legacy
 
 get_rgb r/int g/int b/int -> int:
   return (r << 16) | (g << 8) | b

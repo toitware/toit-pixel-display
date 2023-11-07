@@ -8,6 +8,8 @@ See https://docs.toit.io/language/sdk/display
 */
 
 import bitmap show *
+import .common
+import .element
 import .texture
 import .two_color as two_color
 import .three_color as three_color
@@ -253,7 +255,7 @@ abstract class PixelDisplay implements Window:
     TextureGroup.  This enables you to later add textures that are not at the
     front, by adding them to a TextureGroup that is not at the front.
   */
-  add texture/Texture -> none:
+  add texture/ElementOrTexture_ -> none:
     textures_.add texture
     texture.change_tracker = this
     texture.invalidate
@@ -262,7 +264,7 @@ abstract class PixelDisplay implements Window:
   Removes a texture that was previously added.  You cannot remove a background
     texture.  Instead you should set a new background with @background=.
   */
-  remove texture/Texture -> none:
+  remove texture/ElementOrTexture_ -> none:
     textures_.remove texture
     texture.invalidate
     texture.change_tracker = null

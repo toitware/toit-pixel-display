@@ -8,9 +8,9 @@
 
 import bitmap show *
 import font show Font
+import .common
 import .two_color as two_color
 import .texture
-import .legacy
 
 // The canvas contains two bitmapped ByteArrays, for up to 4 colors or gray
 // scales per pixel.  Starts off with all pixels 0, 0.
