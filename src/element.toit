@@ -44,6 +44,9 @@ abstract class Element extends ElementOrTexture_:
 
   abstract draw canvas/AbstractCanvas -> none
 
+  abstract min_w -> int
+  abstract min_h -> int
+
 interface ColoredElement:
   color -> int?
   color= value/int -> none
@@ -79,6 +82,9 @@ abstract class ResizableElement extends Element:
     w_ = w
     h_ = h
     invalidate
+
+  min_w: return w_
+  min_h: return h_
 
 abstract class RectangleElement extends ResizableElement implements ColoredElement:
   color_ /int := ?
@@ -382,9 +388,9 @@ class OutlineRectangleElement extends RectangleElement:
     canvas.rectangle (x_ + w_ - thickness_) y_ --w=thickness_ --h=h_         --color=color_
     canvas.rectangle x_ (y + h_ - thickness_)  --w=w_         --h=thickness_ --color=color_
 
-class TextElement extends Element implements ColoredElement:
+class Label extends Element implements ColoredElement:
   color_/int := ?
-  text_/string? := null
+  label_/string? := null
   alignment_/int := ?
   orientation_/int := ?
   font_/Font := ?
@@ -392,6 +398,8 @@ class TextElement extends Element implements ColoredElement:
   top_/int? := null
   width_/int? := null
   height_/int? := null
+  min_w_/int? := null
+  min_h_/int? := null
 
   color -> int: return color_
 
@@ -400,25 +408,43 @@ class TextElement extends Element implements ColoredElement:
       color_ = value
       invalidate
 
-  constructor --x/int --y/int --color/int --text/string?=null --font/Font --orientation/int=ORIENTATION_0 --alignment/int=ALIGN_LEFT:
+  constructor --x/int --y/int --color/int --label/string?=null --font/Font --orientation/int=ORIENTATION_0 --alignment/int=ALIGN_LEFT:
     color_ = color
-    text_ = text
+    label_ = label
     alignment_ = alignment
     orientation_ = orientation
     font_ = font
     super --x=x --y=y
+
+  min_w -> int:
+    if not label_: return 0
+    if not min_w_:
+      if orientation_ == ORIENTATION_0 or orientation_ == ORIENTATION_180:
+        min_w_ = font_.pixel_width label_
+      else:
+        min_w_ = (font_.text_extent label_)[1]
+    return min_w_
+
+  min_h -> int:
+    if not label_: return 0
+    if not min_h_:
+      if orientation_ == ORIENTATION_0 or orientation_ == ORIENTATION_180:
+        min_h_ = (font_.text_extent label_)[1]
+      else:
+        min_h_ = font_.pixel_width label_
+    return min_h_
 
   /**
   Calls the block with the left, top, width, and height.
   For zero sized objects, doesn't call the block.
   */
   xywh_ [block]:
-    if not text_: return
+    if not label_: return
     if not left_:
-      extent/List := font_.text_extent text_
+      extent/List := font_.text_extent label_
       displacement := 0
       if alignment_ != ALIGN_LEFT:
-        displacement = (font_.pixel_width text_)
+        displacement = (font_.pixel_width label_)
         if alignment_ == ALIGN_CENTER: displacement >>= 1
       l := extent[2] - displacement
       r := extent[2] - displacement + extent[0]
@@ -448,26 +474,31 @@ class TextElement extends Element implements ColoredElement:
     block.call (x_ + left_) (y_ + top_) width_ height_
 
   invalidate:
-    if change_tracker and text_:
+    if change_tracker and label_:
       xywh_: | x y w h |
         change_tracker.child_invalidated_element x y w h
 
-  text= value/string? -> none:
-    if value == text_: return
-    if orientation_ == ORIENTATION_0 and change_tracker and text_:
-      text_get_bounding_boxes_ text_ value alignment_ font_: | old/TextExtent_ new/TextExtent_ |
+  label= value/string? -> none:
+    if value == label_: return
+    if orientation_ == ORIENTATION_0 and change_tracker and label_:
+      text_get_bounding_boxes_ label_ value alignment_ font_: | old/TextExtent_ new/TextExtent_ |
         change_tracker.child_invalidated_element (x_ + old.x) (y_ + old.y) old.w old.h
         change_tracker.child_invalidated_element (x_ + new.x) (y_ + new.y) new.w new.h
-        text_ = value
+        label_ = value
+        min_w_ = null  // Trigger recalculation.
         left_ = null  // Trigger recalculation.
         return
     invalidate
-    text_ = value
+    label_ = value
+    min_w_ = null
+    min_h_ = null
     left_ = null  // Trigger recalculation.
     invalidate
 
   orientation= value/int -> none:
     if value == orientation_: return
+    min_w_ = null
+    min_h_ = null
     invalidate
     orientation_ = value
     left_ = null  // Trigger recalculation.
@@ -484,7 +515,7 @@ class TextElement extends Element implements ColoredElement:
     x := x_
     y := y_
     if alignment_ != ALIGN_LEFT:
-      text_width := font_.pixel_width text_
+      text_width := font_.pixel_width label_
       if alignment_ == ALIGN_CENTER: text_width >>= 1
       if orientation_ == ORIENTATION_0:
         x -= text_width
@@ -495,7 +526,7 @@ class TextElement extends Element implements ColoredElement:
       else:
         assert: orientation_ == ORIENTATION_270
         y -= text_width
-    canvas.text x y --text=text_ --color=color_ --font=font_ --orientation=orientation_
+    canvas.text x y --text=label_ --color=color_ --font=font_ --orientation=orientation_
 
 /**
 A superclass for elements that can draw themselves.  Override the
@@ -525,6 +556,9 @@ class BarCodeEanElement extends CustomElement:
   background/int
   sans10_ ::= Font.get "sans10"
   number_height_ := EAN_13_BOTTOM_SPACE
+
+  min_w: return w
+  min_h: return h
 
   code_ := ?  // 13 digit code as a string.
 
@@ -706,6 +740,9 @@ abstract class WindowElement extends BorderlessWindowElement implements Window:
   */
   h -> int:
     return inner_h_
+
+  min_w: return inner_w_
+  min_h: return inner_h_
 
   /**
   Changes the top left corner (without any borders) of the window.

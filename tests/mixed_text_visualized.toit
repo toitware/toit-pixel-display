@@ -29,8 +29,8 @@ main args:
   texture_text := display.text (ctx.with --color=SEVERAL_BLUE) 30 20 "Texture"
   texture_text_2 := display.text (ctx.with --color=SEVERAL_BLUE) 80 20 "Texture"
   // Element-based rectangles.
-  element_text := TextElement --x=30 --y=30 --color=SEVERAL_ORANGE --text="joo%" --font=sans10
-  element_text_2 := TextElement --x=130 --y=20 --color=SEVERAL_ORANGE --text="joo%" --font=sans10
+  element_text := Label --x=30 --y=30 --color=SEVERAL_ORANGE --label="joo%" --font=sans10
+  element_text_2 := Label --x=130 --y=20 --color=SEVERAL_ORANGE --label="joo%" --font=sans10
   display.add element_text
   display.add element_text_2
   display.draw

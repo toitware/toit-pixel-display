@@ -21,7 +21,7 @@ main args:
   win := SimpleWindowElement --x=30 --y=30 --w=180 --h=100 --border_width=0 --background_color=SEVERAL_LIGHT_GRAY
   display.add win
 
-  text := TextElement --x=90 --y=55 --text="Hello, World!" --font=sans10 --color=SEVERAL_BLACK
+  text := Label --x=90 --y=55 --label="Hello, World!" --font=sans10 --color=SEVERAL_BLACK
   win.add text
 
   display.draw

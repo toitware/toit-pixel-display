@@ -35,7 +35,7 @@ main args:
       ]
   win.add gradient
 
-  text := TextElement --x=90 --y=55 --text="Hello, World!" --font=sans10 --color=0x10
+  text := Label --x=90 --y=55 --label="Hello, World!" --font=sans10 --color=0x10
   win.add text
 
   display.draw

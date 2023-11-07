@@ -22,7 +22,7 @@ main args:
   win := RoundedCornerWindowElement --x=30 --y=30 --w=180 --h=100 --corner_radius=17 --background_color=WHITE
   display.add win
 
-  text := TextElement --x=90 --y=55 --text="Hello, World!" --font=sans10 --color=BLACK
+  text := Label --x=90 --y=55 --label="Hello, World!" --font=sans10 --color=BLACK
   win.add text
 
   display.draw
