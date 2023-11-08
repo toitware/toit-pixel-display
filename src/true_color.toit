@@ -93,6 +93,45 @@ class Canvas extends AbstractCanvas:
       bytemap_draw_text x2 y2 g o2 text font green_ width_
       bytemap_draw_text x2 y2 b o2 text font blue_ width_
 
+  bitmap x/int y/int -> none
+      --pixels/ByteArray
+      --alpha/ByteArray    // 2-element byte array.
+      --palette/ByteArray  // 6-element byte array.
+      --source_width/int   // In pixels.
+      --orientation/int:
+    source_byte_width := (source_width + 7) >> 3
+    zero_alpha := alpha[0]
+    one_alpha := alpha[1]
+    draw_pixels := pixels
+    if one_alpha == 0:
+      if zero_alpha == 0: return
+      if zero_alpha == 0xff:
+        inverted := ByteArray pixels.size --filler=0xff
+        blit pixels inverted source_byte_width --operation=XOR
+        draw_pixels = inverted
+        zero_alpha = 0
+        one_alpha = 0xff
+    if one_alpha == 0xff:
+      if zero_alpha == 0xff or zero_alpha == 0:
+        if zero_alpha == 0xff:
+          h := pixels.size / source_byte_width
+          bytemap_rectangle x y palette[0] source_width h red_ width_
+          bytemap_rectangle x y palette[1] source_width h green_ width_
+          bytemap_rectangle x y palette[2] source_width h blue_ width_
+        bitmap_draw_bitmap x y palette[3] orientation pixels 0 source_width red_ width_ true
+        bitmap_draw_bitmap x y palette[4] orientation pixels 0 source_width green_ width_ true
+        bitmap_draw_bitmap x y palette[5] orientation pixels 0 source_width blue_ width_ true
+        return
+    // Unfortunately one of the alpha values is not 0 or 0xff, so we can't use
+    // the bitmap draw primitive.  We can blow it up to bytes, then use the
+    // bitmap-draw-bytemap.
+    h := pixels.size / source_byte_width
+    bytemap := ByteArray source_width * h
+    bitmap_draw_bitmap 0 0 1 0 pixels 0 source_width bytemap source_width true
+    bitmap_draw_bytemap x y alpha orientation bytemap source_width palette red_ width_
+    bitmap_draw_bytemap x y alpha orientation bytemap source_width palette[1..] green_ width_
+    bitmap_draw_bytemap x y alpha orientation bytemap source_width palette[2..] blue_ width_
+
   draw_rgb_pixmap x/int y/int --r/ByteArray --g/ByteArray --b/ByteArray
       --pixmap_width/int
       --orientation/int=ORIENTATION_0:

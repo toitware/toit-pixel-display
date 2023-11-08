@@ -1,9 +1,5 @@
-sdk: ^2.0.0-alpha.64
 prefixes:
-  png-tools: toit-png-tools
+  png_tools: toit-png-tools
 packages:
-  pkg-host:
-    url: github.com/toitlang/pkg-host
-    name: host
-    version: 1.11.0
-    hash: 7e7df6ac70d98a02f232185add81a06cec0d77e8
+  toit-png-tools:
+    path: ../toit-png-tools

@@ -98,6 +98,13 @@ abstract class AbstractCanvas:
   abstract text x/int y/int --text/string --color/int --font/Font --orientation/int
   abstract text x/int y/int --text/string --color/int --font/Font
 
+  abstract bitmap x/int y/int -> none
+      --pixels/ByteArray
+      --alpha/ByteArray    // 2-element byte array.
+      --palette/ByteArray  // 6-element byte array.
+      --source_width/int   // In pixels.
+      --orientation/int
+
 TRANSFORM_IDENTITY_ ::= Transform.with_ [1, 0, 0, 1, 0, 0]
 TRANSFORM_90_ ::= Transform.with_ [0, -1, 1, 0, 0, 0]
 TRANSFORM_180_ ::= Transform.with_ [-1, 0, 0, -1, 0, 0]

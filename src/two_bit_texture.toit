@@ -69,6 +69,15 @@ class TwoBitCanvas_ extends AbstractCanvas:
       bitmap_draw_text x2 y2 b0 o2 text font plane_0_ width_
       bitmap_draw_text x2 y2 b1 o2 text font plane_1_ width_
 
+  bitmap x/int y/int -> none
+      --pixels/ByteArray
+      --alpha/ByteArray    // 2-element byte array.
+      --palette/ByteArray  // 6-element byte array.
+      --source_width/int   // In pixels.
+      --orientation/int:
+    throw "Not implemented"
+
+
 class TwoBitFilledRectangle_ extends FilledRectangle_:
   color_ := ?
 

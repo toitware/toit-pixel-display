@@ -6,6 +6,8 @@ prefixes:
 packages:
   ..:
     path: ..
+    prefixes:
+      png_tools: toit-png-tools
   pkg-host:
     url: github.com/toitlang/pkg-host
     name: host

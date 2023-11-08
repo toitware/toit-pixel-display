@@ -12,6 +12,8 @@ import .bar_code_impl_
 import font show Font
 import math
 
+import png_tools.png_reader show PngRandomAccess
+
 abstract class Element extends ElementOrTexture_:
   x_ /int? := null
   y_ /int? := null
@@ -108,7 +110,7 @@ class GradientSpecifier:
 
 /**
 GradientElements are similar to CSS linear gradients and SVG gradients.
-They are given a list of $GradientSpecifiers, each of which has a color and
+They are given a list of $GradientSpecifier, each of which has a color and
   a percentage, indicating where in the gradient the color should appear.
   The specifiers should be ordered in increasing order of perentage.
 Angles are as in CSS, with 0 degrees being up and 90 degrees being to the right
@@ -1220,4 +1222,23 @@ class DropShadowWindowElement extends RoundedCornerWindowElement:
 
   draw_frame canvas/AbstractCanvas:
     canvas.set_all_pixels 0
+
+// Element that draws a PNG image.
+class PngElement extends CustomElement:
+  w/int
+  h/int
+  png_/PngRandomAccess
+
+  min_w: return w
+  min_h: return h
+
+  constructor --x/int?=null --y/int?=null png_file/ByteArray:
+    png_ = PngRandomAccess png_file
+    w = png_.width
+    h = png_.height
+    super --x=x --y=y
+
+  // Redraw routine.
+  draw canvas/AbstractCanvas:
+    if (canvas.bounds_analysis x y w h) == AbstractCanvas.ALL_OUTSIDE: return
 

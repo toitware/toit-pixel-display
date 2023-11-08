@@ -65,6 +65,14 @@ class Canvas extends AbstractCanvas:
     transform.xyo x y orientation: | x2 y2 o2 |
       bitmap_draw_text x2 y2 color o2 text font pixels_ width_
 
+  bitmap x/int y/int -> none
+      --pixels/ByteArray
+      --alpha/ByteArray    // 2-element byte array.
+      --palette/ByteArray  // 6-element byte array.
+      --source_width/int   // In pixels.
+      --orientation/int:
+    throw "Not implemented"
+
   draw_bitmap x/int y/int
       --pixels/ByteArray
       --color/int

@@ -1,2 +1,5 @@
 name: pixel_display
 description: Common code to drive all pixel-based displays.
+dependencies:
+  png_tools:
+    path: ../toit-png-tools

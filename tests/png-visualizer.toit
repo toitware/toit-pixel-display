@@ -305,7 +305,7 @@ abstract class PngVisualizingDriver_ extends AbstractDriver:
       color_type = COLOR-TYPE-TRUECOLOR
     else if gray_scale:
       bit_depth = 8
-      color_type = COLOR-TYPE-GREYSCALE
+      color_type = COLOR-TYPE-GRAYSCALE
     else if three_color:
       bit_depth = 2
       color_type = COLOR-TYPE-INDEXED
@@ -314,10 +314,10 @@ abstract class PngVisualizingDriver_ extends AbstractDriver:
       color_type = COLOR-TYPE-INDEXED
     else if gray:
       bit_depth = 2
-      color_type = COLOR-TYPE-GREYSCALE
+      color_type = COLOR-TYPE-GRAYSCALE
     else:
       bit_depth = 1
-      color_type = COLOR-TYPE-GREYSCALE
+      color_type = COLOR-TYPE-GRAYSCALE
 
     for y := 0; y < frames_down; y++:
       for x := 0; x < frames_across; x++:
