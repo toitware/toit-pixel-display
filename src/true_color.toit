@@ -102,25 +102,33 @@ class Canvas extends AbstractCanvas:
     source_byte_width := (source_width + 7) >> 3
     zero_alpha := alpha[0]
     one_alpha := alpha[1]
+    one_r := palette[3]
+    one_g := palette[4]
+    one_b := palette[5]
     draw_pixels := pixels
     if one_alpha == 0:
-      if zero_alpha == 0: return
-      if zero_alpha == 0xff:
+      if zero_alpha == 0: return  // Both transparent.
+      if zero_alpha == 0xff:      // Swap 0 and 1.
         inverted := ByteArray pixels.size --filler=0xff
         blit pixels inverted source_byte_width --operation=XOR
         draw_pixels = inverted
         zero_alpha = 0
         one_alpha = 0xff
+        one_r = palette[0]
+        one_g = palette[1]
+        one_b = palette[2]
     if one_alpha == 0xff:
       if zero_alpha == 0xff or zero_alpha == 0:
         if zero_alpha == 0xff:
           h := pixels.size / source_byte_width
+          // Draw the zeros.
           bytemap_rectangle x y palette[0] source_width h red_ width_
           bytemap_rectangle x y palette[1] source_width h green_ width_
           bytemap_rectangle x y palette[2] source_width h blue_ width_
-        bitmap_draw_bitmap x y palette[3] orientation pixels 0 source_width red_ width_ true
-        bitmap_draw_bitmap x y palette[4] orientation pixels 0 source_width green_ width_ true
-        bitmap_draw_bitmap x y palette[5] orientation pixels 0 source_width blue_ width_ true
+        // Draw the ones.
+        bitmap_draw_bitmap x y one_r orientation pixels 0 source_width red_ width_ true
+        bitmap_draw_bitmap x y one_g orientation pixels 0 source_width green_ width_ true
+        bitmap_draw_bitmap x y one_b orientation pixels 0 source_width blue_ width_ true
         return
     // Unfortunately one of the alpha values is not 0 or 0xff, so we can't use
     // the bitmap draw primitive.  We can blow it up to bytes, then use the
