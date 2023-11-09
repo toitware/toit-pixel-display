@@ -6,6 +6,7 @@
 Classes useful for RGB $TrueColorPixelDisplay.
 */
 
+import binary show BIG_ENDIAN
 import bitmap show *
 import font show Font
 import icons show Icon
@@ -101,44 +102,31 @@ class Canvas extends AbstractCanvas:
       --orientation/int:
     source_byte_width := (source_width + 7) >> 3
     zero_alpha := alpha[0]
-    one_alpha := alpha[1]
-    one_r := palette[3]
-    one_g := palette[4]
-    one_b := palette[5]
-    draw_pixels := pixels
-    if one_alpha == 0:
-      if zero_alpha == 0: return  // Both transparent.
-      if zero_alpha == 0xff:      // Swap 0 and 1.
-        inverted := ByteArray pixels.size --filler=0xff
-        blit pixels inverted source_byte_width --operation=XOR
-        draw_pixels = inverted
-        zero_alpha = 0
-        one_alpha = 0xff
-        one_r = palette[0]
-        one_g = palette[1]
-        one_b = palette[2]
-    if one_alpha == 0xff:
-      if zero_alpha == 0xff or zero_alpha == 0:
-        if zero_alpha == 0xff:
-          h := pixels.size / source_byte_width
-          // Draw the zeros.
-          bytemap_rectangle x y palette[0] source_width h red_ width_
-          bytemap_rectangle x y palette[1] source_width h green_ width_
-          bytemap_rectangle x y palette[2] source_width h blue_ width_
-        // Draw the ones.
-        bitmap_draw_bitmap x y one_r orientation pixels 0 source_width red_ width_ true
-        bitmap_draw_bitmap x y one_g orientation pixels 0 source_width green_ width_ true
-        bitmap_draw_bitmap x y one_b orientation pixels 0 source_width blue_ width_ true
-        return
+    // Fast case if the alpha is either 0 or 0xff, because we can use the
+    // primitives that paint 1's with a particular color and leave the zeros
+    // transparent.  We don't check for the case where 0 is opaque and 1 is
+    // transparent, because pngunzip fixes that for us.
+    if alpha[1] == 0xff and (zero_alpha == 0xff or zero_alpha == 0):
+      if zero_alpha == 0xff:
+        h := pixels.size / source_byte_width
+        // Draw the zeros.
+        rectangle x y --w=source_width --h=h --color=(BIG_ENDIAN.uint24 palette 0)
+      // Draw the ones.
+      transform.xyo x y orientation: | x2 y2 o2 |
+        bitmap_draw_bitmap x2 y2 palette[3] o2 pixels 0 source_width red_ width_ true
+        bitmap_draw_bitmap x2 y2 palette[4] o2 pixels 0 source_width green_ width_ true
+        bitmap_draw_bitmap x2 y2 palette[5] o2 pixels 0 source_width blue_ width_ true
+      return
     // Unfortunately one of the alpha values is not 0 or 0xff, so we can't use
     // the bitmap draw primitive.  We can blow it up to bytes, then use the
     // bitmap-draw-bytemap.
     h := pixels.size / source_byte_width
     bytemap := ByteArray source_width * h
     bitmap_draw_bitmap 0 0 1 0 pixels 0 source_width bytemap source_width true
-    bitmap_draw_bytemap x y alpha orientation bytemap source_width palette red_ width_
-    bitmap_draw_bytemap x y alpha orientation bytemap source_width palette[1..] green_ width_
-    bitmap_draw_bytemap x y alpha orientation bytemap source_width palette[2..] blue_ width_
+    transform.xyo x y orientation: | x2 y2 o2 |
+      bitmap_draw_bytemap x2 y2 alpha o2 bytemap source_width palette red_ width_
+      bitmap_draw_bytemap x2 y2 alpha o2 bytemap source_width palette[1..] green_ width_
+      bitmap_draw_bytemap x2 y2 alpha o2 bytemap source_width palette[2..] blue_ width_
 
   draw_rgb_pixmap x/int y/int --r/ByteArray --g/ByteArray --b/ByteArray
       --pixmap_width/int
