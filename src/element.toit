@@ -12,7 +12,7 @@ import .bar_code_impl_
 import font show Font
 import math
 
-import png_tools.png_reader show PngRandomAccess
+import png_tools.png_reader show *
 
 abstract class Element extends ElementOrTexture_:
   x_ /int? := null
@@ -307,9 +307,9 @@ class GradientElement extends ResizableElement:
           g = g[o .. o + h]
           b = b[o .. o + h]
         if canvas is true_color.Canvas:
-          (canvas as true_color.Canvas).draw_rgb_pixmap (i + x2) y3 --r=r --g=g --b=b --pixmap_width=h --orientation=orientation
+          (canvas as true_color.Canvas).rgb_pixmap (i + x2) y3 --r=r --g=g --b=b --source_width=h --orientation=orientation
         else:
-          (canvas as one_byte.OneByteCanvas_).draw_pixmap (i + x2) y3 --pixels=b --pixmap_width=h --orientation=orientation
+          (canvas as one_byte.OneByteCanvas_).gray_pixmap (i + x2) y3 --pixels=b --source_width=h --orientation=orientation
         offset += step
     else:
       // The gradient goes broadly horizontally, and we draw in horizontal strips.
@@ -348,9 +348,9 @@ class GradientElement extends ResizableElement:
           g = g[o .. o + w]
           b = b[o .. o + w]
         if canvas is true_color.Canvas:
-          (canvas as true_color.Canvas).draw_rgb_pixmap x3 (i + y2) --r=r --g=g --b=b --pixmap_width=w --orientation=orientation
+          (canvas as true_color.Canvas).rgb_pixmap x3 (i + y2) --r=r --g=g --b=b --source_width=w --orientation=orientation
         else:
-          (canvas as one_byte.OneByteCanvas_).draw_pixmap x3 (i + y2) --pixels=b --pixmap_width=w --orientation=orientation
+          (canvas as one_byte.OneByteCanvas_).gray_pixmap x3 (i + y2) --pixels=b --source_width=w --orientation=orientation
         offset += step
 
 class FilledRectangleElement extends RectangleElement:
@@ -1083,10 +1083,10 @@ class RoundedCornerWindowElement extends WindowElement:
     if transparency_map is one_byte.OneByteCanvas_:
       palette := opacity == 0xff ? #[] : shadow_palette_
       draw_corners_ x2 y2 right bottom corner_radius_: | x y orientation |
-        transparency_map.draw_pixmap x y --pixels=opacities_ --palette=palette --pixmap_width=corner_radius_ --orientation=orientation
+        transparency_map.gray_pixmap x y --pixels=opacities_ --palette=palette --source_width=corner_radius_ --orientation=orientation
     else:
       draw_corners_ x2 y2 right bottom corner_radius_: | x y orientation |
-        transparency_map.draw_bitmap x y --pixels=bit_opacities_ --color=1 --pixmap_width=corner_radius_ --orientation=orientation
+        transparency_map.draw_bitmap x y --pixels=bit_opacities_ --color=1 --source_width=corner_radius_ --orientation=orientation
 
   draw_corners_ left/int top/int right/int bottom/int corner_radius/int [block]:
     // Top left corner:
@@ -1227,18 +1227,45 @@ class DropShadowWindowElement extends RoundedCornerWindowElement:
 class PngElement extends CustomElement:
   w/int
   h/int
-  png_/PngRandomAccess
+  png_/AbstractPng
 
   min_w: return w
   min_h: return h
 
   constructor --x/int?=null --y/int?=null png_file/ByteArray:
-    png_ = PngRandomAccess png_file
+    info := PngInfo png_file
+    if info.uncompressed_random_access:
+      png_ = PngRandomAccess png_file
+    else:
+      png_ = Png png_file
+    if png_.bit_depth > 8: throw "UNSUPPORTED"
+    if png_.color_type == COLOR_TYPE_TRUECOLOR or png_.color_type == COLOR_TYPE_TRUECOLOR_ALPHA: throw "UNSUPPORTED"
     w = png_.width
     h = png_.height
     super --x=x --y=y
 
   // Redraw routine.
   draw canvas/AbstractCanvas:
-    if (canvas.bounds_analysis x y w h) == AbstractCanvas.ALL_OUTSIDE: return
-
+    y2 := 0
+    while y2 < h: // and (canvas.bounds_analysis x y w (h - y)) != AbstractCanvas.ALL_OUTSIDE:
+      png_.get_indexed_image_data y2: | y_from/int y_to/int bits_per_pixel/int pixels/ByteArray line_stride/int |
+        if bits_per_pixel == 1:
+          // Last line a little shorter because it has no stride padding.
+          adjust := line_stride - ((round_up w 8) >> 3)
+          pixels = pixels[0 .. (y_to - y_from) * line_stride - adjust]
+          canvas.bitmap x (y + y_from)
+              --pixels=pixels
+              --alpha=png_.alpha_palette
+              --palette=png_.palette
+              --source_width=w
+              --line_stride=line_stride
+          y2 = y_to
+        else:
+          adjust := line_stride - w
+          pixels = pixels[0 .. (y_to - y_from) * line_stride - adjust]
+          (canvas as true_color.Canvas).rgb_pixmap x (y + y_from) --r=pixels --g=pixels --b=pixels
+              --alpha=png_.alpha_palette
+              --palette=png_.palette
+              --source_width=w
+              --line_stride=line_stride
+          y2 = y_to

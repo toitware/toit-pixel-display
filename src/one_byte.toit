@@ -59,15 +59,15 @@ class OneByteCanvas_ extends AbstractCanvas:
       --alpha/ByteArray    // 2-element byte array.
       --palette/ByteArray  // 6-element byte array.
       --source_width/int   // In pixels.
-      --orientation/int:
+      --line_stride/int:   // In bytes.
     throw "Not implemented"
 
-  draw_pixmap x/int y/int --pixels/ByteArray
+  gray_pixmap x/int y/int --pixels/ByteArray
       --palette/ByteArray=#[]
-      --pixmap_width/int
+      --source_width/int
       --orientation/int=ORIENTATION_0:
     transform.xyo x y orientation: | x2 y2 o2 |
-      bitmap_draw_bytemap x2 y2 -1 o2 pixels pixmap_width palette pixels_ width_
+      bitmap_draw_bytemap x2 y2 -1 o2 pixels source_width palette pixels_ width_
 
 class OneByteFilledRectangle_ extends FilledRectangle_:
   color_ := ?

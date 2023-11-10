@@ -74,7 +74,7 @@ class TwoBitCanvas_ extends AbstractCanvas:
       --alpha/ByteArray    // 2-element byte array.
       --palette/ByteArray  // 6-element byte array.
       --source_width/int   // In pixels.
-      --orientation/int:
+      --line_stride/int:   // In bytes.
     throw "Not implemented"
 
 

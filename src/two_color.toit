@@ -70,18 +70,18 @@ class Canvas extends AbstractCanvas:
       --alpha/ByteArray    // 2-element byte array.
       --palette/ByteArray  // 6-element byte array.
       --source_width/int   // In pixels.
-      --orientation/int:
+      --line_stride/int:   // In bytes.
     throw "Not implemented"
 
   draw_bitmap x/int y/int
       --pixels/ByteArray
       --color/int
-      --pixmap_width/int
+      --source_width/int
       --orientation/int:
     transform.xyo x y orientation: | x2 y2 o2 |
       bytewise := false
       offset := 0
-      bitmap_draw_bitmap x2 y2 1 o2 pixels offset pixmap_width pixels_ width_ bytewise
+      bitmap_draw_bitmap x2 y2 1 o2 pixels offset source_width pixels_ width_ bytewise
 
 class FilledRectangle extends FilledRectangle_:
   color_ := ?

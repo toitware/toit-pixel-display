@@ -103,7 +103,7 @@ abstract class AbstractCanvas:
       --alpha/ByteArray    // 2-element byte array.
       --palette/ByteArray  // 6-element byte array.
       --source_width/int   // In pixels.
-      --orientation/int
+      --line_stride/int    // In bytes.
 
 TRANSFORM_IDENTITY_ ::= Transform.with_ [1, 0, 0, 1, 0, 0]
 TRANSFORM_90_ ::= Transform.with_ [0, -1, 1, 0, 0, 0]
