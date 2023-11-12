@@ -120,8 +120,8 @@ class TwoBitBitmapTexture_ extends BitmapTexture_:
     super x y w h transform
 
   draw_ bx by orientation canvas/TwoBitCanvas_:
-    bitmap_draw_bitmap bx by (color_ & 1)        orientation bytes_ 0 w canvas.plane_0_ canvas.width_ false
-    bitmap_draw_bitmap bx by ((color_ & 2) >> 1) orientation bytes_ 0 w canvas.plane_1_ canvas.width_ false
+    bitmap_draw_bitmap bx by --color=(color_ & 1)        --orientation=orientation --source=bytes_ --source_width=w --destination=canvas.plane_0_ --destination_width=canvas.width_
+    bitmap_draw_bitmap bx by --color=((color_ & 2) >> 1) --orientation=orientation --source=bytes_ --source_width=w --destination=canvas.plane_1_ --destination_width=canvas.width_
 
 /**
 A two color bitmap texture where foreground and background pixels in the
@@ -165,8 +165,8 @@ class PbmTexture_ extends BitmapTexture_:
     super.no_allocate_ x y parser.width parser.height transform
 
   draw_ bx by orientation canvas/TwoBitCanvas_:
-    bitmap_draw_bitmap bx by (color_ & 1)        orientation bytes_ 0 w canvas.plane_0_ canvas.width_ false
-    bitmap_draw_bitmap bx by ((color_ & 2) >> 1) orientation bytes_ 0 w canvas.plane_1_ canvas.width_ false
+    bitmap_draw_bitmap bx by --color=(color_ & 1)        --orientation=orientation --source=bytes_ --source_width=w --destination=canvas.plane_0_ --destination_width=canvas.width_
+    bitmap_draw_bitmap bx by --color=((color_ & 2) >> 1) --orientation=orientation --source=bytes_ --source_width=w --destination=canvas.plane_1_ --destination_width=canvas.width_
 
 class TwoBitBarCodeEan13_ extends BarCodeEan13_:
   black_ := 0

@@ -178,9 +178,9 @@ class PixmapTexture extends PixmapTexture_:
 
   draw_ bx by orientation canvas/Canvas:
     if transparency_:
-      bitmap_draw_bytemap bx by 42 orientation bytes_ w palette_ canvas.pixels_ canvas.width_
+      bitmap_draw_bytemap bx by --transparent_index=42 --orientation=orientation --source=bytes_ --source_width=w --palette=palette_ --destination=canvas.pixels_ --destination_width=canvas.width_
     else:
-      bitmap_draw_bytemap bx by -1 orientation bytes_ w palette_ canvas.pixels_ canvas.width_
+      bitmap_draw_bytemap bx by --orientation=orientation --source=bytes_ --source_width=w --palette=palette_ --destination=canvas.pixels_ --destination_width=canvas.width_
 
 class BarCodeEan13 extends OneByteBarCodeEan13_:
   constructor code/string x/int y/int transform/Transform:

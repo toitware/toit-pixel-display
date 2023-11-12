@@ -67,7 +67,7 @@ class OneByteCanvas_ extends AbstractCanvas:
       --source_width/int
       --orientation/int=ORIENTATION_0:
     transform.xyo x y orientation: | x2 y2 o2 |
-      bitmap_draw_bytemap x2 y2 -1 o2 pixels source_width palette pixels_ width_
+      bitmap_draw_bytemap x2 y2 --orientation=o2 --source=pixels --source_width=source_width --palette=palette --destination=pixels_ --destination_width=width_
 
 class OneByteFilledRectangle_ extends FilledRectangle_:
   color_ := ?
@@ -115,7 +115,7 @@ class OneByteBitmapTexture_ extends BitmapTexture_:
     super x y w h transform
 
   draw_ bx by orientation canvas/OneByteCanvas_:
-    bitmap_draw_bitmap bx by color_ orientation bytes_ 0 w canvas.pixels_ canvas.width_ true
+    bitmap_draw_bitmap bx by --color=color_ --orientation=orientation --source=bytes_ --source_width=w --destination=canvas.pixels_ --destination_width=canvas.width_ --bytewise=true
 
 /**
 A two color bitmap texture where foreground and background pixels in the
@@ -162,7 +162,7 @@ class OneBytePbmTexture_ extends BitmapTexture_:
     super.no_allocate_ x y parser.width parser.height transform
 
   draw_ bx by orientation canvas/OneByteCanvas_:
-    bitmap_draw_bitmap bx by color_ orientation bytes_ 0 w canvas.pixels_ canvas.width_ true
+    bitmap_draw_bitmap bx by --color=color_ --orientation=orientation --source=bytes_ --source_width=w --destination=canvas.pixels_ --destination_width=canvas.width_ --bytewise
 
 abstract class OneByteBarCodeEan13_ extends BarCodeEan13_:
   constructor code/string x/int y/int transform/Transform:

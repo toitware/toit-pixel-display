@@ -127,8 +127,8 @@ class OpaquePixmapTexture extends BitmapTextureBase_:
 
   draw_ bx by orientation canvas/TwoBitCanvas_:
     // The area was already zeroed, add in the 1s as needed.
-    bitmap_draw_bitmap bx by 1 orientation bytes_ 0 w canvas.plane_0_ canvas.width_ false
-    bitmap_draw_bitmap bx by 1 orientation bytes_2_ 0 w canvas.plane_1_ canvas.width_ false
+    bitmap_draw_bitmap bx by --color=1 --orientation=orientation --source=bytes_ --source_width=w --destination=canvas.plane_0_ --destination_width=canvas.width_
+    bitmap_draw_bitmap bx by --color=1 --orientation=orientation --source=bytes_2_ --source_width=w --destination=canvas.plane_1_ --destination_width=canvas.width_
 
 // A texture backed by a P4 (binary two-level) PBM file.  The white areas
 // (zeros) are rendered transparent and the black areas (ones) are rendered in

@@ -79,9 +79,7 @@ class Canvas extends AbstractCanvas:
       --source_width/int
       --orientation/int:
     transform.xyo x y orientation: | x2 y2 o2 |
-      bytewise := false
-      offset := 0
-      bitmap_draw_bitmap x2 y2 1 o2 pixels offset source_width pixels_ width_ bytewise
+      bitmap_draw_bitmap x2 y2 --color=1 --orientation=o2 --source=pixels --source_width=source_width --destination=pixels_ --destination_width=width_
 
 class FilledRectangle extends FilledRectangle_:
   color_ := ?
@@ -142,7 +140,7 @@ class BitmapTexture extends BitmapTexture_:
     super x y w h transform
 
   draw_ bx by orientation canvas/Canvas:
-    bitmap_draw_bitmap bx by color_ orientation bytes_ 0 w canvas.pixels_ canvas.width_ false
+    bitmap_draw_bitmap bx by --color=color_ --orientation=orientation --source=bytes_ --source_width=w --destination=canvas.pixels_ --destination_width=canvas.width_
 
 /**
 A two color bitmap texture where foreground and background pixels in the
@@ -305,7 +303,7 @@ class PbmTexture extends BitmapTexture_:
     super.no_allocate_ x y parser.width parser.height transform
 
   draw_ bx by orientation canvas/Canvas:
-    bitmap_draw_bitmap bx by color_ orientation bytes_ 0 w canvas.pixels_ canvas.width_ false
+    bitmap_draw_bitmap bx by --color=color_ --orientation=orientation --source=bytes_ --source_width=w --destination=canvas.pixels_ --destination_width=canvas.width_
 
 // A texture backed by a P4 (binary two-level) PBM file.  This is normally more
 // efficient than the Pbm class, but it cannot scale the image.

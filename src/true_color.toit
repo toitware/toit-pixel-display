@@ -112,24 +112,24 @@ class Canvas extends AbstractCanvas:
         // Draw the zeros.
         rectangle x y --w=source_width --h=h --color=(BIG_ENDIAN.uint24 palette 0)
       // Draw the ones.
-      transform.xyo x y 0: | x2 y2 orientation |
-        bitmap_draw_bitmap x2 y2 palette[3] orientation pixels 0 source_width line_stride red_ width_ true
-        bitmap_draw_bitmap x2 y2 palette[4] orientation pixels 0 source_width line_stride green_ width_ true
-        bitmap_draw_bitmap x2 y2 palette[5] orientation pixels 0 source_width line_stride blue_ width_ true
+      transform.xyo x y 0: | x2 y2 o2 |
+        bitmap_draw_bitmap x2 y2 --color=palette[3] --orientation=o2 --source=pixels --source_width=source_width --source_stride=line_stride --destination=red_ --destination_width=width_ --bytewise
+        bitmap_draw_bitmap x2 y2 --color=palette[4] --orientation=o2 --source=pixels --source_width=source_width --source_stride=line_stride --destination=green_ --destination_width=width_ --bytewise
+        bitmap_draw_bitmap x2 y2 --color=palette[5] --orientation=o2 --source=pixels --source_width=source_width --source_stride=line_stride --destination=blue_ --destination_width=width_ --bytewise
       return
     // Unfortunately one of the alpha values is not 0 or 0xff, so we can't use
     // the bitmap draw primitive.  We can blow it up to bytes, then use the
     // bitmap_draw_bytemap.
     h := pixels.size / source_byte_width
     bytemap := ByteArray source_width * h
-    bitmap_draw_bitmap 0 0 1 0 pixels 0 source_width line_stride bytemap source_width true
-    transform.xyo x y 0: | x2 y2 orientation |
-      bitmap_draw_bytemap x2 y2 alpha orientation bytemap source_width source_width palette red_ width_
-      bitmap_draw_bytemap x2 y2 alpha orientation bytemap source_width source_width palette[1..] green_ width_
-      bitmap_draw_bytemap x2 y2 alpha orientation bytemap source_width source_width palette[2..] blue_ width_
+    bitmap_draw_bitmap 0 0 --color=1 --source=pixels --source_width=source_width --destination=bytemap --destination_width=source_width --bytewise
+    transform.xyo x y 0: | x2 y2 o2 |
+      bitmap_draw_bytemap x2 y2 --alpha=alpha --orientation=o2 --source=bytemap --source_width=source_width --palette=palette --destination=red_ --destination_width=width_
+      bitmap_draw_bytemap x2 y2 --alpha=alpha --orientation=o2 --source=bytemap --source_width=source_width --palette=palette[1..] --destination=green_ --destination_width=width_
+      bitmap_draw_bytemap x2 y2 --alpha=alpha --orientation=o2 --source=bytemap --source_width=source_width --palette=palette[2..] --destination=blue_ --destination_width=width_
 
   rgb_pixmap x/int y/int --r/ByteArray --g/ByteArray --b/ByteArray
-      --alpha=-1
+      --alpha/ByteArray=#[]
       --palette/ByteArray?=null
       --source_width/int
       --orientation/int=ORIENTATION_0
@@ -138,9 +138,9 @@ class Canvas extends AbstractCanvas:
     palette_g := palette ? palette[1..] : #[]
     palette_b := palette ? palette[2..] : #[]
     transform.xyo x y orientation: | x2 y2 o2 |
-      bitmap_draw_bytemap x2 y2 alpha o2 r source_width line_stride palette_r red_ width_
-      bitmap_draw_bytemap x2 y2 alpha o2 g source_width line_stride palette_g green_ width_
-      bitmap_draw_bytemap x2 y2 alpha o2 b source_width line_stride palette_b blue_ width_
+      bitmap_draw_bytemap x2 y2 --alpha=alpha --orientation=o2 --source=r --source_width=source_width --source_stride=line_stride --palette=palette_r --destination=red_ --destination_width=width_
+      bitmap_draw_bytemap x2 y2 --alpha=alpha --orientation=o2 --source=g --source_width=source_width --source_stride=line_stride --palette=palette_g --destination=green_ --destination_width=width_
+      bitmap_draw_bytemap x2 y2 --alpha=alpha --orientation=o2 --source=b --source_width=source_width --source_stride=line_stride --palette=palette_b --destination=blue_ --destination_width=width_
 
 class FilledRectangle extends FilledRectangle_:
   color_ := ?
@@ -205,9 +205,9 @@ class BitmapTexture extends BitmapTexture_:
     super x y w h transform
 
   draw_ bx by orientation canvas/Canvas:
-    bitmap_draw_bitmap bx by (red_component color_) orientation bytes_ 0 w canvas.red_ canvas.width_ true
-    bitmap_draw_bitmap bx by (green_component color_) orientation bytes_ 0 w canvas.green_ canvas.width_ true
-    bitmap_draw_bitmap bx by (blue_component color_) orientation bytes_ 0 w canvas.blue_ canvas.width_ true
+    bitmap_draw_bitmap bx by --color=(red_component color_) --orientation=orientation --source=bytes_ --source_width=w --destination=canvas.red_ --destination_width=canvas.width_ --bytewise
+    bitmap_draw_bitmap bx by --color=(green_component color_) --orientation=orientation --source=bytes_ --source_width=w --destination=canvas.green_ --destination_width=canvas.width_ --bytewise
+    bitmap_draw_bitmap bx by --color=(blue_component color_) --orientation=orientation --source=bytes_ --source_width=w --destination=canvas.blue_ --destination_width=canvas.width_ --bytewise
 
 /**
 A two color bitmap texture where foreground and background pixels in the
@@ -252,9 +252,9 @@ class PbmTexture extends BitmapTexture_:
     super.no_allocate_ x y parser.width parser.height transform
 
   draw_ bx by orientation canvas/Canvas:
-    bitmap_draw_bitmap bx by (red_component color_)   orientation bytes_ 0 w canvas.red_   canvas.width_ true
-    bitmap_draw_bitmap bx by (green_component color_) orientation bytes_ 0 w canvas.green_ canvas.width_ true
-    bitmap_draw_bitmap bx by (blue_component color_)  orientation bytes_ 0 w canvas.blue_  canvas.width_ true
+    bitmap_draw_bitmap bx by --color=(red_component color_)   --orientation=orientation --source=bytes_ --source_width=w --destination=canvas.red_   --destination_width=canvas.width_ --bytewise
+    bitmap_draw_bitmap bx by --color=(green_component color_) --orientation=orientation --source=bytes_ --source_width=w --destination=canvas.green_ --destination_width=canvas.width_ --bytewise
+    bitmap_draw_bitmap bx by --color=(blue_component color_)  --orientation=orientation --source=bytes_ --source_width=w --destination=canvas.blue_  --destination_width=canvas.width_ --bytewise
 
 /**
 A rectangular pixmap that can be drawn in any of 4 orientations on a canvas.
@@ -354,9 +354,9 @@ class IndexedPixmapTexture extends PixmapTexture_:
   draw_ bx by orientation canvas/Canvas:
     if not green_palette_: green_palette_ = palette_[1..]
     if not blue_palette_: blue_palette_ = palette_[2..]
-    bitmap_draw_bytemap bx by 0 orientation bytes_ w w palette_       canvas.red_   canvas.width_
-    bitmap_draw_bytemap bx by 0 orientation bytes_ w w green_palette_ canvas.green_ canvas.width_
-    bitmap_draw_bytemap bx by 0 orientation bytes_ w w blue_palette_  canvas.blue_  canvas.width_
+    bitmap_draw_bytemap bx by --transparent_index=0 --orientation=orientation --source=bytes_ --source_width=w --palette=palette_       --destination=canvas.red_   --destination_width=canvas.width_
+    bitmap_draw_bytemap bx by --transparent_index=0 --orientation=orientation --source=bytes_ --source_width=w --palette=green_palette_ --destination=canvas.green_ --destination_width=canvas.width_
+    bitmap_draw_bytemap bx by --transparent_index=0 --orientation=orientation --source=bytes_ --source_width=w --palette=blue_palette_  --destination=canvas.blue_  --destination_width=canvas.width_
 
 class BarCodeEan13 extends BarCodeEan13_:
   constructor code/string x/int y/int transform/Transform:
