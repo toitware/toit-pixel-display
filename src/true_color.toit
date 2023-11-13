@@ -96,10 +96,10 @@ class Canvas extends AbstractCanvas:
 
   bitmap x/int y/int -> none
       --pixels/ByteArray
-      --alpha/ByteArray    // 2-element byte array.
-      --palette/ByteArray  // 6-element byte array.
-      --source_width/int   // In pixels.
-      --line_stride/int:   // In bytes.
+      --alpha/ByteArray          // 2-element byte array.
+      --palette/ByteArray        // 6-element byte array.
+      --source_width/int         // In pixels.
+      --source_line_stride/int:  // In bytes.
     source_byte_width := (source_width + 7) >> 3
     zero_alpha := alpha[0]
     // Fast case if the alpha is either 0 or 0xff, because we can use the
@@ -113,9 +113,9 @@ class Canvas extends AbstractCanvas:
         rectangle x y --w=source_width --h=h --color=(BIG_ENDIAN.uint24 palette 0)
       // Draw the ones.
       transform.xyo x y 0: | x2 y2 o2 |
-        bitmap_draw_bitmap x2 y2 --color=palette[3] --orientation=o2 --source=pixels --source_width=source_width --source_stride=line_stride --destination=red_ --destination_width=width_ --bytewise
-        bitmap_draw_bitmap x2 y2 --color=palette[4] --orientation=o2 --source=pixels --source_width=source_width --source_stride=line_stride --destination=green_ --destination_width=width_ --bytewise
-        bitmap_draw_bitmap x2 y2 --color=palette[5] --orientation=o2 --source=pixels --source_width=source_width --source_stride=line_stride --destination=blue_ --destination_width=width_ --bytewise
+        bitmap_draw_bitmap x2 y2 --color=palette[3] --orientation=o2 --source=pixels --source_width=source_width --source_line_stride=source_line_stride --destination=red_ --destination_width=width_ --bytewise
+        bitmap_draw_bitmap x2 y2 --color=palette[4] --orientation=o2 --source=pixels --source_width=source_width --source_line_stride=source_line_stride --destination=green_ --destination_width=width_ --bytewise
+        bitmap_draw_bitmap x2 y2 --color=palette[5] --orientation=o2 --source=pixels --source_width=source_width --source_line_stride=source_line_stride --destination=blue_ --destination_width=width_ --bytewise
       return
     // Unfortunately one of the alpha values is not 0 or 0xff, so we can't use
     // the bitmap draw primitive.  We can blow it up to bytes, then use the
@@ -133,14 +133,14 @@ class Canvas extends AbstractCanvas:
       --palette/ByteArray?=null
       --source_width/int
       --orientation/int=ORIENTATION_0
-      --line_stride/int=source_width:
+      --source_line_stride/int=source_width:
     palette_r := palette ? palette : #[]
     palette_g := palette ? palette[1..] : #[]
     palette_b := palette ? palette[2..] : #[]
     transform.xyo x y orientation: | x2 y2 o2 |
-      bitmap_draw_bytemap x2 y2 --alpha=alpha --orientation=o2 --source=r --source_width=source_width --source_stride=line_stride --palette=palette_r --destination=red_ --destination_width=width_
-      bitmap_draw_bytemap x2 y2 --alpha=alpha --orientation=o2 --source=g --source_width=source_width --source_stride=line_stride --palette=palette_g --destination=green_ --destination_width=width_
-      bitmap_draw_bytemap x2 y2 --alpha=alpha --orientation=o2 --source=b --source_width=source_width --source_stride=line_stride --palette=palette_b --destination=blue_ --destination_width=width_
+      bitmap_draw_bytemap x2 y2 --alpha=alpha --orientation=o2 --source=r --source_width=source_width --source_line_stride=source_line_stride --palette=palette_r --destination=red_ --destination_width=width_
+      bitmap_draw_bytemap x2 y2 --alpha=alpha --orientation=o2 --source=g --source_width=source_width --source_line_stride=source_line_stride --palette=palette_g --destination=green_ --destination_width=width_
+      bitmap_draw_bytemap x2 y2 --alpha=alpha --orientation=o2 --source=b --source_width=source_width --source_line_stride=source_line_stride --palette=palette_b --destination=blue_ --destination_width=width_
 
 class FilledRectangle extends FilledRectangle_:
   color_ := ?

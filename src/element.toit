@@ -1258,7 +1258,7 @@ class PngElement extends CustomElement:
               --alpha=png_.alpha_palette
               --palette=png_.palette
               --source_width=w
-              --line_stride=line_stride
+              --source_line_stride=line_stride
           y2 = y_to
         else:
           adjust := line_stride - w
@@ -1267,5 +1267,5 @@ class PngElement extends CustomElement:
               --alpha=png_.alpha_palette
               --palette=png_.palette
               --source_width=w
-              --line_stride=line_stride
+              --source_line_stride=line_stride
           y2 = y_to

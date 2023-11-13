@@ -6,6 +6,7 @@
 // A canvas is a frame buffer that can be drawn on and sent to a display.
 // A texture is an object that can draw itself onto a canvas.
 
+import binary show BIG_ENDIAN
 import bitmap show *
 import font show Font
 import icons show Icon
@@ -57,10 +58,32 @@ class OneByteCanvas_ extends AbstractCanvas:
   bitmap x/int y/int -> none
       --pixels/ByteArray
       --alpha/ByteArray    // 2-element byte array.
-      --palette/ByteArray  // 6-element byte array.
+      --palette/ByteArray  // 4 element byte array.
       --source_width/int   // In pixels.
-      --line_stride/int:   // In bytes.
-    throw "Not implemented"
+      --source_line_stride/int:   // In bytes.
+    source_byte_width := (source_width + 7) >> 3
+    zero_alpha := alpha[0]
+    // Fast case if the alpha is either 0 or 0xff, because we can use the
+    // primitives that paint 1's with a particular color and leave the zeros
+    // transparent.  We don't check for the case where 0 is opaque and 1 is
+    // transparent, because pngunzip fixes that for us.
+    if alpha[1] == 0xff and (zero_alpha == 0xff or zero_alpha == 0):
+      if zero_alpha == 0xff:
+        h := (pixels.size + source_line_stride - source_width ) / source_line_stride
+        // Draw the zeros.
+        rectangle x y --w=source_width --h=h --color=(BIG_ENDIAN.uint24 palette 0)
+      // Draw the ones.
+      transform.xyo x y 0: | x2 y2 o2 |
+        bitmap_draw_bitmap x2 y2 --color=palette[3] --orientation=o2 --source=pixels --source_width=source_width --source_line_stride=source_line_stride --destination=pixels_ --destination_width=width_ --bytewise
+      return
+    // Unfortunately one of the alpha values is not 0 or 0xff, so we can't use
+    // the bitmap draw primitive.  We can blow it up to bytes, then use the
+    // bitmap_draw_bytemap.
+    h := (pixels.size + source_line_stride - source_width ) / source_line_stride
+    bytemap := ByteArray source_width * h
+    bitmap_draw_bitmap 0 0 --color=1 --source=pixels --source_width=source_width --destination=bytemap --destination_width=source_width --bytewise
+    transform.xyo x y 0: | x2 y2 o2 |
+      bitmap_draw_bytemap x2 y2 --alpha=alpha --orientation=o2 --source=bytemap --source_width=source_width --palette=palette --destination=pixels_ --destination_width=width_
 
   gray_pixmap x/int y/int --pixels/ByteArray
       --palette/ByteArray=#[]
