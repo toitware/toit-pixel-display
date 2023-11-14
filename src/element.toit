@@ -1250,7 +1250,7 @@ class PngElement extends CustomElement:
     while y2 < h and (canvas.bounds_analysis x (y + y2) w (h - y2)) != AbstractCanvas.ALL_OUTSIDE:
       png_.get_indexed_image_data y2: | y_from/int y_to/int bits_per_pixel/int pixels/ByteArray line_stride/int |
         if bits_per_pixel == 1:
-          palette := canvas is true_color.Canvas ? png_.palette : png_.gray-palette
+          palette := canvas is one_byte.OneByteCanvas_ ? png_.gray-palette : png_.palette
           // Last line a little shorter because it has no stride padding.
           adjust := line_stride - ((round_up w 8) >> 3)
           pixels = pixels[0 .. (y_to - y_from) * line_stride - adjust]
@@ -1269,7 +1269,7 @@ class PngElement extends CustomElement:
                 --palette=png_.palette
                 --source_width=w
                 --source_line_stride=line_stride
-          else:
+          else: if canvas is one_byte.OneByteCanvas_:
             (canvas as one_byte.OneByteCanvas_).gray_pixmap x (y + y_from) --pixels=pixels
                 --alpha=png_.alpha_palette
                 --palette=png_.gray-palette

@@ -13,6 +13,7 @@ import .element
 import .texture
 import .two_color as two_color
 import .three_color as three_color
+import .two_bit_texture as two_bit
 import font show Font
 import icons show Icon
 import .four_gray as four_gray
@@ -653,6 +654,9 @@ class FourGrayPixelDisplay extends TwoBitPixelDisplay_:
   default_background_color_ -> int:
     return four_gray.WHITE
 
+  create_canvas_ w/int h/int -> AbstractCanvas:
+    return four_gray.Canvas w h
+
   text context/GraphicsContext x/int y/int text/string -> four_gray.TextTexture:
     if context.font == null: throw "NO_FONT_GIVEN"
     texture := four_gray.TextTexture x y context.transform context.alignment text context.font context.color
@@ -731,6 +735,9 @@ class ThreeColorPixelDisplay extends TwoBitPixelDisplay_:
   default_background_color_ -> int:
     return three_color.WHITE
 
+  create_canvas_ w/int h/int -> AbstractCanvas:
+    return three_color.Canvas w h
+
   text context/GraphicsContext x/int y/int text/string -> three_color.TextTexture:
     if context.font == null: throw "NO_FONT_GIVEN"
     texture := three_color.TextTexture x y context.transform context.alignment text context.font context.color
@@ -793,10 +800,7 @@ abstract class TwoBitPixelDisplay_ extends PixelDisplay:
     // We can't work well with canvases that are less than 8 pixels tall.
     return max 8 height
 
-  create_canvas_ w/int h/int -> AbstractCanvas:
-    return three_color.Canvas w h
-
-  draw_ x/int y/int w/int h/int canvas/three_color.Canvas -> none:
+  draw_ x/int y/int w/int h/int canvas/two_bit.TwoBitCanvas_ -> none:
     driver_.draw_two_bit x y w h canvas.plane_0_ canvas.plane_1_
 
 /**
