@@ -108,7 +108,7 @@ class Canvas extends AbstractCanvas:
     // transparent, because pngunzip fixes that for us.
     if alpha[1] == 0xff and (zero_alpha == 0xff or zero_alpha == 0):
       if zero_alpha == 0xff:
-        h := pixels.size / source_byte_width
+        h := (pixels.size + source_line_stride - source_byte_width) / source_line_stride
         // Draw the zeros.
         rectangle x y --w=source_width --h=h --color=(BIG_ENDIAN.uint24 palette 0)
       // Draw the ones.
@@ -120,7 +120,7 @@ class Canvas extends AbstractCanvas:
     // Unfortunately one of the alpha values is not 0 or 0xff, so we can't use
     // the bitmap draw primitive.  We can blow it up to bytes, then use the
     // bitmap_draw_bytemap.
-    h := pixels.size / source_byte_width
+    h := (pixels.size + source_line_stride - source_byte_width) / source_line_stride
     bytemap := ByteArray source_width * h
     bitmap_draw_bitmap 0 0 --color=1 --source=pixels --source_width=source_width --destination=bytemap --destination_width=source_width --bytewise
     transform.xyo x y 0: | x2 y2 o2 |

@@ -11,7 +11,7 @@ build/CMakeCache.txt:
 install-pkgs: rebuild-cmake
 	(cd build && ninja install-pkgs)
 
-test: install-pkgs rebuild-cmake
+test: rebuild-cmake
 	(cd build && ninja check)
 
 # We rebuild the cmake file all the time.

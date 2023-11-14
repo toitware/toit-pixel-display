@@ -69,9 +69,9 @@ class OneByteCanvas_ extends AbstractCanvas:
     // transparent, because pngunzip fixes that for us.
     if alpha[1] == 0xff and (zero_alpha == 0xff or zero_alpha == 0):
       if zero_alpha == 0xff:
-        h := (pixels.size + source_line_stride - source_width ) / source_line_stride
+        h := (pixels.size + source_line_stride - source_byte_width ) / source_line_stride
         // Draw the zeros.
-        rectangle x y --w=source_width --h=h --color=(BIG_ENDIAN.uint24 palette 0)
+        rectangle x y --w=source_width --h=h --color=palette[0]
       // Draw the ones.
       transform.xyo x y 0: | x2 y2 o2 |
         bitmap_draw_bitmap x2 y2 --color=palette[3] --orientation=o2 --source=pixels --source_width=source_width --source_line_stride=source_line_stride --destination=pixels_ --destination_width=width_ --bytewise
@@ -79,18 +79,20 @@ class OneByteCanvas_ extends AbstractCanvas:
     // Unfortunately one of the alpha values is not 0 or 0xff, so we can't use
     // the bitmap draw primitive.  We can blow it up to bytes, then use the
     // bitmap_draw_bytemap.
-    h := (pixels.size + source_line_stride - source_width ) / source_line_stride
+    h := (pixels.size + source_line_stride - source_byte_width ) / source_line_stride
     bytemap := ByteArray source_width * h
     bitmap_draw_bitmap 0 0 --color=1 --source=pixels --source_width=source_width --destination=bytemap --destination_width=source_width --bytewise
     transform.xyo x y 0: | x2 y2 o2 |
       bitmap_draw_bytemap x2 y2 --alpha=alpha --orientation=o2 --source=bytemap --source_width=source_width --palette=palette --destination=pixels_ --destination_width=width_
 
   gray_pixmap x/int y/int --pixels/ByteArray
+      --alpha/ByteArray=#[]
       --palette/ByteArray=#[]
       --source_width/int
-      --orientation/int=ORIENTATION_0:
+      --orientation/int=ORIENTATION_0
+      --source_line_stride/int=source_width:
     transform.xyo x y orientation: | x2 y2 o2 |
-      bitmap_draw_bytemap x2 y2 --orientation=o2 --source=pixels --source_width=source_width --palette=palette --destination=pixels_ --destination_width=width_
+      bitmap_draw_bytemap x2 y2 --alpha=alpha --orientation=o2 --source=pixels --source_width=source_width --source_line_stride=source_line_stride --palette=palette --destination=pixels_ --destination_width=width_
 
 class OneByteFilledRectangle_ extends FilledRectangle_:
   color_ := ?

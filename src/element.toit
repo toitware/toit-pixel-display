@@ -1247,25 +1247,32 @@ class PngElement extends CustomElement:
   // Redraw routine.
   draw canvas/AbstractCanvas:
     y2 := 0
-    while y2 < h: // and (canvas.bounds_analysis x y w (h - y)) != AbstractCanvas.ALL_OUTSIDE:
+    while y2 < h and (canvas.bounds_analysis x (y + y2) w (h - y2)) != AbstractCanvas.ALL_OUTSIDE:
       png_.get_indexed_image_data y2: | y_from/int y_to/int bits_per_pixel/int pixels/ByteArray line_stride/int |
         if bits_per_pixel == 1:
+          palette := canvas is true_color.Canvas ? png_.palette : png_.gray-palette
           // Last line a little shorter because it has no stride padding.
           adjust := line_stride - ((round_up w 8) >> 3)
           pixels = pixels[0 .. (y_to - y_from) * line_stride - adjust]
           canvas.bitmap x (y + y_from)
               --pixels=pixels
               --alpha=png_.alpha_palette
-              --palette=png_.palette
+              --palette=palette
               --source_width=w
               --source_line_stride=line_stride
-          y2 = y_to
         else:
           adjust := line_stride - w
           pixels = pixels[0 .. (y_to - y_from) * line_stride - adjust]
-          (canvas as true_color.Canvas).rgb_pixmap x (y + y_from) --r=pixels --g=pixels --b=pixels
-              --alpha=png_.alpha_palette
-              --palette=png_.palette
-              --source_width=w
-              --source_line_stride=line_stride
-          y2 = y_to
+          if canvas is true_color.Canvas:
+            (canvas as true_color.Canvas).rgb_pixmap x (y + y_from) --r=pixels --g=pixels --b=pixels
+                --alpha=png_.alpha_palette
+                --palette=png_.palette
+                --source_width=w
+                --source_line_stride=line_stride
+          else:
+            (canvas as one_byte.OneByteCanvas_).gray_pixmap x (y + y_from) --pixels=pixels
+                --alpha=png_.alpha_palette
+                --palette=png_.gray-palette
+                --source_width=w
+                --source_line_stride=line_stride
+        y2 = y_to
