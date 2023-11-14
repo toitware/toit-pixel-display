@@ -81,7 +81,7 @@ class OneByteCanvas_ extends AbstractCanvas:
     // bitmap_draw_bytemap.
     h := (pixels.size + source_line_stride - source_byte_width ) / source_line_stride
     bytemap := ByteArray source_width * h
-    bitmap_draw_bitmap 0 0 --color=1 --source=pixels --source_width=source_width --destination=bytemap --destination_width=source_width --bytewise
+    bitmap_draw_bitmap 0 0 --color=1 --source=pixels --source_width=source_width --source_line_stride=source_line_stride --destination=bytemap --destination_width=source_width --bytewise
     transform.xyo x y 0: | x2 y2 o2 |
       bitmap_draw_bytemap x2 y2 --alpha=alpha --orientation=o2 --source=bytemap --source_width=source_width --palette=palette --destination=pixels_ --destination_width=width_
 
