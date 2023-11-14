@@ -28,14 +28,19 @@ pngunzip --override-chunk "PLTE=#[0, 0, 0, 0, 0, 0]" -o heater-bw.png heater-bw.
 # Make a version with a white non-transparent background.
 pngunzip --override-chunk "PLTE=#[0xff, 0xff, 0xff, 0, 0, 0]" --override-chunk "tRNS=#[0xff, 0xff]" -o heater-white-bg.png heater-bw.png
 
+# Make a version with a partially transparent foreground and background.
+pngunzip --override-chunk "PLTE=#[0xff, 0x0, 0, 0x80, 0x80, 0xff]" --override-chunk "tRNS=#[0x30, 0x80]" -o heater-translucent.png heater-bw.png
+
 # Crush the files.
 pngout -y heater-bw.png heater-bw.png
 pngout -y heater-white-bg.png heater-white-bg.png
 pngout -y heater-4-bit.png heater-4-bit.png
+pngout -y heater-translucent.png heater-translucent.png
 
 # Make uncompressed versions.
 pngunzip -o heater-2-bit-uncompressed.png heater-2-bit.png
 pngunzip -o heater-bw-uncompressed.png heater-bw.png
 pngunzip -o heater-white-bg-uncompressed.png heater-white-bg.png
+pngunzip -o heater-translucent-uncompressed.png heater-translucent.png
 pngunzip -o heater-4-bit-uncompressed.png heater-4-bit.png
 pngunzip -o heater-uncompressed.png heater.png
