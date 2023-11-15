@@ -58,6 +58,9 @@ abstract class AbstractCanvas:
 
   abstract set_all_pixels color/int -> none
 
+  abstract supported_pixel_depths -> int
+  abstract gray_scale -> bool
+
   abstract make_alpha_map -> AbstractCanvas
   abstract make_alpha_map --padding/int -> AbstractCanvas
 
@@ -104,6 +107,14 @@ abstract class AbstractCanvas:
       --palette/ByteArray       // 6-element byte array.
       --source_width/int        // In pixels.
       --source_line_stride/int  // In bytes.
+
+  abstract pixmap x/int y/int
+      --pixels/ByteArray
+      --alpha/ByteArray=#[]
+      --palette/ByteArray=#[]
+      --source_width/int
+      --orientation/int=ORIENTATION_0
+      --source_line_stride/int=source_width
 
 TRANSFORM_IDENTITY_ ::= Transform.with_ [1, 0, 0, 1, 0, 0]
 TRANSFORM_90_ ::= Transform.with_ [0, -1, 1, 0, 0, 0]

@@ -11,11 +11,12 @@ import bitmap show *
 import font show Font
 import icons show Icon
 import .common
+import .gray_scale as gray_scale_
 import .texture
 
 // The canvas contains a ByteArray.
 // Initially all pixels are 0.
-class OneByteCanvas_ extends AbstractCanvas:
+abstract class OneByteCanvas_ extends AbstractCanvas:
   pixels_ := ?
 
   constructor width/int height/int:
@@ -29,16 +30,8 @@ class OneByteCanvas_ extends AbstractCanvas:
   get_pixel_ x y:
     return pixels_[x + width_ * y]
 
-  /**
-  Creates a blank texture with the same dimensions as this one.
-  */
-  create_similar:
-    result := OneByteCanvas_ width_ height_
-    result.transform=transform
-    return result
-
   make_alpha_map --padding/int=0 -> AbstractCanvas:
-    result := OneByteCanvas_ (width_ + padding) (height_ + padding)
+    result := gray_scale_.Canvas (width_ + padding) (height_ + padding)
     result.transform=transform
     return result
 
@@ -85,7 +78,8 @@ class OneByteCanvas_ extends AbstractCanvas:
     transform.xyo x y 0: | x2 y2 o2 |
       bitmap_draw_bytemap x2 y2 --alpha=alpha --orientation=o2 --source=bytemap --source_width=source_width --palette=palette --destination=pixels_ --destination_width=width_
 
-  gray_pixmap x/int y/int --pixels/ByteArray
+  pixmap x/int y/int
+      --pixels/ByteArray
       --alpha/ByteArray=#[]
       --palette/ByteArray=#[]
       --source_width/int

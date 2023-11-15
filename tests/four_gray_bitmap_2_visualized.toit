@@ -43,7 +43,7 @@ main args:
   display.add (PngElement --x=352 --y=32 heater-white-bg)
 
   display.add (PngElement --x=100 --y=120 heater-red-uncompressed)
-  display.add (PngElement --x=184 --y=120 heater-2-bit-uncompressed)
+  //display.add (PngElement --x=184 --y=120 heater-2-bit-uncompressed)
   display.add (PngElement --x=268 --y=120 heater-bw-uncompressed)
   display.add (PngElement --x=352 --y=120 heater-white-bg-uncompressed)
 

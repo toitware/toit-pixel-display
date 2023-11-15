@@ -29,6 +29,9 @@ class Canvas extends TwoBitCanvas_:
   constructor width/int height/int:
     super width height
 
+  supported_pixel_depths -> int: return 1
+  gray_scale -> bool: return true
+
   /**
   Creates a blank texture with the same dimensions as this one.
   */
@@ -40,9 +43,8 @@ class Canvas extends TwoBitCanvas_:
   NEAREST_TABLE_ ::= #[BLACK, DARK_GRAY, LIGHT_GRAY, WHITE]
 
   // Convert from a PNG color (0 = black, 255 = white) to a 2-bit 4-gray color.
-  nearest_color_ r/int g/int b/int -> int:
-    value := (r * 77 + g * 150 + b * 29) >> 14
-    return NEAREST_TABLE_[value]
+  nearest_color_ palette/ByteArray offset/int -> int:
+    return NEAREST_TABLE_[palette[offset] >> 6]
 
 class FilledRectangle extends TwoBitFilledRectangle_:
   constructor color x/int y/int w/int h/int transform/Transform:

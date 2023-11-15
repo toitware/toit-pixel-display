@@ -20,6 +20,17 @@ class Canvas extends OneByteCanvas_:
   constructor width/int height/int:
     super width height
 
+  supported_pixel_depths -> int: return 1 | 8
+  gray_scale -> bool: return false
+
+  /**
+  Creates a blank texture with the same dimensions as this one.
+  */
+  create_similar:
+    result := Canvas width_ height_
+    result.transform=transform
+    return result
+
   static NO_MIXING_ := ByteArray 0x100: it < 0x80 ? 0 : 0xff
 
   composit frame_opacity frame_canvas/OneByteCanvas_? painting_opacity painting_canvas/OneByteCanvas_:

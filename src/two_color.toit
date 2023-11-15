@@ -24,6 +24,9 @@ TRANSPARENT ::= 3
 class Canvas extends AbstractCanvas:
   pixels_ := ?
 
+  supported_pixel_depths -> int: return 1
+  gray_scale -> bool: return true
+
   constructor width/int height/int:
     assert: height & 7 == 0
     size := (width * height) >> 3
@@ -72,6 +75,15 @@ class Canvas extends AbstractCanvas:
       --source_width/int         // In pixels.
       --source_line_stride/int:  // In bytes.
     throw "Not implemented"
+
+  pixmap x/int y/int
+      --pixels/ByteArray
+      --alpha/ByteArray=#[]
+      --palette/ByteArray=#[]
+      --source_width/int
+      --orientation/int=ORIENTATION_0
+      --source_line_stride/int=source_width:
+    throw "Unimplemented"
 
   draw_bitmap x/int y/int
       --pixels/ByteArray

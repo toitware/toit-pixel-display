@@ -11,7 +11,7 @@ import bitmap show *
 import font show Font
 import icons show Icon
 import .common
-import .one_byte show OneByteCanvas_
+import .gray_scale as gray_scale_
 import .pixel_display show TrueColorPixelDisplay  // For the doc comment.
 import .texture
 
@@ -36,6 +36,9 @@ class Canvas extends AbstractCanvas:
   red_ := ?
   green_ := ?
   blue_ := ?
+
+  supported_pixel_depths -> int: return 1 | 8
+  gray_scale -> bool: return false
 
   constructor width/int height/int:
     size := width * height
@@ -65,7 +68,7 @@ class Canvas extends AbstractCanvas:
     return result
 
   make_alpha_map --padding/int=0 -> AbstractCanvas:
-    result := OneByteCanvas_ (width_ + padding) (height_ + padding)
+    result := gray_scale_.Canvas (width_ + padding) (height_ + padding)
     result.transform = transform
     return result
 
@@ -127,6 +130,21 @@ class Canvas extends AbstractCanvas:
       bitmap_draw_bytemap x2 y2 --alpha=alpha --orientation=o2 --source=bytemap --source_width=source_width --palette=palette --destination=red_ --destination_width=width_
       bitmap_draw_bytemap x2 y2 --alpha=alpha --orientation=o2 --source=bytemap --source_width=source_width --palette=palette[1..] --destination=green_ --destination_width=width_
       bitmap_draw_bytemap x2 y2 --alpha=alpha --orientation=o2 --source=bytemap --source_width=source_width --palette=palette[2..] --destination=blue_ --destination_width=width_
+
+  pixmap x/int y/int
+      --pixels/ByteArray
+      --alpha/ByteArray=#[]
+      --palette/ByteArray=#[]
+      --source_width/int
+      --orientation/int=ORIENTATION_0
+      --source_line_stride/int=source_width:
+    palette_r := palette ? palette : #[]
+    palette_g := palette ? palette[1..] : #[]
+    palette_b := palette ? palette[2..] : #[]
+    transform.xyo x y orientation: | x2 y2 o2 |
+      bitmap_draw_bytemap x2 y2 --alpha=alpha --orientation=o2 --source=pixels --source_width=source_width --source_line_stride=source_line_stride --palette=palette_r --destination=red_ --destination_width=width_
+      bitmap_draw_bytemap x2 y2 --alpha=alpha --orientation=o2 --source=pixels --source_width=source_width --source_line_stride=source_line_stride --palette=palette_g --destination=green_ --destination_width=width_
+      bitmap_draw_bytemap x2 y2 --alpha=alpha --orientation=o2 --source=pixels --source_width=source_width --source_line_stride=source_line_stride --palette=palette_b --destination=blue_ --destination_width=width_
 
   rgb_pixmap x/int y/int --r/ByteArray --g/ByteArray --b/ByteArray
       --alpha/ByteArray=#[]

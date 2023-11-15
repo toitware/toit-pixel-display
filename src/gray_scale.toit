@@ -25,6 +25,17 @@ class Canvas extends OneByteCanvas_:
   constructor width/int height/int:
     super width height
 
+  supported_pixel_depths -> int: return 1 | 8
+  gray_scale -> bool: return true
+
+  /**
+  Creates a blank texture with the same dimensions as this one.
+  */
+  create_similar:
+    result := Canvas width_ height_
+    result.transform=transform
+    return result
+
 class FilledRectangle extends OneByteFilledRectangle_:
   constructor color/int x/int y/int w/int h/int transform/Transform:
     super color x y w h transform
