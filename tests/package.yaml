@@ -1,3 +1,5 @@
+environment:
+  sdk: ^2.0.0-alpha.121
 dependencies:
   host:
     url: github.com/toitlang/pkg-host
