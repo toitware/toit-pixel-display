@@ -138,9 +138,9 @@ class Canvas extends AbstractCanvas:
       --source_width/int
       --orientation/int=ORIENTATION_0
       --source_line_stride/int=source_width:
-    palette_r := palette ? palette : #[]
-    palette_g := palette ? palette[1..] : #[]
-    palette_b := palette ? palette[2..] : #[]
+    palette_r := palette
+    palette_g := palette.size > 0 ? palette[1..] : #[]
+    palette_b := palette.size > 1 ? palette[2..] : #[]
     transform.xyo x y orientation: | x2 y2 o2 |
       bitmap_draw_bytemap x2 y2 --alpha=alpha --orientation=o2 --source=pixels --source_width=source_width --source_line_stride=source_line_stride --palette=palette_r --destination=red_ --destination_width=width_
       bitmap_draw_bytemap x2 y2 --alpha=alpha --orientation=o2 --source=pixels --source_width=source_width --source_line_stride=source_line_stride --palette=palette_g --destination=green_ --destination_width=width_
