@@ -24,7 +24,7 @@ TRANSPARENT ::= 3
 class Canvas extends AbstractCanvas:
   pixels_ := ?
 
-  supported_pixel_depths -> int: return 1
+  supports_8_bit -> bool: return false
   gray_scale -> bool: return true
 
   constructor width/int height/int:

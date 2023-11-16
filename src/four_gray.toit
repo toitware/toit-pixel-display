@@ -29,7 +29,7 @@ class Canvas extends TwoBitCanvas_:
   constructor width/int height/int:
     super width height
 
-  supported_pixel_depths -> int: return 1
+  supports_8_bit -> bool: return false
   gray_scale -> bool: return true
 
   /**

@@ -58,7 +58,7 @@ abstract class AbstractCanvas:
 
   abstract set_all_pixels color/int -> none
 
-  abstract supported_pixel_depths -> int
+  abstract supports_8_bit -> bool
   abstract gray_scale -> bool
 
   abstract make_alpha_map -> AbstractCanvas

@@ -37,7 +37,7 @@ class Canvas extends AbstractCanvas:
   green_ := ?
   blue_ := ?
 
-  supported_pixel_depths -> int: return 1 | 8
+  supports_8_bit -> bool: return true
   gray_scale -> bool: return false
 
   constructor width/int height/int:

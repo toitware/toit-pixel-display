@@ -20,7 +20,7 @@ class Canvas extends OneByteCanvas_:
   constructor width/int height/int:
     super width height
 
-  supported_pixel_depths -> int: return 1 | 8
+  supports_8_bit -> bool: return true
   gray_scale -> bool: return false
 
   /**
