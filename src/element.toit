@@ -65,11 +65,11 @@ abstract class ResizableElement extends Element:
     super --x=x --y=y
 
   invalidate:
-    if change_tracker:
+    if change_tracker and x and y and w and h:
       change_tracker.child_invalidated_element x y w h
 
-  w -> int: return w_
-  h -> int: return h_
+  w -> int?: return w_
+  h -> int?: return h_
 
   w= value/int -> none:
     invalidate
@@ -91,16 +91,16 @@ abstract class ResizableElement extends Element:
   min_h: return h_
 
 abstract class RectangleElement extends ResizableElement implements ColoredElement:
-  color_ /int := ?
+  color_ /int? := ?
 
-  color -> int: return color_
+  color -> int?: return color_
 
   color= value/int -> none:
     if color_ != value:
       color_ = value
       invalidate
 
-  constructor --x/int?=null --y/int?=null --w/int --h/int --color/int:
+  constructor --x/int?=null --y/int?=null --w/int?=null --h/int?=null --color/int?=null:
     color_ = color
     super --x=x --y=y --w=w --h=h
 
@@ -138,7 +138,7 @@ class GradientElement extends ResizableElement:
   blue_pixels_/ByteArray? := null
   draw_vertical_/bool? := null
 
-  constructor --x/int?=null --y/int?=null --w/int --h/int --angle/int --specifiers/List:
+  constructor --x/int?=null --y/int?=null --w/int?=null --h/int?=null --angle/int=0 --specifiers/List:
     angle_ = normalize_angle_ angle
     if specifiers.size == 0: throw "INVALID_ARGUMENT"
     validate_specifiers_ specifiers
@@ -175,7 +175,7 @@ class GradientElement extends ResizableElement:
     recalculate_texture_
 
   recalculate_texture_ -> none:
-    if h == 0 or w == 0: return
+    if h == 0 or h == null or w == 0 or w == null: return
 
     // CSS gradient angles are:
     //    0 bottom to top.
@@ -258,6 +258,7 @@ class GradientElement extends ResizableElement:
       b += step_b
 
   draw canvas/AbstractCanvas -> none:
+    if not (x and y and w and h): return
     analysis := canvas.bounds_analysis x y w h
     if analysis == AbstractCanvas.ALL_OUTSIDE: return
     // Determine whether the draw operations will be automatically cropped for
@@ -356,7 +357,7 @@ class GradientElement extends ResizableElement:
         offset += step
 
 class FilledRectangleElement extends RectangleElement:
-  constructor --x/int --y/int --w/int --h/int --color/int:
+  constructor --x/int?=null --y/int?=null --w/int?=null --h/int?=null --color/int?=null:
     super --x=x --y=y --w=w --h=h --color=color
 
   draw canvas/AbstractCanvas -> none:
@@ -365,8 +366,7 @@ class FilledRectangleElement extends RectangleElement:
 class OutlineRectangleElement extends RectangleElement:
   thickness_/int := ?
 
-  constructor --x/int --y/int --w/int --h/int --color/int --thickness/int=1:
-    if thickness > (min h w): throw "INVALID_ARGUMENT"
+  constructor --x/int?=null --y/int?=null --w/int?=null --h/int?=null --color/int?=0 --thickness/int=1:
     thickness_ = thickness
     super --x=x --y=y --w=w --h=h --color=color
 
@@ -380,13 +380,14 @@ class OutlineRectangleElement extends RectangleElement:
       thickness_ = value
 
   invalidate -> none:
-    if change_tracker:
+    if change_tracker and x and y and w and h:
       change_tracker.child_invalidated_element x y w thickness
       change_tracker.child_invalidated_element x y thickness h
       change_tracker.child_invalidated_element x (y + h - thickness) w thickness
       change_tracker.child_invalidated_element (x + w - thickness) y thickness h
 
   draw canvas /AbstractCanvas -> none:
+    if not (x and y and w and h): return
     canvas.rectangle x_ y_                     --w=thickness_ --h=h_         --color=color_
     canvas.rectangle x_ y_                     --w=w_         --h=thickness_ --color=color_
     canvas.rectangle (x_ + w_ - thickness_) y_ --w=thickness_ --h=h_         --color=color_
@@ -394,10 +395,10 @@ class OutlineRectangleElement extends RectangleElement:
 
 class Label extends Element implements ColoredElement:
   color_/int := ?
-  label_/string? := null
+  label_/string := ?
   alignment_/int := ?
   orientation_/int := ?
-  font_/Font := ?
+  font_/Font? := ?
   left_/int? := null
   top_/int? := null
   width_/int? := null
@@ -412,7 +413,7 @@ class Label extends Element implements ColoredElement:
       color_ = value
       invalidate
 
-  constructor --x/int --y/int --color/int --label/string?=null --font/Font --orientation/int=ORIENTATION_0 --alignment/int=ALIGN_LEFT:
+  constructor --x/int?=null --y/int?=null --color/int=0 --label/string="" --font/Font?=null --orientation/int=ORIENTATION_0 --alignment/int=ALIGN_LEFT:
     color_ = color
     label_ = label
     alignment_ = alignment
@@ -421,7 +422,6 @@ class Label extends Element implements ColoredElement:
     super --x=x --y=y
 
   min_w -> int:
-    if not label_: return 0
     if not min_w_:
       if orientation_ == ORIENTATION_0 or orientation_ == ORIENTATION_180:
         min_w_ = font_.pixel_width label_
@@ -430,7 +430,6 @@ class Label extends Element implements ColoredElement:
     return min_w_
 
   min_h -> int:
-    if not label_: return 0
     if not min_h_:
       if orientation_ == ORIENTATION_0 or orientation_ == ORIENTATION_180:
         min_h_ = (font_.text_extent label_)[1]
@@ -443,7 +442,6 @@ class Label extends Element implements ColoredElement:
   For zero sized objects, doesn't call the block.
   */
   xywh_ [block]:
-    if not label_: return
     if not left_:
       extent/List := font_.text_extent label_
       displacement := 0
@@ -478,13 +476,13 @@ class Label extends Element implements ColoredElement:
     block.call (x_ + left_) (y_ + top_) width_ height_
 
   invalidate:
-    if change_tracker and label_:
+    if change_tracker and x and y:
       xywh_: | x y w h |
         change_tracker.child_invalidated_element x y w h
 
-  label= value/string? -> none:
+  label= value/string -> none:
     if value == label_: return
-    if orientation_ == ORIENTATION_0 and change_tracker and label_:
+    if orientation_ == ORIENTATION_0 and change_tracker and x and y:
       text_get_bounding_boxes_ label_ value alignment_ font_: | old/TextExtent_ new/TextExtent_ |
         change_tracker.child_invalidated_element (x_ + old.x) (y_ + old.y) old.w old.h
         change_tracker.child_invalidated_element (x_ + new.x) (y_ + new.y) new.w new.h
@@ -518,6 +516,7 @@ class Label extends Element implements ColoredElement:
   draw canvas /AbstractCanvas -> none:
     x := x_
     y := y_
+    if not (x and y): return
     if alignment_ != ALIGN_LEFT:
       text_width := font_.pixel_width label_
       if alignment_ == ALIGN_CENTER: text_width >>= 1
@@ -542,14 +541,14 @@ Drawing operations are not automatically clipped to w and h, but if you
   draw outside the area then partial screen updates will be broken.
 */
 abstract class CustomElement extends Element:
-  abstract w -> int
-  abstract h -> int
+  abstract w -> int?
+  abstract h -> int?
 
   constructor --x/int?=null --y/int?=null:
     super --x=x --y=y
 
   invalidate:
-    if change_tracker:
+    if change_tracker and x and y and w and h:
       change_tracker.child_invalidated_element x y w h
 
 // Element that draws a standard EAN-13 bar code.  TODO: Other scales.
@@ -578,7 +577,7 @@ class BarCodeEanElement extends CustomElement:
   $y: The top edge of the barcode in the coordinate system of the transform.
   $background should normally be white and foreground should normally be black.
   */
-  constructor .code_/string x/int y/int --.background/int --.foreground/int:
+  constructor .code_/string x/int?=null y/int?=null --.background/int=0 --.foreground/int=0xff:
     // The numbers go below the bar code in a way that depends on the size
     // of the digits, so we need to take that into account when calculating
     // the bounding box.
@@ -599,6 +598,7 @@ class BarCodeEanElement extends CustomElement:
 
   // Make a white background behind the bar code and draw the digits along the bottom.
   draw_background_ canvas/AbstractCanvas:
+    if not (x and y): return
     canvas.rectangle x_ y_ --w=w --h=h --color=background
 
     // Bar code coordinates.
@@ -622,6 +622,7 @@ class BarCodeEanElement extends CustomElement:
 
   // Redraw routine.
   draw canvas/AbstractCanvas:
+    if not (x and y): return
     if (canvas.bounds_analysis x y w h) == AbstractCanvas.ALL_OUTSIDE: return
     draw_background_ canvas
 
@@ -659,11 +660,11 @@ class BarCodeEanElement extends CustomElement:
     canvas.rectangle x + 2 top --w=1 --h=long_height --color=foreground
 
 abstract class BorderlessWindowElement extends Element implements Window:
-  inner_w_/int := ?
-  inner_h_/int := ?
+  inner_w_/int? := ?
+  inner_h_/int? := ?
   elements_ := {}
 
-  constructor --x/int --y/int --w/int --h/int:
+  constructor --x/int?=null --y/int?=null --w/int?=null --h/int?=null:
     inner_w_ = w
     inner_h_ = h
     super --x=x --y=y
@@ -691,7 +692,7 @@ abstract class BorderlessWindowElement extends Element implements Window:
     block.call x_ y_ inner_w_ inner_h_
 
   child_invalidated_element x/int y/int w/int h/int -> none:
-    if change_tracker:
+    if change_tracker and x and y and w and h:
       x2 := max x_ (x_ + x)
       y2 := max y_ (y_ + y)
       right := min (x_ + inner_w_) (x_ + x + w)
@@ -700,7 +701,7 @@ abstract class BorderlessWindowElement extends Element implements Window:
         change_tracker.child_invalidated_element x2 y2 (right - x2) (bottom - y2)
 
   child_invalidated x/int y/int w/int h/int -> none:
-    throw "NOT_IMPLEMENTED"  // This is only for textures, but we don't allow those.
+    unreachable  // This is only for textures, but we don't allow those.
 
   invalidate:
     if change_tracker:
@@ -736,17 +737,17 @@ abstract class WindowElement extends BorderlessWindowElement implements Window:
   /**
   Gets the inner width (without any borders) of the window.
   */
-  w -> int:
+  w -> int?:
     return inner_w_
 
   /**
   Gets the inner height (without any borders) of the window.
   */
-  h -> int:
+  h -> int?:
     return inner_h_
 
-  min_w: return inner_w_
-  min_h: return inner_h_
+  min_w -> int?: return inner_w_
+  min_h -> int?: return inner_h_
 
   /**
   Changes the top left corner (without any borders) of the window.
@@ -812,11 +813,12 @@ abstract class WindowElement extends BorderlessWindowElement implements Window:
   */
   abstract draw_frame canvas
 
-  constructor --x/int --y/int --w/int --h/int:
+  constructor --x/int?=null --y/int?=null --w/int?=null --h/int?=null:
     super --x=x --y=y --w=w --h=h
 
   // After the textures under us have drawn themselves, we draw on top.
   draw canvas/AbstractCanvas -> none:
+    if not (x and y and h and w): return
     extent: | x2 y2 w2 h2 |
       if (canvas.bounds_analysis x2 y2 w2 h2) == AbstractCanvas.ALL_OUTSIDE: return
 
@@ -840,7 +842,7 @@ abstract class WindowElement extends BorderlessWindowElement implements Window:
       canvas.transform = old_transform
       return
 
-    // The complicated case where we have to composite the tile from the wall,
+    // The complicated case where we have to composit the tile from the wall,
     // the frame, and the painting_opacity.
     frame_canvas := null
     if not is_all_transparent frame_opacity:
@@ -864,7 +866,7 @@ class SimpleWindowElement extends WindowElement:
   border_color_/int? := ?
   background_color_/int? := ?
 
-  constructor --x/int --y/int --w/int --h/int --border_width/int --border_color/int?=null --background_color/int?=null:
+  constructor --x/int?=null --y/int?=null --w/int?=null --h/int?=null --border_width/int=0 --border_color/int=0 --background_color/int=0xffffff:
     if border_width < 0 or (border_width != 0 and border_color == null): throw "INVALID_ARGUMENT"
     border_width_ = border_width
     border_color_ = border_color
@@ -873,11 +875,12 @@ class SimpleWindowElement extends WindowElement:
     super --x=x --y=y --w=w --h=h  // Inner dimensions.
 
   extent [block]:
-    block.call
-        x - border_width_
-        y - border_width_
-        w + border_width_ * 2
-        h + border_width_ * 2
+    if x and y and w and h:
+      block.call
+          x - border_width_
+          y - border_width_
+          w + border_width_ * 2
+          h + border_width_ * 2
 
   border_width -> int: return border_width_
 
@@ -1034,7 +1037,7 @@ class RoundedCornerWindowElement extends WindowElement:
   opacities_/RoundedCornerOpacity_? := null
   shadow_palette_/ByteArray := #[]
 
-  constructor --x/int --y/int --w/int --h/int --corner_radius/int=5 --background_color/int?=null:
+  constructor --x/int?=null --y/int?=null --w/int?=null --h/int?=null --corner_radius/int=5 --background_color/int=0:
     if not 0 <= corner_radius <= RoundedCornerOpacity_.TABLE_SIZE_: throw "OUT_OF_RANGE"
     corner_radius_ = corner_radius
     background_color_ = background_color
@@ -1055,7 +1058,8 @@ class RoundedCornerWindowElement extends WindowElement:
         change_tracker.child_invalidated_element x + w + invalid_radius y + h - invalid_radius invalid_radius invalid_radius
 
   extent [block]:
-    block.call x y w h   // Does not protrude beyond the inner bounds.
+    if x and y and w and h:
+      block.call x y w h   // Does not protrude beyond the inner bounds.
 
   ensure_opacities_:
     if opacities_: return
@@ -1116,7 +1120,7 @@ class RoundedCornerWindowElement extends WindowElement:
     block.call right bottom ORIENTATION_0
 
   draw_frame canvas/AbstractCanvas:
-    throw "NOT_IMPLEMENTED"  // There's no frame.
+    unreachable  // There's no frame.
 
   draw_background canvas/AbstractCanvas:
     if background_color_: canvas.set_all_pixels background_color_
@@ -1127,7 +1131,7 @@ class DropShadowWindowElement extends RoundedCornerWindowElement:
   drop_distance_y_/int := ?
   shadow_opacity_percent_/int := ?
 
-  constructor --x/int --y/int --w/int --h/int --corner_radius/int=5 --blur_radius/int=5 --drop_distance_x/int=10 --drop_distance_y/int=10 --shadow_opacity_percent/int=25:
+  constructor --x/int?=null --y/int?=null --w/int?=null --h/int?=null --corner_radius/int=5 --blur_radius/int=5 --drop_distance_x/int=10 --drop_distance_y/int=10 --shadow_opacity_percent/int=25:
     if not 0 <= blur_radius <= 6: throw "OUT_OF_RANGE"
     blur_radius_ = blur_radius
     drop_distance_x_ = drop_distance_x
@@ -1144,12 +1148,13 @@ class DropShadowWindowElement extends RoundedCornerWindowElement:
     block.call extension_left extension_top extension_right extension_bottom
 
   extent [block]:
-    extent_helper_: | left top right bottom |
-      block.call
-          x - left
-          y - top
-          w + left + right
-          h + top + bottom
+    if x and y and w and h:
+      extent_helper_: | left top right bottom |
+        block.call
+            x - left
+            y - top
+            w + left + right
+            h + top + bottom
 
   blur_radius -> int: return blur_radius_
 
@@ -1263,6 +1268,7 @@ class PngElement extends CustomElement:
 
   // Redraw routine.
   draw canvas/AbstractCanvas:
+    if not (x and y): return
     y2 := 0
     while y2 < h and (canvas.bounds_analysis x (y + y2) w (h - y2)) != AbstractCanvas.ALL_OUTSIDE:
       png_.get_indexed_image_data y2 h
