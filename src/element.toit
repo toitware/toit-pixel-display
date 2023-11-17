@@ -961,16 +961,81 @@ class SimpleWindowElement extends WindowElement:
   draw_background canvas/AbstractCanvas:
     if background_color_: canvas.set_all_pixels background_color_
 
+class RoundedCornerOpacity_:
+  byte_opacity/ByteArray
+  bit_opacity/ByteArray
+  radius/int
+  bitmap_width/int
+  static cache_ := Map.weak
+
+  static get corner_radius/int -> RoundedCornerOpacity_:
+    cached := cache_.get corner_radius
+    if cached: return cached
+    new := RoundedCornerOpacity_.private_ corner_radius
+    cache_[corner_radius] = new
+    return new
+
+  static TABLE_SIZE_ ::= 256
+  // The heights of a top-right quarter circle of radius [TABLE_SIZE_].
+  static QUARTER_CIRCLE_ ::= create_quarter_circle_array_ TABLE_SIZE_
+
+  static create_quarter_circle_array_ size:
+    array := ByteArray size
+    hypotenuse := (size - 1) * (size - 1)
+    size.repeat:
+      array[it] = (hypotenuse - it * it).sqrt.to_int
+    return array
+
+  constructor.private_ .radius:
+    byte_opacity = ByteArray radius * radius
+    downsample := TABLE_SIZE_ / radius  // For example 81 for a radius of 3.
+    steps := List radius:
+      (it * TABLE_SIZE_) / radius
+    radius.repeat: | j |
+      b := steps[j]
+      radius.repeat: | i |
+        a := steps[i]
+        idx := j * radius + i
+        // Set the opacity according to whether the downsample x downsample
+        // square is fully outside the circle, fully inside the circle or on
+        // the edge.
+        if QUARTER_CIRCLE_[b + downsample - 1] >= a + downsample:
+          byte_opacity[idx] = 0xff  // Inside quarter circle.
+        else if QUARTER_CIRCLE_[b] < a:
+          byte_opacity[idx] = 0  // Outside quarter circle.
+        else:
+          // Edge of quarter circle.
+          total := 0
+          downsample.repeat: | small_y |
+            extent := QUARTER_CIRCLE_[b + small_y]
+            if extent >= a + downsample:
+              total += downsample
+            else if extent > a:
+              total += extent - a
+          byte_opacity[idx] = (0xff * total) / (downsample * downsample)
+    // Generate a bit version of the opacities in case we have to use it on a
+    // 2-color or 3-color display.
+    bitmap_width = round_up radius 8
+    bit_opacity = ByteArray (byte_opacity.size / radius) * (bitmap_width >> 3)
+    destination_line_stride := bitmap_width >> 3
+    8.repeat: | bit |
+      blit byte_opacity[bit..] bit_opacity ((radius + 7 - bit) >> 3)
+          --source_pixel_stride=8
+          --source_line_stride=radius
+          --destination_line_stride=destination_line_stride
+          --shift=bit
+          --mask=(0x80 >> bit)
+          --operation=OR
+
 /** A rectangular window with rounded corners. */
 class RoundedCornerWindowElement extends WindowElement:
   corner_radius_/int := ?
   background_color_/int? := ?
-  opacities_ := null
-  bit_opacities_ := null
+  opacities_/RoundedCornerOpacity_? := null
   shadow_palette_/ByteArray := #[]
 
   constructor --x/int --y/int --w/int --h/int --corner_radius/int=5 --background_color/int?=null:
-    if not 0 <= corner_radius <= TABLE_SIZE_: throw "OUT_OF_RANGE"
+    if not 0 <= corner_radius <= RoundedCornerOpacity_.TABLE_SIZE_: throw "OUT_OF_RANGE"
     corner_radius_ = corner_radius
     background_color_ = background_color
     super --x=x --y=y --w=w --h=h
@@ -978,7 +1043,7 @@ class RoundedCornerWindowElement extends WindowElement:
   corner_radius -> int: return corner_radius_
 
   corner_radius= new_radius/int -> none:
-    if not 0 <= new_radius <= TABLE_SIZE_: throw "OUT_OF_RANGE"
+    if not 0 <= new_radius <= RoundedCornerOpacity_.TABLE_SIZE_: throw "OUT_OF_RANGE"
     if new_radius != corner_radius_:
       opacities_ = null
       invalid_radius := max corner_radius_ new_radius
@@ -994,60 +1059,10 @@ class RoundedCornerWindowElement extends WindowElement:
 
   ensure_opacities_:
     if opacities_: return
-
-    opacities_ = ByteArray corner_radius_ * corner_radius_
-    downsample := TABLE_SIZE_ / corner_radius_  // For example 81 for a corner_radius of 3.
-    steps := List corner_radius_:
-      (it * TABLE_SIZE_) / corner_radius
-    corner_radius_.repeat: | j |
-      b := steps[j]
-      corner_radius_.repeat: | i |
-        a := steps[i]
-        idx := j * corner_radius_ + i
-        // Set the opacity according to whether the downsample x downsample
-        // square is fully outside the circle, fully inside the circle or on
-        // the edge.
-        if QUARTER_CIRCLE_[b + downsample - 1] >= a + downsample:
-          opacities_[idx] = 0xff  // Inside quarter circle.
-        else if QUARTER_CIRCLE_[b] < a:
-          opacities_[idx] = 0  // Outside quarter circle.
-        else:
-          // Edge of quarter circle.
-          total := 0
-          downsample.repeat: | small_y |
-            extent := QUARTER_CIRCLE_[b + small_y]
-            if extent >= a + downsample:
-              total += downsample
-            else if extent > a:
-              total += extent - a
-          opacities_[idx] = (0xff * total) / (downsample * downsample)
-    // Generate a bit version of the opacities in case we have to use it on a
-    // 2-color or 3-color display.
-    bitmap_width := round_up corner_radius_ 8
-    bit_opacities_ = ByteArray (opacities_.size / corner_radius_) * (bitmap_width >> 3)
-    destination_line_stride := bitmap_width >> 3
-    8.repeat: | bit |
-      blit opacities_[bit..] bit_opacities_ ((corner_radius_ + 7 - bit) >> 3)
-          --source_pixel_stride=8
-          --source_line_stride=corner_radius_
-          --destination_line_stride=destination_line_stride
-          --shift=bit
-          --mask=(0x80 >> bit)
-          --operation=OR
+    opacities_ = RoundedCornerOpacity_.get corner_radius_
 
   frame_map canvas/AbstractCanvas:
     return WindowElement.ALL_TRANSPARENT  // No frame on these windows.
-
-  static TABLE_SIZE_ ::= 256
-  // The heights of a top-right quarter circle of radius [TABLE_SIZE_].
-  static QUARTER_CIRCLE_ ::= create_quarter_circle_array_ TABLE_SIZE_
-
-  static create_quarter_circle_array_ size:
-    array := ByteArray size
-    hypotenuse := (size - 1) * (size - 1)
-    size.repeat:
-      array[it] = (hypotenuse - it * it).sqrt.to_int
-    return array
 
   // Draws 100% opacity for the window content, a filled rounded-corner rectangle.
   painting_map canvas/AbstractCanvas:
@@ -1085,10 +1100,10 @@ class RoundedCornerWindowElement extends WindowElement:
     if transparency_map is one_byte.OneByteCanvas_:
       palette := opacity == 0xff ? #[] : shadow_palette_
       draw_corners_ x2 y2 right bottom corner_radius_: | x y orientation |
-        transparency_map.pixmap x y --pixels=opacities_ --palette=palette --source_width=corner_radius_ --orientation=orientation
+        transparency_map.pixmap x y --pixels=opacities_.byte_opacity --palette=palette --source_width=corner_radius_ --orientation=orientation
     else:
       draw_corners_ x2 y2 right bottom corner_radius_: | x y orientation |
-        transparency_map.draw_bitmap x y --pixels=bit_opacities_ --color=1 --source_width=corner_radius_ --orientation=orientation
+        transparency_map.draw_bitmap x y --pixels=opacities_.bit_opacity --color=1 --source_width=corner_radius_ --orientation=orientation
 
   draw_corners_ left/int top/int right/int bottom/int corner_radius/int [block]:
     // Top left corner:
