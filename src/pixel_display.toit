@@ -107,6 +107,8 @@ abstract class PixelDisplay implements Window:
   // The image to display.
   textures_ := {}
   background_ := null
+  inner_width: return driver_.width
+  inner_height: return driver_.width
 
   // Need-to-redraw is tracked as a bit array of dirty bits, arranged in
   // SSD1306 layout so we can use bitmap_rectangle to invalidate areas.

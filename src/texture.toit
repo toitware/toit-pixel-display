@@ -490,6 +490,8 @@ A collections of textures which can be added to a display as a single texture.
 */
 class TextureGroup extends Texture implements Window:
   elements_ := []
+  inner_width -> int?: unreachable  // Not used by textures, only elements.
+  inner_height -> int?: unreachable
 
   add element -> none:
     elements_.add element
@@ -523,6 +525,10 @@ class TextureGroup extends Texture implements Window:
     elements_.do: it.invalidate
 
 abstract class BorderlessWindow_ extends ResizableTexture implements Window:
+  elements_ := {}
+  inner_width -> int?: unreachable  // Not used by textures, only elements.
+  inner_height -> int?: unreachable
+
   constructor x/int y/int w/int h/int transform:
     this.transform = transform.translate x y
     super x y w h transform
@@ -544,7 +550,6 @@ abstract class BorderlessWindow_ extends ResizableTexture implements Window:
     elements_.remove_all
 
   transform /Transform := ?
-  elements_ := {}
 
   child_invalidated_element x/int y/int w/int h/int -> none:
     throw "NOT_IMPLEMENTED"
