@@ -42,10 +42,12 @@ pngout -y heater-translucent.png heater-translucent.png
 pngout -y heater-red.png heater-red.png
 
 # Make uncompressed versions.
-pngunzip -o heater-2-bit-uncompressed.png heater-2-bit.png
-pngunzip -o heater-bw-uncompressed.png heater-bw.png
-pngunzip -o heater-white-bg-uncompressed.png heater-white-bg.png
-pngunzip -o heater-translucent-uncompressed.png heater-translucent.png
-pngunzip -o heater-red-uncompressed.png heater-red.png
-pngunzip -o heater-4-bit-uncompressed.png heater-4-bit.png
-pngunzip -o heater-uncompressed.png heater.png
+# Be sure to test images that take more than one literal section.
+PNGUNZIP_OPT=--max-literal-section=500
+pngunzip $PNGUNZIP_OPT -o heater-2-bit-uncompressed.png heater-2-bit.png
+pngunzip $PNGUNZIP_OPT -o heater-bw-uncompressed.png heater-bw.png
+pngunzip $PNGUNZIP_OPT -o heater-white-bg-uncompressed.png heater-white-bg.png
+pngunzip $PNGUNZIP_OPT -o heater-translucent-uncompressed.png heater-translucent.png
+pngunzip $PNGUNZIP_OPT -o heater-red-uncompressed.png heater-red.png
+pngunzip $PNGUNZIP_OPT -o heater-4-bit-uncompressed.png heater-4-bit.png
+pngunzip $PNGUNZIP_OPT -o heater-uncompressed.png heater.png
