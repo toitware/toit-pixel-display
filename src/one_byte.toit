@@ -16,7 +16,7 @@ import .texture
 
 // The canvas contains a ByteArray.
 // Initially all pixels are 0.
-abstract class OneByteCanvas_ extends AbstractCanvas:
+abstract class Canvas_ extends AbstractCanvas:
   pixels_ := ?
 
   constructor width/int height/int:
@@ -31,11 +31,11 @@ abstract class OneByteCanvas_ extends AbstractCanvas:
     return pixels_[x + width_ * y]
 
   make_alpha_map --padding/int=0 -> AbstractCanvas:
-    result := gray_scale_.Canvas (width_ + padding) (height_ + padding)
+    result := gray_scale_.Canvas_ (width_ + padding) (height_ + padding)
     result.transform=transform
     return result
 
-  composit frame_opacity frame_canvas/OneByteCanvas_? painting_opacity painting_canvas/OneByteCanvas_:
+  composit frame_opacity frame_canvas/Canvas_? painting_opacity painting_canvas/Canvas_:
     fo := frame_opacity is ByteArray ? frame_opacity : frame_opacity.pixels_
     po := painting_opacity is ByteArray ? painting_opacity : painting_opacity.pixels_
     composit_bytes pixels_ fo (frame_canvas ? frame_canvas.pixels_ : null) po painting_canvas.pixels_ false
@@ -95,7 +95,7 @@ class OneByteFilledRectangle_ extends FilledRectangle_:
     assert: 0 <= color_ <= 0xff
     super x y w h transform
 
-  translated_write_ x y w h canvas/OneByteCanvas_:
+  translated_write_ x y w h canvas/Canvas_:
     bytemap_rectangle x y color_ w h canvas.pixels_ canvas.width_
 
 class OneByteTextTexture_ extends TextTexture_:
@@ -120,7 +120,7 @@ class OneByteTextTexture_ extends TextTexture_:
     color_ = new_color
     invalidate
 
-  draw_ bx by orientation canvas/OneByteCanvas_:
+  draw_ bx by orientation canvas/Canvas_:
     bytemap_draw_text bx by color_ orientation string_ font_ canvas.pixels_ canvas.width_
 
 /**
@@ -133,7 +133,7 @@ class OneByteBitmapTexture_ extends BitmapTexture_:
   constructor x/int y/int w/int h/int transform/Transform .color_/int:
     super x y w h transform
 
-  draw_ bx by orientation canvas/OneByteCanvas_:
+  draw_ bx by orientation canvas/Canvas_:
     bitmap_draw_bitmap bx by --color=color_ --orientation=orientation --source=bytes_ --source_width=w --destination=canvas.pixels_ --destination_width=canvas.width_ --bytewise=true
 
 /**
@@ -149,7 +149,7 @@ class OneByteOpaqueBitmapTexture_ extends OneByteBitmapTexture_:
   constructor x/int y/int w/int h/int transform/Transform foreground_color/int .background_color_:
     super x y w h transform foreground_color
 
-  write2_ canvas/OneByteCanvas_:
+  write2_ canvas/Canvas_:
     transform_.xywh x_ y_ w_ h_: | x2 y2 w2 h2 |
       x := x2 - canvas.x_offset_
       y := y2 - canvas.y_offset_
@@ -180,7 +180,7 @@ class OneBytePbmTexture_ extends BitmapTexture_:
     bytes_ = bytes[parser.image_data_offset..]
     super.no_allocate_ x y parser.width parser.height transform
 
-  draw_ bx by orientation canvas/OneByteCanvas_:
+  draw_ bx by orientation canvas/Canvas_:
     bitmap_draw_bitmap bx by --color=color_ --orientation=orientation --source=bytes_ --source_width=w --destination=canvas.pixels_ --destination_width=canvas.width_ --bytewise
 
 abstract class OneByteBarCodeEan13_ extends BarCodeEan13_:
@@ -190,7 +190,7 @@ abstract class OneByteBarCodeEan13_ extends BarCodeEan13_:
   abstract white_ -> int
   abstract black_ -> int
 
-  white_square_ x y w h canvas/OneByteCanvas_:
+  white_square_ x y w h canvas/Canvas_:
     white ::= 0xff
     bytemap_rectangle x y white_ w h canvas.pixels_ canvas.width_
 
@@ -198,7 +198,7 @@ abstract class OneByteBarCodeEan13_ extends BarCodeEan13_:
     if digit == "": return
     bytemap_draw_text x y black_ orientation digit sans10_ canvas.pixels_ canvas.width_
 
-  block_ x y width height canvas/OneByteCanvas_:
+  block_ x y width height canvas/Canvas_:
     bytemap_rectangle x y black_ width height canvas.pixels_ canvas.width_
 
 class OneByteSimpleWindow_ extends SimpleWindow_:
@@ -212,13 +212,13 @@ class OneByteSimpleWindow_ extends SimpleWindow_:
   constructor x y w h transform border_width .border_color .background_color:
     super x y w h transform border_width
 
-  draw_frame canvas/OneByteCanvas_:
+  draw_frame canvas/Canvas_:
     bytemap_zap canvas.pixels_ border_color
 
-  draw_background canvas/OneByteCanvas_:
+  draw_background canvas/Canvas_:
     bytemap_zap canvas.pixels_ background_color
 
-  make_alpha_map_ canvas/OneByteCanvas_:
+  make_alpha_map_ canvas/Canvas_:
     return ByteArray canvas.width_ * canvas.height_
 
   make_opaque_ x y w h map map_width:
@@ -237,8 +237,8 @@ abstract class OneByteRoundedCornerWindow_ extends RoundedCornerWindow_:
     assert: not frame
     bytemap_rectangle x y 0xff w h map map_width
 
-  draw_background canvas/OneByteCanvas_:
+  draw_background canvas/Canvas_:
     bytemap_zap canvas.pixels_ background_color
 
-  draw_frame canvas/OneByteCanvas_:
+  draw_frame canvas/Canvas_:
     throw "UNREACHABLE"

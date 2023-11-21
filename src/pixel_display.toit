@@ -630,9 +630,9 @@ class TwoColorPixelDisplay extends PixelDisplay:
     return max 8 height
 
   create_canvas_ w/int h/int -> AbstractCanvas:
-    return two_color.Canvas w h
+    return two_color.Canvas_ w h
 
-  draw_ x/int y/int w/int h/int canvas/two_color.Canvas -> none:
+  draw_ x/int y/int w/int h/int canvas/two_color.Canvas_ -> none:
       driver_.draw_two_color x y w h canvas.pixels_
 
 /**
@@ -660,7 +660,7 @@ class FourGrayPixelDisplay extends TwoBitPixelDisplay_:
     return four_gray.WHITE
 
   create_canvas_ w/int h/int -> AbstractCanvas:
-    return four_gray.Canvas w h
+    return four_gray.Canvas_ w h
 
   text context/GraphicsContext x/int y/int text/string -> four_gray.TextTexture:
     if context.font == null: throw "NO_FONT_GIVEN"
@@ -741,7 +741,7 @@ class ThreeColorPixelDisplay extends TwoBitPixelDisplay_:
     return three_color.WHITE
 
   create_canvas_ w/int h/int -> AbstractCanvas:
-    return three_color.Canvas w h
+    return three_color.Canvas_ w h
 
   text context/GraphicsContext x/int y/int text/string -> three_color.TextTexture:
     if context.font == null: throw "NO_FONT_GIVEN"
@@ -805,7 +805,7 @@ abstract class TwoBitPixelDisplay_ extends PixelDisplay:
     // We can't work well with canvases that are less than 8 pixels tall.
     return max 8 height
 
-  draw_ x/int y/int w/int h/int canvas/two_bit.TwoBitCanvas_ -> none:
+  draw_ x/int y/int w/int h/int canvas/two_bit.Canvas_ -> none:
     driver_.draw_two_bit x y w h canvas.plane_0_ canvas.plane_1_
 
 /**
@@ -883,9 +883,9 @@ class GrayScalePixelDisplay extends PixelDisplay:
     return height < 8 ? 4 : height
 
   create_canvas_ w/int h/int -> AbstractCanvas:
-    return gray_scale.Canvas w h
+    return gray_scale.Canvas_ w h
 
-  draw_ x/int y/int w/int h/int canvas/gray_scale.Canvas -> none:
+  draw_ x/int y/int w/int h/int canvas/gray_scale.Canvas_ -> none:
     driver_.draw_gray_scale x y w h canvas.pixels_
 
 /**
@@ -963,9 +963,9 @@ class SeveralColorPixelDisplay extends PixelDisplay:
     return height < 8 ? 4 : height
 
   create_canvas_ w/int h/int -> AbstractCanvas:
-    return several_color.Canvas w h
+    return several_color.Canvas_ w h
 
-  draw_ x/int y/int w/int h/int canvas/several_color.Canvas -> none:
+  draw_ x/int y/int w/int h/int canvas/several_color.Canvas_ -> none:
     driver_.draw_several_color x y w h canvas.pixels_
 
 /**
@@ -1044,7 +1044,7 @@ class TrueColorPixelDisplay extends PixelDisplay:
     return max 4 height
 
   create_canvas_ w/int h/int -> AbstractCanvas:
-    return true_color.Canvas w h
+    return true_color.Canvas_ w h
 
-  draw_ x/int y/int w/int h/int canvas/true_color.Canvas -> none:
+  draw_ x/int y/int w/int h/int canvas/true_color.Canvas_ -> none:
     driver_.draw_true_color x y w h canvas.red_ canvas.green_ canvas.blue_

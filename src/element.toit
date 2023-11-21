@@ -309,10 +309,10 @@ class GradientElement extends ResizableElement:
           r = r[o .. o + h]
           g = g[o .. o + h]
           b = b[o .. o + h]
-        if canvas is true_color.Canvas:
-          (canvas as true_color.Canvas).rgb_pixmap (i + x2) y3 --r=r --g=g --b=b --source_width=h --orientation=orientation
+        if canvas is true_color.Canvas_:
+          (canvas as true_color.Canvas_).rgb_pixmap (i + x2) y3 --r=r --g=g --b=b --source_width=h --orientation=orientation
         else:
-          (canvas as one_byte.OneByteCanvas_).pixmap (i + x2) y3 --pixels=b --source_width=h --orientation=orientation
+          (canvas as one_byte.Canvas_).pixmap (i + x2) y3 --pixels=b --source_width=h --orientation=orientation
         offset += step
     else:
       // The gradient goes broadly horizontally, and we draw in horizontal strips.
@@ -350,10 +350,10 @@ class GradientElement extends ResizableElement:
           r = r[o .. o + w]
           g = g[o .. o + w]
           b = b[o .. o + w]
-        if canvas is true_color.Canvas:
-          (canvas as true_color.Canvas).rgb_pixmap x3 (i + y2) --r=r --g=g --b=b --source_width=w --orientation=orientation
+        if canvas is true_color.Canvas_:
+          (canvas as true_color.Canvas_).rgb_pixmap x3 (i + y2) --r=r --g=g --b=b --source_width=w --orientation=orientation
         else:
-          (canvas as one_byte.OneByteCanvas_).pixmap x3 (i + y2) --pixels=b --source_width=w --orientation=orientation
+          (canvas as one_byte.Canvas_).pixmap x3 (i + y2) --pixels=b --source_width=w --orientation=orientation
         offset += step
 
 class FilledRectangleElement extends RectangleElement:
@@ -1101,7 +1101,7 @@ class RoundedCornerWindowElement extends WindowElement:
     right := x2 + w2 - corner_radius_
     top := y2 + corner_radius_ - 1
     bottom := y2 + h2 - corner_radius_
-    if transparency_map is one_byte.OneByteCanvas_:
+    if transparency_map is one_byte.Canvas_:
       palette := opacity == 0xff ? #[] : shadow_palette_
       draw_corners_ x2 y2 right bottom corner_radius_: | x y orientation |
         transparency_map.pixmap x y --pixels=opacities_.byte_opacity --palette=palette --source_width=corner_radius_ --orientation=orientation
@@ -1225,10 +1225,10 @@ class DropShadowWindowElement extends RoundedCornerWindowElement:
     max_shadow_opacity := (shadow_opacity_percent * 2.5500001).to_int
     draw_rounded_corners_ transparency_map drop_distance_x_ drop_distance_y_ inner_width inner_height max_shadow_opacity
 
-    if blur_radius == 0 or transparency_map is not one_byte.OneByteCanvas_:
+    if blur_radius == 0 or transparency_map is not one_byte.Canvas_:
       return transparency_map
 
-    one_byte_map := transparency_map as one_byte.OneByteCanvas_
+    one_byte_map := transparency_map as one_byte.Canvas_
 
     // Blur the shadow.
     bytemap_blur one_byte_map.pixels_ transparency_map.width_ blur_radius
@@ -1237,7 +1237,7 @@ class DropShadowWindowElement extends RoundedCornerWindowElement:
     transparency_map_unpadded := canvas.make_alpha_map
     blit
         one_byte_map.pixels_[blur_radius + blur_radius * one_byte_map.width_..]   // Source.
-        (transparency_map_unpadded as one_byte.OneByteCanvas_).pixels_  // Destination.
+        (transparency_map_unpadded as one_byte.Canvas_).pixels_  // Destination.
         transparency_map_unpadded.width_   // Bytes per line.
         --source_line_stride=transparency_map.width_
     return transparency_map_unpadded

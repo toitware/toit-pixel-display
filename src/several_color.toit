@@ -13,10 +13,11 @@ import icons show Icon
 import .pixel_display show SeveralColorPixelDisplay  // For the doc comment.
 import .texture
 import .one_byte
+import .one_byte as one_byte
 
 // The canvas contains a ByteArray.
 // Initially all pixels have the 0 color.
-class Canvas extends OneByteCanvas_:
+class Canvas_ extends one_byte.Canvas_:
   constructor width/int height/int:
     super width height
 
@@ -27,13 +28,13 @@ class Canvas extends OneByteCanvas_:
   Creates a blank texture with the same dimensions as this one.
   */
   create_similar:
-    result := Canvas width_ height_
+    result := Canvas_ width_ height_
     result.transform=transform
     return result
 
   static NO_MIXING_ := ByteArray 0x100: it < 0x80 ? 0 : 0xff
 
-  composit frame_opacity frame_canvas/OneByteCanvas_? painting_opacity painting_canvas/OneByteCanvas_:
+  composit frame_opacity frame_canvas/one_byte.Canvas_? painting_opacity painting_canvas/one_byte.Canvas_:
     fo := frame_opacity is ByteArray ? frame_opacity : frame_opacity.pixels_
     po := painting_opacity is ByteArray ? painting_opacity : painting_opacity.pixels_
     // We can't mix pixels on a palette-based display so all pixels must be 0 or 0xff.
@@ -122,10 +123,10 @@ class SimpleWindow extends OneByteSimpleWindow_:
   constructor x y w h transform border_width border_color/int background_color/int:
     super x y w h transform border_width border_color background_color
 
-  draw_frame canvas/Canvas:
+  draw_frame canvas/Canvas_:
     bytemap_zap canvas.pixels_ border_color
 
-  draw_background canvas/Canvas:
+  draw_background canvas/Canvas_:
     bytemap_zap canvas.pixels_ background_color
 
 class RoundedCornerWindow extends OneByteRoundedCornerWindow_:

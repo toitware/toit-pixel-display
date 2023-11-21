@@ -13,6 +13,7 @@ import icons show Icon
 import .pixel_display show GrayScalePixelDisplay  // For the doc comment.
 import .texture
 import .one_byte
+import .one_byte as one_byte
 
 WHITE ::= 255
 LIGHT_GRAY ::= 170
@@ -21,7 +22,7 @@ BLACK ::= 0
 
 // The canvas contains a ByteArray.
 // Initially all pixels have the 0 color.
-class Canvas extends OneByteCanvas_:
+class Canvas_ extends one_byte.Canvas_:
   constructor width/int height/int:
     super width height
 
@@ -32,7 +33,7 @@ class Canvas extends OneByteCanvas_:
   Creates a blank texture with the same dimensions as this one.
   */
   create_similar:
-    result := Canvas width_ height_
+    result := Canvas_ width_ height_
     result.transform=transform
     return result
 
@@ -187,7 +188,7 @@ class PixmapTexture extends PixmapTexture_:
     if not transparency_: throw "No transparency"
     bitmap_zap bytes_ 42
 
-  draw_ bx by orientation canvas/Canvas:
+  draw_ bx by orientation canvas/Canvas_:
     if transparency_:
       bitmap_draw_bytemap bx by --transparent_index=42 --orientation=orientation --source=bytes_ --source_width=w --palette=palette_ --destination=canvas.pixels_ --destination_width=canvas.width_
     else:
@@ -227,7 +228,7 @@ class DropShadowWindow extends DropShadowWindow_:
     max_shadow_opacity_ = (shadow_opacity_percent * 2.5500001).to_int
     super x y w h transform corner_radius blur_radius drop_distance_x drop_distance_y
 
-  make_alpha_map_ canvas/Canvas padding:
+  make_alpha_map_ canvas/Canvas_ padding:
     return ByteArray (canvas.width_ + padding) * (canvas.height_ + padding)
 
   make_opaque_ x y w h map map_width --frame/bool:
@@ -242,8 +243,8 @@ class DropShadowWindow extends DropShadowWindow_:
         else:
           map[x + y_offset] = opacity
 
-  draw_background canvas/OneByteCanvas_:
+  draw_background canvas/one_byte.Canvas_:
     bytemap_zap canvas.pixels_ background_color
 
-  draw_frame canvas/OneByteCanvas_:
+  draw_frame canvas/one_byte.Canvas_:
     bytemap_zap canvas.pixels_ 0

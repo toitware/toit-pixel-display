@@ -11,6 +11,7 @@ import font show Font
 import icons show Icon
 import .pixel_display show ThreeColorPixelDisplay  // For the doc comment.
 import .texture
+import .two_bit_texture as two_bit
 import .two_bit_texture
 
 WHITE ::= 0
@@ -24,7 +25,7 @@ RED ::= 2
 //   0    1   Red
 //   1    1   Invalid
 // Starts off with all pixels white.
-class Canvas extends TwoBitCanvas_:
+class Canvas_ extends two_bit.Canvas_:
   constructor width height:
     super width height
 
@@ -35,7 +36,7 @@ class Canvas extends TwoBitCanvas_:
   Creates a blank texture with the same dimensions as this one.
   */
   create_similar:
-    result := Canvas width_ height_
+    result := Canvas_ width_ height_
     result.transform = transform
     return result
 
