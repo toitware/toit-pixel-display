@@ -46,7 +46,7 @@ abstract class Element extends ElementOrTexture_:
   write_ canvas -> none:
     throw "Can't call write_ on an Element"
 
-  abstract draw canvas/AbstractCanvas -> none
+  abstract draw canvas/Canvas -> none
 
   abstract min_w -> int
   abstract min_h -> int
@@ -257,15 +257,15 @@ class GradientElement extends ResizableElement:
       g += step_g
       b += step_b
 
-  draw canvas/AbstractCanvas -> none:
+  draw canvas/Canvas -> none:
     if not (x and y and w and h): return
     analysis := canvas.bounds_analysis x y w h
-    if analysis == AbstractCanvas.ALL_OUTSIDE: return
+    if analysis == Canvas.ALL_OUTSIDE: return
     // Determine whether the draw operations will be automatically cropped for
     // us, or whether we need to do it ourselves by using slices for drawing
     // operations.  We could also check whether we are inside a window that will
     // use compositing to crop everything.
-    auto_crop := analysis == AbstractCanvas.ALL_INSIDE
+    auto_crop := analysis == Canvas.ALL_INSIDE
 
     // CSS gradient angles are:
     //    0 bottom to top.
@@ -360,7 +360,7 @@ class FilledRectangleElement extends RectangleElement:
   constructor --x/int?=null --y/int?=null --w/int?=null --h/int?=null --color/int?=null:
     super --x=x --y=y --w=w --h=h --color=color
 
-  draw canvas/AbstractCanvas -> none:
+  draw canvas/Canvas -> none:
     canvas.rectangle x_ y_ --w=w_ --h=h_ --color=color_
 
 class OutlineRectangleElement extends RectangleElement:
@@ -386,7 +386,7 @@ class OutlineRectangleElement extends RectangleElement:
       change_tracker.child_invalidated_element x (y + h - thickness) w thickness
       change_tracker.child_invalidated_element (x + w - thickness) y thickness h
 
-  draw canvas /AbstractCanvas -> none:
+  draw canvas /Canvas -> none:
     if not (x and y and w and h): return
     canvas.rectangle x_ y_                     --w=thickness_ --h=h_         --color=color_
     canvas.rectangle x_ y_                     --w=w_         --h=thickness_ --color=color_
@@ -513,7 +513,7 @@ class Label extends Element implements ColoredElement:
     left_ = null  // Trigger recalculation.
     invalidate
 
-  draw canvas /AbstractCanvas -> none:
+  draw canvas /Canvas -> none:
     x := x_
     y := y_
     if not (x and y): return
@@ -597,7 +597,7 @@ class BarCodeEanElement extends CustomElement:
     return (l_ digit) ^ 0x7f
 
   // Make a white background behind the bar code and draw the digits along the bottom.
-  draw_background_ canvas/AbstractCanvas:
+  draw_background_ canvas/Canvas:
     if not (x and y): return
     canvas.rectangle x_ y_ --w=w --h=h --color=background
 
@@ -621,9 +621,9 @@ class BarCodeEanElement extends CustomElement:
     canvas.text text_x text_y --text=">" --color=foreground --font=sans10_
 
   // Redraw routine.
-  draw canvas/AbstractCanvas:
+  draw canvas/Canvas:
     if not (x and y): return
-    if (canvas.bounds_analysis x y w h) == AbstractCanvas.ALL_OUTSIDE: return
+    if (canvas.bounds_analysis x y w h) == Canvas.ALL_OUTSIDE: return
     draw_background_ canvas
 
     x := x_ + EAN_13_QUIET_ZONE_WIDTH
@@ -781,7 +781,7 @@ abstract class WindowElement extends BorderlessWindowElement implements Window:
   The coordinate system of the canvas is the coordinate system of the window, so
     the top and left edges will normally be plotted at negative coordinates.
   */
-  abstract frame_map canvas/AbstractCanvas -> ByteArray
+  abstract frame_map canvas/Canvas -> ByteArray
 
   /**
   Returns a canvas that is an alpha map for the given area that describes where
@@ -793,7 +793,7 @@ abstract class WindowElement extends BorderlessWindowElement implements Window:
     transparency.
   The coordinate system of the canvas is the coordinate system of the window.
   */
-  abstract painting_map canvas/AbstractCanvas -> ByteArray
+  abstract painting_map canvas/Canvas -> ByteArray
 
   /**
   Draws the background on the canvas.  This represents the interior wall color
@@ -802,7 +802,7 @@ abstract class WindowElement extends BorderlessWindowElement implements Window:
     draws on will be composited using them afterwards.
   The coordinate system of the canvas is the coordinate system of the window.
   */
-  abstract draw_background canvas/AbstractCanvas -> none
+  abstract draw_background canvas/Canvas -> none
 
   /**
   Expected to draw the frame on the canvas.  This represents the window frame
@@ -817,10 +817,10 @@ abstract class WindowElement extends BorderlessWindowElement implements Window:
     super --x=x --y=y --w=w --h=h
 
   // After the textures under us have drawn themselves, we draw on top.
-  draw canvas/AbstractCanvas -> none:
+  draw canvas/Canvas -> none:
     if not (x and y and h and w): return
     extent: | x2 y2 w2 h2 |
-      if (canvas.bounds_analysis x2 y2 w2 h2) == AbstractCanvas.ALL_OUTSIDE: return
+      if (canvas.bounds_analysis x2 y2 w2 h2) == Canvas.ALL_OUTSIDE: return
 
     old_transform := canvas.transform
     canvas.transform = old_transform.translate x_ y_
@@ -911,7 +911,7 @@ class SimpleWindowElement extends WindowElement:
   // Draws 100% opacity for the frame shape, a filled rectangle.
   // (The frame is behind the painting, so this doesn't mean we only
   // see the frame.)
-  frame_map canvas/AbstractCanvas:
+  frame_map canvas/Canvas:
     if border_width_ == 0: return WindowElement.ALL_TRANSPARENT  // The frame is not visible anywhere.
     // Transform inner dimensions not including border
     canvas.transform.xywh 0 0 inner_width inner_height: | x2 y2 w2 h2 |
@@ -940,7 +940,7 @@ class SimpleWindowElement extends WindowElement:
     return transparency_map
 
   // Draws 100% opacity for the window content, a filled rectangle.
-  painting_map canvas/AbstractCanvas:
+  painting_map canvas/Canvas:
     canvas.transform.xywh 0 0 inner_width inner_height: | x2 y2 w2 h2 |
       if x2 <= 0 and y2 <= 0 and x2 + w2 >= canvas.width_ and y2 + h2 >= canvas.height_:
         return WindowElement.ALL_OPAQUE  // The content is 100% opaque in the middle.
@@ -958,10 +958,10 @@ class SimpleWindowElement extends WindowElement:
       --color=0xffffff
     return transparency_map
 
-  draw_frame canvas/AbstractCanvas:
+  draw_frame canvas/Canvas:
     if border_width_ != 0: canvas.set_all_pixels border_color_
 
-  draw_background canvas/AbstractCanvas:
+  draw_background canvas/Canvas:
     if background_color_: canvas.set_all_pixels background_color_
 
 class RoundedCornerOpacity_:
@@ -1065,11 +1065,11 @@ class RoundedCornerWindowElement extends WindowElement:
     if opacities_: return
     opacities_ = RoundedCornerOpacity_.get corner_radius_
 
-  frame_map canvas/AbstractCanvas:
+  frame_map canvas/Canvas:
     return WindowElement.ALL_TRANSPARENT  // No frame on these windows.
 
   // Draws 100% opacity for the window content, a filled rounded-corner rectangle.
-  painting_map canvas/AbstractCanvas:
+  painting_map canvas/Canvas:
     canvas.transform.xywh 0 0 inner_width inner_height: | x2 y2 w2 h2 |
       right := x2 + w2
       bottom := y2 + h2
@@ -1119,10 +1119,10 @@ class RoundedCornerWindowElement extends WindowElement:
     // Bottom right corner:
     block.call right bottom ORIENTATION_0
 
-  draw_frame canvas/AbstractCanvas:
+  draw_frame canvas/Canvas:
     unreachable  // There's no frame.
 
-  draw_background canvas/AbstractCanvas:
+  draw_background canvas/Canvas:
     if background_color_: canvas.set_all_pixels background_color_
 
 class DropShadowWindowElement extends RoundedCornerWindowElement:
@@ -1197,7 +1197,7 @@ class DropShadowWindowElement extends RoundedCornerWindowElement:
     if max_shadow_opacity != 0xff:
       shadow_palette_ = ByteArray 0x300: ((it / 3) * max_shadow_opacity) / 0xff
 
-  frame_map canvas/AbstractCanvas:
+  frame_map canvas/Canvas:
     // Transform inner dimensions excluding shadow to determine if the canvas
     // is wholly inside the window.
     canvas.transform.xywh 0 0 inner_width inner_height: | x2 y2 w2 h2 |
@@ -1242,7 +1242,7 @@ class DropShadowWindowElement extends RoundedCornerWindowElement:
         --source_line_stride=transparency_map.width_
     return transparency_map_unpadded
 
-  draw_frame canvas/AbstractCanvas:
+  draw_frame canvas/Canvas:
     canvas.set_all_pixels 0
 
 // Element that draws a PNG image.
@@ -1267,10 +1267,10 @@ class PngElement extends CustomElement:
     super --x=x --y=y
 
   // Redraw routine.
-  draw canvas/AbstractCanvas:
+  draw canvas/Canvas:
     if not (x and y): return
     y2 := 0
-    while y2 < h and (canvas.bounds_analysis x (y + y2) w (h - y2)) != AbstractCanvas.ALL_OUTSIDE:
+    while y2 < h and (canvas.bounds_analysis x (y + y2) w (h - y2)) != Canvas.ALL_OUTSIDE:
       png_.get_indexed_image_data y2 h
           --accept_8_bit=canvas.supports_8_bit
           --need-gray-palette=canvas.gray_scale: | y_from/int y_to/int bits_per_pixel/int pixels/ByteArray line_stride/int palette/ByteArray alpha-palette/ByteArray |

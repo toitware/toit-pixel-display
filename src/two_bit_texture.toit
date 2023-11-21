@@ -14,7 +14,7 @@ import .texture
 
 // The canvas contains two bitmapped ByteArrays, for up to 4 colors or gray
 // scales per pixel.  Starts off with all pixels 0, 0.
-abstract class Canvas_ extends AbstractCanvas:
+abstract class Canvas_ extends Canvas:
   plane_0_ := ?
   plane_1_ := ?
 
@@ -37,7 +37,7 @@ abstract class Canvas_ extends AbstractCanvas:
     bit1 := (plane_1_[idx] & bit) == 0 ? 0 : 1
     return bit0 + (bit1 << 1)
 
-  make_alpha_map --padding/int=0 -> AbstractCanvas:
+  make_alpha_map --padding/int=0 -> Canvas:
     result := two_color.Canvas_ (width_ + padding) (height_ + padding)
     result.transform = transform
     return result

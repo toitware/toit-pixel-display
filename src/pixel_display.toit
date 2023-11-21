@@ -511,9 +511,9 @@ abstract class PixelDisplay implements Window:
 
   abstract max_canvas_height_ width/int -> int
 
-  abstract create_canvas_ w/int h/int -> AbstractCanvas
+  abstract create_canvas_ w/int h/int -> Canvas
 
-  abstract draw_ x y w h canvas/AbstractCanvas -> none
+  abstract draw_ x y w h canvas/Canvas -> none
 
   clean_rect_ left/int top/int right/int bottom/int -> none:
     driver_.clean left top right bottom
@@ -629,7 +629,7 @@ class TwoColorPixelDisplay extends PixelDisplay:
     // We can't work well with canvases that are less than 8 pixels tall.
     return max 8 height
 
-  create_canvas_ w/int h/int -> AbstractCanvas:
+  create_canvas_ w/int h/int -> Canvas:
     return two_color.Canvas_ w h
 
   draw_ x/int y/int w/int h/int canvas/two_color.Canvas_ -> none:
@@ -659,7 +659,7 @@ class FourGrayPixelDisplay extends TwoBitPixelDisplay_:
   default_background_color_ -> int:
     return four_gray.WHITE
 
-  create_canvas_ w/int h/int -> AbstractCanvas:
+  create_canvas_ w/int h/int -> Canvas:
     return four_gray.Canvas_ w h
 
   text context/GraphicsContext x/int y/int text/string -> four_gray.TextTexture:
@@ -740,7 +740,7 @@ class ThreeColorPixelDisplay extends TwoBitPixelDisplay_:
   default_background_color_ -> int:
     return three_color.WHITE
 
-  create_canvas_ w/int h/int -> AbstractCanvas:
+  create_canvas_ w/int h/int -> Canvas:
     return three_color.Canvas_ w h
 
   text context/GraphicsContext x/int y/int text/string -> three_color.TextTexture:
@@ -882,7 +882,7 @@ class GrayScalePixelDisplay extends PixelDisplay:
     // We can't work well with canvases that are less than 4 pixels tall.
     return height < 8 ? 4 : height
 
-  create_canvas_ w/int h/int -> AbstractCanvas:
+  create_canvas_ w/int h/int -> Canvas:
     return gray_scale.Canvas_ w h
 
   draw_ x/int y/int w/int h/int canvas/gray_scale.Canvas_ -> none:
@@ -962,7 +962,7 @@ class SeveralColorPixelDisplay extends PixelDisplay:
     // We can't work well with canvases that are less than 4 pixels tall.
     return height < 8 ? 4 : height
 
-  create_canvas_ w/int h/int -> AbstractCanvas:
+  create_canvas_ w/int h/int -> Canvas:
     return several_color.Canvas_ w h
 
   draw_ x/int y/int w/int h/int canvas/several_color.Canvas_ -> none:
@@ -1043,7 +1043,7 @@ class TrueColorPixelDisplay extends PixelDisplay:
     // We can't work well with canvases that are less than 4 pixels tall.
     return max 4 height
 
-  create_canvas_ w/int h/int -> AbstractCanvas:
+  create_canvas_ w/int h/int -> Canvas:
     return true_color.Canvas_ w h
 
   draw_ x/int y/int w/int h/int canvas/true_color.Canvas_ -> none:

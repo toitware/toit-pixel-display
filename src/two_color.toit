@@ -21,7 +21,7 @@ TRANSPARENT ::= 3
 
 // The canvas contains a bitmapped ByteArray.
 // Starts off with/ all pixels white.
-class Canvas_ extends AbstractCanvas:
+class Canvas_ extends Canvas:
   pixels_ := ?
 
   supports_8_bit -> bool: return false
@@ -50,7 +50,7 @@ class Canvas_ extends AbstractCanvas:
     result.transform = transform
     return result
 
-  make_alpha_map --padding/int=0 -> AbstractCanvas:
+  make_alpha_map --padding/int=0 -> Canvas:
     result := Canvas_ (width_ + padding) (height_ + padding)
     result.transform = transform
     return result

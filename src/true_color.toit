@@ -32,7 +32,7 @@ blue_component pixel/int -> int:
 
 // The canvas contains three ByteArrays, red, green, and blue.
 // 0 is black, 255 is max intensity.  Initially all pixels are black.
-class Canvas_ extends AbstractCanvas:
+class Canvas_ extends Canvas:
   red_ := ?
   green_ := ?
   blue_ := ?
@@ -67,7 +67,7 @@ class Canvas_ extends AbstractCanvas:
     result.transform = transform
     return result
 
-  make_alpha_map --padding/int=0 -> AbstractCanvas:
+  make_alpha_map --padding/int=0 -> Canvas:
     result := gray_scale_.Canvas_ (width_ + padding) (height_ + padding)
     result.transform = transform
     return result

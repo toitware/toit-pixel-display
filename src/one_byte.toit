@@ -16,7 +16,7 @@ import .texture
 
 // The canvas contains a ByteArray.
 // Initially all pixels are 0.
-abstract class Canvas_ extends AbstractCanvas:
+abstract class Canvas_ extends Canvas:
   pixels_ := ?
 
   constructor width/int height/int:
@@ -30,7 +30,7 @@ abstract class Canvas_ extends AbstractCanvas:
   get_pixel_ x y:
     return pixels_[x + width_ * y]
 
-  make_alpha_map --padding/int=0 -> AbstractCanvas:
+  make_alpha_map --padding/int=0 -> Canvas:
     result := gray_scale_.Canvas_ (width_ + padding) (height_ + padding)
     result.transform=transform
     return result

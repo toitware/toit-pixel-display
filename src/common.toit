@@ -40,14 +40,14 @@ abstract class ElementOrTexture_:
   Writes the image data to a canvas window.
   $canvas: Some sort of canvas.  The precise type depends on the depth of the display.
   */
-  write canvas/AbstractCanvas -> none:
+  write canvas/Canvas -> none:
     write_ canvas
 
   abstract write_ canvas
 
   abstract invalidate -> none
 
-abstract class AbstractCanvas:
+abstract class Canvas:
   width_ / int                    // Used by both Textures and Elements.
   height_ / int                   // Only used by Textures.
   x_offset_ / int := 0            // Only used by Textures.
@@ -56,15 +56,15 @@ abstract class AbstractCanvas:
 
   constructor .width_ .height_:
 
-  abstract create_similar -> AbstractCanvas
+  abstract create_similar -> Canvas
 
   abstract set_all_pixels color/int -> none
 
   abstract supports_8_bit -> bool
   abstract gray_scale -> bool
 
-  abstract make_alpha_map -> AbstractCanvas
-  abstract make_alpha_map --padding/int -> AbstractCanvas
+  abstract make_alpha_map -> Canvas
+  abstract make_alpha_map --padding/int -> Canvas
 
   static ALL_OUTSIDE ::= 0
   static ALL_INSIDE ::= 1
@@ -79,7 +79,7 @@ abstract class AbstractCanvas:
       if x2 >= 0 and y2 >= 0 and right <= width_ and bottom <= height_: return ALL_INSIDE
     return MIXED_BOUNDS
 
-  abstract composit frame_opacity frame_canvas/AbstractCanvas painting_opacity painting_canvas/AbstractCanvas
+  abstract composit frame_opacity frame_canvas/Canvas painting_opacity painting_canvas/Canvas
 
   // draw a Line from x1,y1 (inclusive) to x2,y2 (exclusive) using the transform.
   // The line must be horizontal or vertical.
