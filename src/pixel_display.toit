@@ -21,6 +21,7 @@ import .true_color as true_color
 import .gray_scale as gray_scale
 import .several_color as several_color
 import .one_byte as one_byte
+import .style
 
 FLAG_2_COLOR ::=         0b1
 FLAG_3_COLOR ::=         0b10
@@ -109,6 +110,13 @@ abstract class PixelDisplay implements Window:
   background_ := null
   inner_width: return driver_.width
   inner_height: return driver_.width
+
+  default_style_ /Style := Style.empty
+  style_class_map_ := Map
+
+  /// Set the default style for the whole display.
+  style= style/Style -> none:
+    default_style_ = style
 
   // Need-to-redraw is tracked as a bit array of dirty bits, arranged in
   // SSD1306 layout so we can use bitmap_rectangle to invalidate areas.

@@ -17,15 +17,22 @@ import math
 import png_tools.png_reader show *
 
 abstract class Element extends ElementOrTexture_:
+  style_/Style? := null
+  classes/List?
+  id/string?
+
   x_ /int? := null
   y_ /int? := null
 
   x -> int?: return x_
   y -> int?: return y_
 
-  constructor --x/int?=null --y/int?=null:
+  constructor --x/int?=null --y/int?=null --element_class/string?=null --.classes/List?=null --.id/string?=null:
     x_ = x
     y_ = y
+    if element_class:
+      if not classes: classes = []
+      classes.add element_class
 
   x= value/int -> none:
     invalidate
@@ -51,6 +58,15 @@ abstract class Element extends ElementOrTexture_:
   abstract min_w -> int
   abstract min_h -> int
 
+  set_style style/Style -> none:
+    if not style_:
+      style_ = style
+    set_attributes
+
+  abstract set_attributes -> none
+
+  abstract type -> string
+
 interface ColoredElement:
   color -> int?
   color= value/int -> none
@@ -71,24 +87,33 @@ abstract class ResizableElement extends Element:
   w -> int?: return w_
   h -> int?: return h_
 
-  w= value/int -> none:
-    invalidate
-    w_ = value
-    invalidate
+  w= value/int? -> none:
+    if w_ != value:
+      if w_: invalidate
+      w_ = value
+      if value: invalidate
 
-  h= value/int -> none:
-    invalidate
-    h_ = value
-    invalidate
+  h= value/int? -> none:
+    if h_ != value:
+      if h_: invalidate
+      h_ = value
+      if value: invalidate
 
   set_size w/int h/int -> none:
-    invalidate
-    w_ = w
-    h_ = h
-    invalidate
+    if w_ != w or h_ != h:
+      if w_ and h_: invalidate
+      w_ = w
+      h_ = h
+      invalidate
 
   min_w: return w_
   min_h: return h_
+
+  set_attributes -> none:
+    if not w_:
+      w = style_.get --type=type --classes=classes --id=id "width"
+    if not h_:
+      h = style_.get --type=type --classes=classes --id=id "height"
 
 abstract class RectangleElement extends ResizableElement implements ColoredElement:
   color_ /int? := ?
@@ -103,6 +128,11 @@ abstract class RectangleElement extends ResizableElement implements ColoredEleme
   constructor --x/int?=null --y/int?=null --w/int?=null --h/int?=null --color/int?=null:
     color_ = color
     super --x=x --y=y --w=w --h=h
+
+  set_attributes -> none:
+    super
+    if not color_:
+      color = style_.get --type=type --classes=classes --id=id "color"
 
 class GradientSpecifier:
   color/int
@@ -437,12 +467,16 @@ class GradientElement extends ResizableElement:
     if not rendering_: rendering_ = GradientRendering_.get w h gradient_
     rendering_.draw canvas x y
 
+  type -> string: return "gradient"
+
 class FilledRectangleElement extends RectangleElement:
   constructor --x/int?=null --y/int?=null --w/int?=null --h/int?=null --color/int?=null:
     super --x=x --y=y --w=w --h=h --color=color
 
   draw canvas/Canvas -> none:
     canvas.rectangle x_ y_ --w=w_ --h=h_ --color=color_
+
+  type -> string: return "filled-rectangle"
 
 class OutlineRectangleElement extends RectangleElement:
   thickness_/int := ?
@@ -474,6 +508,8 @@ class OutlineRectangleElement extends RectangleElement:
     canvas.rectangle (x_ + w_ - thickness_) y_ --w=thickness_ --h=h_         --color=color_
     canvas.rectangle x_ (y + h_ - thickness_)  --w=w_         --h=thickness_ --color=color_
 
+  type -> string: return "outline-rectangle"
+
 class Label extends Element implements ColoredElement:
   color_/int := ?
   label_/string := ?
@@ -487,11 +523,29 @@ class Label extends Element implements ColoredElement:
   min_w_/int? := null
   min_h_/int? := null
 
-  color -> int: return color_
+  type -> string: return "label"
+
+  set_attributes -> none:
+    if not color_:
+      color = style_.get --type=type --classes=classes --id=id "color"
+    if not font_:
+      font = style_.get --type=type --classes=classes --id=id "font"
+
+  color -> int?: return color_
 
   color= value/int -> none:
     if color_ != value:
       color_ = value
+      invalidate
+
+  font -> Font?: return font_
+
+  font= value/Font -> none:
+    if font_ != value:
+      font_ = value
+      min_w_ = null
+      min_h_ = null
+      left_ = null  // Trigger recalculation.
       invalidate
 
   constructor --x/int?=null --y/int?=null --color/int=0 --label/string="" --font/Font?=null --orientation/int=ORIENTATION_0 --alignment/int=ALIGN_LEFT:
@@ -640,6 +694,10 @@ class BarCodeEanElement extends CustomElement:
   background/int
   sans10_ ::= Font.get "sans10"
   number_height_ := EAN_13_BOTTOM_SPACE
+
+  type -> string: return "bar-code-ean"
+
+  set_attributes -> none:
 
   min_w: return w
   min_h: return h
@@ -938,6 +996,14 @@ abstract class WindowElement extends BorderlessWindowElement implements Window:
 
     canvas.transform = old_transform
 
+  type -> string: return "window"
+
+  set_attributes -> none:
+    if not inner_width:
+      w = style_.get --type=type --classes=classes --id=id "width"
+    if not inner_height:
+      h = style_.get --type=type --classes=classes --id=id "height"
+
 /**
 A rectangular window with a fixed width colored border.  The border is
   added to the visible area inside the window.
@@ -1044,6 +1110,8 @@ class SimpleWindowElement extends WindowElement:
 
   draw_background canvas/Canvas:
     if background_color_: canvas.set_all_pixels background_color_
+
+  type -> string: return "simple-window"
 
 class RoundedCornerOpacity_:
   byte_opacity/ByteArray
@@ -1206,6 +1274,8 @@ class RoundedCornerWindowElement extends WindowElement:
   draw_background canvas/Canvas:
     if background_color_: canvas.set_all_pixels background_color_
 
+  type -> string: return "rounded-corner-window"
+
 class DropShadowWindowElement extends RoundedCornerWindowElement:
   blur_radius_/int := ?
   drop_distance_x_/int := ?
@@ -1326,6 +1396,8 @@ class DropShadowWindowElement extends RoundedCornerWindowElement:
   draw_frame canvas/Canvas:
     canvas.set_all_pixels 0
 
+  type -> string: return "drop-shadow-window"
+
 // Element that draws a PNG image.
 class PngElement extends CustomElement:
   w/int
@@ -1374,3 +1446,7 @@ class PngElement extends CustomElement:
               --source_width=w
               --source_line_stride=line_stride
         y2 = y_to
+
+  type -> string: return "png"
+
+  set_attributes -> none:
