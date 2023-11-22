@@ -110,6 +110,26 @@ class GradientSpecifier:
 
   constructor --.color/int .percent/int:
 
+/**
+Gradients are similar to CSS linear gradients and SVG gradients.
+They are given a list of $GradientSpecifier, each of which has a color and
+  a percentage, indicating where in the gradient the color should appear.
+  The specifiers should be ordered in increasing order of percentage.
+Angles are as in CSS, with 0 degrees being up and 90 degrees being to the right
+  (this is different from text orientations, which go anti-clockwise).
+See https://cssgradient.io/ for a visual explanation and playground for CSS
+  gradients.
+See also $GradientElement.
+Example:
+```
+  gradient := Gradient --angle=45
+      --specifiers=[
+          GradientSpecifier --color=0xff0000 10,    // Red from 0-10%, red-to-green from 10-50%.
+          GradientSpecifier --color=0x00ff00 50,    // Green-to-blue from 50-90%.
+          GradientSpecifier --color=0x0000ff 90,    // Blue from 90-100%.
+      ]
+```
+*/
 class Gradient:
   angle/int
   specifiers/List
@@ -235,6 +255,7 @@ class GradientRendering_:
           blue_pixels_[index] = blue
 
   draw canvas/Canvas x/int y/int -> none:
+    if not canvas.supports_8_bit: throw "UNSUPPORTED"
     angle := angle_
     w := w_
     h := h_
@@ -371,23 +392,17 @@ class GradientRendering_:
       b += step_b
 
 /**
-GradientElements are similar to CSS linear gradients and SVG gradients.
-They are given a list of $GradientSpecifier, each of which has a color and
-  a percentage, indicating where in the gradient the color should appear.
-  The specifiers should be ordered in increasing order of percentage.
-Angles are as in CSS, with 0 degrees being up and 90 degrees being to the right
-  (this is different from text orientations, which go anti-clockwise).
-See https://cssgradient.io/ for a visual explanation and playground for CSS
-  gradients.
+GradientElements are elements that draw a $Gradient.
 Example:
 ```
-  gradient = GradientElement --w=200 --h=100 --angle=45
+  gradient := Gradient --angle=45
       --specifiers=[
           GradientSpecifier --color=0xff0000 10,    // Red from 0-10%, red-to-green from 10-50%.
           GradientSpecifier --color=0x00ff00 50,    // Green-to-blue from 50-90%.
           GradientSpecifier --color=0x0000ff 90,    // Blue from 90-100%.
       ]
-  display.add gradient
+  gradient_element := GradientElement --w=200 --h=100 --gradient=gradient
+  display.add gradient_element
 ```
 */
 class GradientElement extends ResizableElement:
@@ -419,10 +434,8 @@ class GradientElement extends ResizableElement:
 
   draw canvas/Canvas -> none:
     if not (x and y and w and h): return
-    if not canvas.supports_8_bit: throw "UNSUPPORTED"
     if not rendering_: rendering_ = GradientRendering_.get w h gradient_
     rendering_.draw canvas x y
-
 
 class FilledRectangleElement extends RectangleElement:
   constructor --x/int?=null --y/int?=null --w/int?=null --h/int?=null --color/int?=null:
