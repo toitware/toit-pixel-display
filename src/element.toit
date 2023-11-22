@@ -259,6 +259,7 @@ class GradientElement extends ResizableElement:
 
   draw canvas/Canvas -> none:
     if not (x and y and w and h): return
+    if not canvas.supports_8_bit: throw "UNSUPPORTED"
     analysis := canvas.bounds_analysis x y w h
     if analysis == Canvas.ALL_OUTSIDE: return
     // Determine whether the draw operations will be automatically cropped for
@@ -309,10 +310,10 @@ class GradientElement extends ResizableElement:
           r = r[o .. o + h]
           g = g[o .. o + h]
           b = b[o .. o + h]
-        if canvas is true_color.Canvas_:
-          (canvas as true_color.Canvas_).rgb_pixmap (i + x2) y3 --r=r --g=g --b=b --source_width=h --orientation=orientation
+        if canvas.gray_scale:
+          canvas.pixmap     (i + x2) y3 --pixels=b        --source_width=h --orientation=orientation
         else:
-          (canvas as one_byte.Canvas_).pixmap (i + x2) y3 --pixels=b --source_width=h --orientation=orientation
+          canvas.rgb_pixmap (i + x2) y3 --r=r --g=g --b=b --source_width=h --orientation=orientation
         offset += step
     else:
       // The gradient goes broadly horizontally, and we draw in horizontal strips.
@@ -350,10 +351,10 @@ class GradientElement extends ResizableElement:
           r = r[o .. o + w]
           g = g[o .. o + w]
           b = b[o .. o + w]
-        if canvas is true_color.Canvas_:
-          (canvas as true_color.Canvas_).rgb_pixmap x3 (i + y2) --r=r --g=g --b=b --source_width=w --orientation=orientation
+        if canvas.gray_scale:
+          canvas.pixmap     x3 (i + y2) --pixels=b        --source_width=w --orientation=orientation
         else:
-          (canvas as one_byte.Canvas_).pixmap x3 (i + y2) --pixels=b --source_width=w --orientation=orientation
+          canvas.rgb_pixmap x3 (i + y2) --r=r --g=g --b=b --source_width=w --orientation=orientation
         offset += step
 
 class FilledRectangleElement extends RectangleElement:
