@@ -398,6 +398,8 @@ abstract class PixelDisplay implements Window:
     t := round_down (max 0 dirty_top_) y_rounding_
     b := round_up (min driver_.height dirty_bottom_) y_rounding_
 
+    if l >= r or t >= b: return
+
     if r - l <= width:
       if (max_canvas_height_ (r - l)) >= b - t:
         if clean:
