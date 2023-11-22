@@ -312,7 +312,7 @@ class GradientElement extends ResizableElement:
   draw canvas/Canvas -> none:
     if not (x and y and w and h): return
     if not canvas.supports_8_bit: throw "UNSUPPORTED"
-    if not rendering_: rendering_ = GradientRendering_ w h gradient_
+    if not rendering_: rendering_ = GradientRendering_.get w h gradient_
     angle := gradient_.angle
     analysis := canvas.bounds_analysis x y w h
     if analysis == Canvas.ALL_OUTSIDE: return
