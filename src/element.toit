@@ -177,6 +177,9 @@ class GradientRendering_:
   green_pixels_/ByteArray? := null
   blue_pixels_/ByteArray? := null
   draw_vertical_/bool? := null
+  angle_ /int
+  h_ /int := 0
+  w_ /int := 0
 
   static map_ := Map.weak
 
@@ -190,7 +193,11 @@ class GradientRendering_:
 
   constructor w/int? h/int? gradient/Gradient:
     angle := gradient.angle
+    angle_ = angle
     if h != 0 and h != null and w != 0 and w != null:
+      h_ = h
+      w_ = w
+
       // CSS gradient angles are:
       //    0 bottom to top.
       //   90 left to right
@@ -226,6 +233,107 @@ class GradientRendering_:
           red_pixels_[index] = red
           green_pixels_[index] = green
           blue_pixels_[index] = blue
+
+  draw canvas/Canvas x/int y/int -> none:
+    angle := angle_
+    w := w_
+    h := h_
+    analysis := canvas.bounds_analysis x y w h
+    if analysis == Canvas.ALL_OUTSIDE: return
+    // Determine whether the draw operations will be automatically cropped for
+    // us, or whether we need to do it ourselves by using slices for drawing
+    // operations.  We could also check whether we are inside a window that will
+    // use compositing to crop everything.
+    auto_crop := analysis == Canvas.ALL_INSIDE
+
+    // CSS gradient angles are:
+    //    0 bottom to top.
+    //   90 left to right
+    //  180 top to bottom
+    //  270 right to left
+
+    if draw_vertical_:
+      // The gradient goes broadly vertically, and we draw in vertical strips.
+      up/bool := angle < 90
+      orientation/int := ORIENTATION_90
+      x2/int := x
+      y2/int := y + h
+      if 90 < angle < 270:  // Top to bottom.
+        up = angle <= 180
+        orientation = ORIENTATION_270
+        x2++
+        y2 = y
+      start/int := w - 1
+      stop/int := -1
+      i_step/int := -1
+      if up:
+        start = 0
+        stop = w
+        i_step = 1
+      offset := 0
+      step := ((red_pixels_.size - h) << 16) / w  // n.16 fixed point.
+      for i := start; i != stop; i += i_step:
+        o := offset >> 16
+        y3 := ?
+        r := red_pixels_
+        g := green_pixels_
+        b := blue_pixels_
+        if auto_crop:
+          if orientation == ORIENTATION_90:
+            y3 = y2 + o
+          else:
+            y3 = y2 - o
+        else:
+          y3 = y2
+          r = r[o .. o + h]
+          g = g[o .. o + h]
+          b = b[o .. o + h]
+        if canvas.gray_scale:
+          canvas.pixmap     (i + x2) y3 --pixels=b        --source_width=h --orientation=orientation
+        else:
+          canvas.rgb_pixmap (i + x2) y3 --r=r --g=g --b=b --source_width=h --orientation=orientation
+        offset += step
+    else:
+      // The gradient goes broadly horizontally, and we draw in horizontal strips.
+      up/bool := angle > 90
+      orientation/int := ORIENTATION_0
+      x2/int := x
+      y2/int := y
+      if angle >= 180:  // Right to left.
+        up = angle < 270
+        orientation = ORIENTATION_180
+        x2 += w
+        y2++
+      start := h - 1
+      stop := -1
+      i_step := -1
+      if up:
+        start = 0
+        stop = h
+        i_step = 1
+      offset := 0
+      step := ((red_pixels_.size - w) << 16) / h  // n.16 fixed point.
+      for i := start; i != stop; i += i_step:
+        o := offset >> 16
+        x3 := ?
+        r := red_pixels_
+        g := green_pixels_
+        b := blue_pixels_
+        if auto_crop:
+          if orientation == ORIENTATION_0:
+            x3 = x2 - o
+          else:
+            x3 = x2 + o
+        else:
+          x3 = x2
+          r = r[o .. o + w]
+          g = g[o .. o + w]
+          b = b[o .. o + w]
+        if canvas.gray_scale:
+          canvas.pixmap     x3 (i + y2) --pixels=b        --source_width=w --orientation=orientation
+        else:
+          canvas.rgb_pixmap x3 (i + y2) --r=r --g=g --b=b --source_width=w --orientation=orientation
+        offset += step
 
   /// Returns a list of quadruples of the form starting-percent ending-percent start-color end-color.
   static extract_ranges_ specifiers/List -> List:
@@ -313,103 +421,8 @@ class GradientElement extends ResizableElement:
     if not (x and y and w and h): return
     if not canvas.supports_8_bit: throw "UNSUPPORTED"
     if not rendering_: rendering_ = GradientRendering_.get w h gradient_
-    angle := gradient_.angle
-    analysis := canvas.bounds_analysis x y w h
-    if analysis == Canvas.ALL_OUTSIDE: return
-    // Determine whether the draw operations will be automatically cropped for
-    // us, or whether we need to do it ourselves by using slices for drawing
-    // operations.  We could also check whether we are inside a window that will
-    // use compositing to crop everything.
-    auto_crop := analysis == Canvas.ALL_INSIDE
+    rendering_.draw canvas x y
 
-    // CSS gradient angles are:
-    //    0 bottom to top.
-    //   90 left to right
-    //  180 top to bottom
-    //  270 right to left
-
-    if rendering_.draw_vertical_:
-      // The gradient goes broadly vertically, and we draw in vertical strips.
-      up/bool := angle < 90
-      orientation/int := ORIENTATION_90
-      x2/int := x
-      y2/int := y + h
-      if 90 < angle < 270:  // Top to bottom.
-        up = angle <= 180
-        orientation = ORIENTATION_270
-        x2++
-        y2 = y
-      start/int := w - 1
-      stop/int := -1
-      i_step/int := -1
-      if up:
-        start = 0
-        stop = w
-        i_step = 1
-      offset := 0
-      step := ((rendering_.red_pixels_.size - h) << 16) / w  // n.16 fixed point.
-      for i := start; i != stop; i += i_step:
-        o := offset >> 16
-        y3 := ?
-        r := rendering_.red_pixels_
-        g := rendering_.green_pixels_
-        b := rendering_.blue_pixels_
-        if auto_crop:
-          if orientation == ORIENTATION_90:
-            y3 = y2 + o
-          else:
-            y3 = y2 - o
-        else:
-          y3 = y2
-          r = r[o .. o + h]
-          g = g[o .. o + h]
-          b = b[o .. o + h]
-        if canvas.gray_scale:
-          canvas.pixmap     (i + x2) y3 --pixels=b        --source_width=h --orientation=orientation
-        else:
-          canvas.rgb_pixmap (i + x2) y3 --r=r --g=g --b=b --source_width=h --orientation=orientation
-        offset += step
-    else:
-      // The gradient goes broadly horizontally, and we draw in horizontal strips.
-      up/bool := angle > 90
-      orientation/int := ORIENTATION_0
-      x2/int := x
-      y2/int := y
-      if angle >= 180:  // Right to left.
-        up = angle < 270
-        orientation = ORIENTATION_180
-        x2 += w
-        y2++
-      start := h - 1
-      stop := -1
-      i_step := -1
-      if up:
-        start = 0
-        stop = h
-        i_step = 1
-      offset := 0
-      step := ((rendering_.red_pixels_.size - w) << 16) / h  // n.16 fixed point.
-      for i := start; i != stop; i += i_step:
-        o := offset >> 16
-        x3 := ?
-        r := rendering_.red_pixels_
-        g := rendering_.green_pixels_
-        b := rendering_.blue_pixels_
-        if auto_crop:
-          if orientation == ORIENTATION_0:
-            x3 = x2 - o
-          else:
-            x3 = x2 + o
-        else:
-          x3 = x2
-          r = r[o .. o + w]
-          g = g[o .. o + w]
-          b = b[o .. o + w]
-        if canvas.gray_scale:
-          canvas.pixmap     x3 (i + y2) --pixels=b        --source_width=w --orientation=orientation
-        else:
-          canvas.rgb_pixmap x3 (i + y2) --r=r --g=g --b=b --source_width=w --orientation=orientation
-        offset += step
 
 class FilledRectangleElement extends RectangleElement:
   constructor --x/int?=null --y/int?=null --w/int?=null --h/int?=null --color/int?=null:
