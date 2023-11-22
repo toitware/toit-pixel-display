@@ -110,41 +110,32 @@ class GradientSpecifier:
 
   constructor --.color/int .percent/int:
 
-/**
-GradientElements are similar to CSS linear gradients and SVG gradients.
-They are given a list of $GradientSpecifier, each of which has a color and
-  a percentage, indicating where in the gradient the color should appear.
-  The specifiers should be ordered in increasing order of perentage.
-Angles are as in CSS, with 0 degrees being up and 90 degrees being to the right
-  (this is different from text orientations, which go anti-clockwise).
-See https://cssgradient.io/ for a visual explanation and playground for CSS
-  gradients.
-Example:
-```
-  gradient = GradientElement --w=200 --h=100 --angle=45
-      --specifiers=[
-          GradientSpecifier --color=0xff0000 10,    // Red from 0-10%, red-to-green from 10-50%.
-          GradientSpecifier --color=0x00ff00 50,    // Green-to-blue from 50-90%.
-          GradientSpecifier --color=0x0000ff 90,    // Blue from 90-100%.
-      ]
-  display.add gradient
-```
-*/
-class GradientElement extends ResizableElement:
-  angle_/int := ?
-  specifiers_/List? := ?
-  red_pixels_/ByteArray? := null
-  green_pixels_/ByteArray? := null
-  blue_pixels_/ByteArray? := null
-  draw_vertical_/bool? := null
+class Gradient:
+  angle/int
+  specifiers/List
+  hash_/int? := null
 
-  constructor --x/int?=null --y/int?=null --w/int?=null --h/int?=null --angle/int=0 --specifiers/List:
-    angle_ = normalize_angle_ angle
-    if specifiers.size == 0: throw "INVALID_ARGUMENT"
+  constructor --angle/int --.specifiers/List:
+    this.angle = normalize_angle_ angle
     validate_specifiers_ specifiers
-    specifiers_ = specifiers
-    super --x=x --y=y --w=w --h=h
-    recalculate_texture_
+
+  operator == other -> bool:
+    if other is not Gradient: return false
+    if other.angle != angle: return false
+    if other.specifiers.size != specifiers.size: return false
+    for i := 0; i < specifiers.size; i++:
+      if other.specifiers[i].color != specifiers[i].color: return false
+      if other.specifiers[i].percent != specifiers[i].percent: return false
+    return true
+
+  hash_code -> int:
+    if not hash_:
+      hash := 0
+      specifiers.do: | it |
+        hash = (hash * 31) & 0xfff_ffff
+        hash += it.color + 47 * it.percent
+        hash_ = hash
+    return hash_
 
   static normalize_angle_ angle/int -> int:
     if 0 <= angle < 360:
@@ -154,66 +145,6 @@ class GradientElement extends ResizableElement:
     else:
       return angle % 360
 
-  specifiers= value/List -> none:
-    validate_specifiers_ value
-    specifiers_ = value
-    recalculate_texture_
-    invalidate
-
-  angle= value/int -> none:
-    if value != angle_:
-      invalidate
-      angle_ = normalize_angle_ value
-      recalculate_texture_
-
-  w= value/int -> none:
-    super = value
-    recalculate_texture_
-
-  h= value/int -> none:
-    super = value
-    recalculate_texture_
-
-  recalculate_texture_ -> none:
-    if h == 0 or h == null or w == 0 or w == null: return
-
-    // CSS gradient angles are:
-    //    0 bottom to top.
-    //   90 left to right
-    //  180 top to bottom
-    //  270 right to left
-
-    // Create an angle that is between 0 and 90 degrees and has the same amount of
-    // verticalness as the gradient.
-    gangle := angle_
-    if gangle >= 180: gangle = 360 - gangle
-    if gangle >= 90: gangle = 180 - gangle
-    // Create an angle from the center of the rectangle to the top right corner.
-    // This is the angle that we will use to calculate the verticalness of the
-    // rectangle.
-    rangle := math.atan (w.to_float / h)  // From 0 to PI/2.
-    rangle *= 180.0 / math.PI            // From 0 to 90.
-    draw_vertical_ = gangle < rangle
-    texture_length/int := ?
-    if draw_vertical_:
-      // The gradient is more vertical than the rectangle, so we will draw
-      // vertical lines on the rectangle.
-      texture_length = (h + w * (math.tan (gangle * math.PI / 180.0)) + 0.01).round
-    else:
-      // The gradient is more horizontal than the rectangle, so we will draw
-      // horizontal lines on the rectangle.
-      texture_length = (w + h * (math.tan ((90 - gangle) * math.PI / 180.0)) + 0.01).round
-
-    red_pixels_ = ByteArray texture_length
-    green_pixels_ = ByteArray texture_length
-    blue_pixels_ = ByteArray texture_length
-    ranges/List := extract_ranges_ specifiers_
-    ranges.do: | range |
-      get_colors range texture_length: | index red green blue |
-        red_pixels_[index] = red
-        green_pixels_[index] = green
-        blue_pixels_[index] = blue
-
   static validate_specifiers_ specifiers -> none:
     last_percent := 0
     if specifiers.size == 0: throw "INVALID_ARGUMENT"
@@ -221,6 +152,80 @@ class GradientElement extends ResizableElement:
       if specifier.percent < last_percent: throw "INVALID_ARGUMENT"
       last_percent = specifier.percent
       if last_percent > 100: throw "INVALID_ARGUMENT"
+
+class GradientSpecification_:
+  w/int?
+  h/int?
+  gradient/Gradient
+  hash_/int? := null
+
+  constructor .w .h .gradient:
+
+  operator == other -> bool:
+    if other is not GradientSpecification_: return false
+    if other.w != w or other.h != h: return false
+    if other.hash_code != hash_code: return false
+    return other.gradient == gradient
+
+  hash_code -> int:
+    if not hash_:
+      hash_ = (w or 0) + 3 * (h or 0) + 71 * gradient.hash_code
+    return hash_
+
+class GradientRendering_:
+  red_pixels_/ByteArray? := null
+  green_pixels_/ByteArray? := null
+  blue_pixels_/ByteArray? := null
+  draw_vertical_/bool? := null
+
+  static map_ := Map.weak
+
+  static get w/int? h/int? gradient/Gradient -> GradientRendering_:
+    probe := GradientSpecification_ w h gradient
+    rendering := map_.get probe
+    if rendering: return rendering  // Might be null because the map is weak.
+    value := GradientRendering_ w h gradient
+    map_[probe] = value
+    return value
+
+  constructor w/int? h/int? gradient/Gradient:
+    angle := gradient.angle
+    if h != 0 and h != null and w != 0 and w != null:
+      // CSS gradient angles are:
+      //    0 bottom to top.
+      //   90 left to right
+      //  180 top to bottom
+      //  270 right to left
+
+      // Create an angle that is between 0 and 90 degrees and has the same amount of
+      // verticalness as the gradient.
+      if angle >= 180: angle = 360 - angle
+      if angle >= 90: angle = 180 - angle
+      // Create an angle from the center of the rectangle to the top right corner.
+      // This is the angle that we will use to calculate the verticalness of the
+      // rectangle.
+      rangle := math.atan (w.to_float / h)  // From 0 to PI/2.
+      rangle *= 180.0 / math.PI            // From 0 to 90.
+      draw_vertical_ = angle < rangle
+      texture_length/int := ?
+      if draw_vertical_:
+        // The gradient is more vertical than the rectangle, so we will draw
+        // vertical lines on the rectangle.
+        texture_length = (h + w * (math.tan (angle * math.PI / 180.0)) + 0.01).round
+      else:
+        // The gradient is more horizontal than the rectangle, so we will draw
+        // horizontal lines on the rectangle.
+        texture_length = (w + h * (math.tan ((90 - angle) * math.PI / 180.0)) + 0.01).round
+
+      red_pixels_ = ByteArray texture_length
+      green_pixels_ = ByteArray texture_length
+      blue_pixels_ = ByteArray texture_length
+      ranges/List := extract_ranges_ gradient.specifiers
+      ranges.do: | range |
+        get_colors range texture_length: | index red green blue |
+          red_pixels_[index] = red
+          green_pixels_[index] = green
+          blue_pixels_[index] = blue
 
   /// Returns a list of quadruples of the form starting-percent ending-percent start-color end-color.
   static extract_ranges_ specifiers/List -> List:
@@ -257,9 +262,58 @@ class GradientElement extends ResizableElement:
       g += step_g
       b += step_b
 
+/**
+GradientElements are similar to CSS linear gradients and SVG gradients.
+They are given a list of $GradientSpecifier, each of which has a color and
+  a percentage, indicating where in the gradient the color should appear.
+  The specifiers should be ordered in increasing order of percentage.
+Angles are as in CSS, with 0 degrees being up and 90 degrees being to the right
+  (this is different from text orientations, which go anti-clockwise).
+See https://cssgradient.io/ for a visual explanation and playground for CSS
+  gradients.
+Example:
+```
+  gradient = GradientElement --w=200 --h=100 --angle=45
+      --specifiers=[
+          GradientSpecifier --color=0xff0000 10,    // Red from 0-10%, red-to-green from 10-50%.
+          GradientSpecifier --color=0x00ff00 50,    // Green-to-blue from 50-90%.
+          GradientSpecifier --color=0x0000ff 90,    // Blue from 90-100%.
+      ]
+  display.add gradient
+```
+*/
+class GradientElement extends ResizableElement:
+  gradient_/Gradient := ?
+  specification_/GradientSpecification_? := null
+  rendering_/GradientRendering_? := null
+
+  constructor --x/int?=null --y/int?=null --w/int?=null --h/int?=null --gradient/Gradient:
+    gradient_ = gradient
+    super --x=x --y=y --w=w --h=h
+    rendering_ = null
+
+  gradient= gradient/Gradient -> none:
+    if gradient != gradient_:
+      invalidate
+      gradient_ = gradient
+      rendering_ = null
+
+  gradient -> Gradient:
+    return gradient_
+
+  w= value/int -> none:
+    super = value
+    rendering_ = null
+
+  h= value/int -> none:
+    super = value
+    rendering_ = null
+
   draw canvas/Canvas -> none:
     if not (x and y and w and h): return
     if not canvas.supports_8_bit: throw "UNSUPPORTED"
+    if not rendering_: rendering_ = GradientRendering_ w h gradient_
+    angle := gradient_.angle
     analysis := canvas.bounds_analysis x y w h
     if analysis == Canvas.ALL_OUTSIDE: return
     // Determine whether the draw operations will be automatically cropped for
@@ -274,14 +328,14 @@ class GradientElement extends ResizableElement:
     //  180 top to bottom
     //  270 right to left
 
-    if draw_vertical_:
+    if rendering_.draw_vertical_:
       // The gradient goes broadly vertically, and we draw in vertical strips.
-      up/bool := angle_ < 90
+      up/bool := angle < 90
       orientation/int := ORIENTATION_90
       x2/int := x
       y2/int := y + h
-      if 90 < angle_ < 270:  // Top to bottom.
-        up = angle_ <= 180
+      if 90 < angle < 270:  // Top to bottom.
+        up = angle <= 180
         orientation = ORIENTATION_270
         x2++
         y2 = y
@@ -293,13 +347,13 @@ class GradientElement extends ResizableElement:
         stop = w
         i_step = 1
       offset := 0
-      step := ((red_pixels_.size - h) << 16) / w  // n.16 fixed point.
+      step := ((rendering_.red_pixels_.size - h) << 16) / w  // n.16 fixed point.
       for i := start; i != stop; i += i_step:
         o := offset >> 16
         y3 := ?
-        r := red_pixels_
-        g := green_pixels_
-        b := blue_pixels_
+        r := rendering_.red_pixels_
+        g := rendering_.green_pixels_
+        b := rendering_.blue_pixels_
         if auto_crop:
           if orientation == ORIENTATION_90:
             y3 = y2 + o
@@ -317,12 +371,12 @@ class GradientElement extends ResizableElement:
         offset += step
     else:
       // The gradient goes broadly horizontally, and we draw in horizontal strips.
-      up/bool := angle_ > 90
+      up/bool := angle > 90
       orientation/int := ORIENTATION_0
       x2/int := x
       y2/int := y
-      if angle_ >= 180:  // Right to left.
-        up = angle_ < 270
+      if angle >= 180:  // Right to left.
+        up = angle < 270
         orientation = ORIENTATION_180
         x2 += w
         y2++
@@ -334,13 +388,13 @@ class GradientElement extends ResizableElement:
         stop = h
         i_step = 1
       offset := 0
-      step := ((red_pixels_.size - w) << 16) / h  // n.16 fixed point.
+      step := ((rendering_.red_pixels_.size - w) << 16) / h  // n.16 fixed point.
       for i := start; i != stop; i += i_step:
         o := offset >> 16
         x3 := ?
-        r := red_pixels_
-        g := green_pixels_
-        b := blue_pixels_
+        r := rendering_.red_pixels_
+        g := rendering_.green_pixels_
+        b := rendering_.blue_pixels_
         if auto_crop:
           if orientation == ORIENTATION_0:
             x3 = x2 - o

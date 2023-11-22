@@ -20,30 +20,32 @@ main args:
   display := TrueColorPixelDisplay driver
   display.background = 0x808080
 
-  gradient := GradientElement --x=20 --y=10 --angle=0 --w=100 --h=60 --specifiers=[
+  gradient := Gradient --angle=0 --specifiers=[
       GradientSpecifier --color=0xffff00 10,
       GradientSpecifier --color=0xffc000 50,
       GradientSpecifier --color=0x808000 90,
       ]
-  display.add gradient
+  gradient_element := GradientElement --x=20 --y=10 --w=100 --h=60 --gradient=gradient
+  display.add gradient_element
 
   display.draw
 
-  gradient_2 := GradientElement --x=50 --y=20 --angle=180 --w=100 --h=40 --specifiers=[
+  gradient_2 := Gradient --angle=180 --specifiers=[
       GradientSpecifier --color=0x00ff00 10,
       GradientSpecifier --color=0x00ffc0 50,
       GradientSpecifier --color=0xc0ffff 90,
       ]
-  display.add gradient_2
+  gradient_2_element := GradientElement --x=50 --y=20 --w=100 --h=40 --gradient=gradient_2
+  display.add gradient_2_element
 
   display.draw
 
-  gradient.angle = 90
-  gradient.h = 10
-  gradient.w = 30
-  gradient_2.angle = 270
-  gradient_2.h = 10
-  gradient_2.w = 30
+  gradient_element.gradient = Gradient --angle=90 --specifiers=gradient.specifiers
+  gradient_element.h = 10
+  gradient_element.w = 30
+  gradient_2_element.gradient = Gradient --angle=270 --specifiers=gradient_2.specifiers
+  gradient_2_element.h = 10
+  gradient_2_element.w = 30
 
   display.draw
 

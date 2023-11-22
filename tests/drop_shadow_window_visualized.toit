@@ -18,22 +18,24 @@ main args:
   display := TrueColorPixelDisplay driver
   display.background = 0x78aac8
 
-  background_gradient := GradientElement --x=0 --y=0 --w=240 --h=160 --angle=135
+  background_gradient := Gradient --angle=135
       --specifiers=[
           GradientSpecifier --color=0x80ddff 10,
           GradientSpecifier --color=0x80ffdd 90,
       ]
-  display.add background_gradient
+  background_gradient_element := GradientElement --x=0 --y=0 --w=240 --h=160 --gradient=background_gradient
+  display.add background_gradient_element
 
   win := DropShadowWindowElement --x=30 --y=30 --w=180 --h=100 --corner_radius=15
   display.add win
 
-  gradient := GradientElement --x=0 --y=0 --w=180 --h=100 --angle=-30
+  gradient := Gradient --angle=-30
       --specifiers=[
           GradientSpecifier --color=0xffdd80 10,
           GradientSpecifier --color=0xddff80 90,
       ]
-  win.add gradient
+  gradient_element := GradientElement --x=0 --y=0 --w=180 --h=100 --gradient=gradient
+  win.add gradient_element
 
   text := Label --x=90 --y=55 --label="Hello, World!" --font=sans10 --color=0x101040
   win.add text

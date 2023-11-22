@@ -36,25 +36,26 @@ do basename/string w/int h/int:
   // to decompress it to display it.  This file also has an almost-transparent
   // background, so we test the code path where we display a 1-bit image with
   // a real alpha channel (and it has a gray background in the output).
-  purifier-compressed := file.read_content "tests/third_party/pictogrammers/air-purifier-bit.png"
+  purifier_compressed := file.read_content "tests/third_party/pictogrammers/air-purifier-bit.png"
 
-  gradient := GradientElement --x=0 --y=0 --angle=160 --w=340 --h=320 --specifiers=[
+  gradient := Gradient --angle=160 --specifiers=[
       GradientSpecifier --color=0xe0e0ff 10,
       GradientSpecifier --color=0x8080c0 90,
       ]
-  display.add gradient
+  gradient_element := GradientElement --x=0 --y=0 --w=340 --h=320 --gradient=gradient
+  display.add gradient_element
 
   display.draw
 
   label := Label --x=44 --y=44 --label="UP ^" --font=SANS --color=0
   display.add label
-  png-element := PngElement --x=36 --y=32 purifier
-  display.add png-element
+  png_element := PngElement --x=36 --y=32 purifier
+  display.add png_element
   display.draw
 
-  display.remove png-element
-  png-element = PngElement --x=36 --y=32 purifier-compressed
-  display.add png-element
+  display.remove png_element
+  png_element = PngElement --x=36 --y=32 purifier_compressed
+  display.add png_element
   display.draw
 
   driver.write_png
