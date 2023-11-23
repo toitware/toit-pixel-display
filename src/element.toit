@@ -36,6 +36,14 @@ abstract class Element extends ElementOrTexture_:
       if not classes: classes = []
       classes.add element_class
 
+  get_element_by_id id/string:
+    if id == this.id: return this
+    if children:
+      children.do: | child/Element |
+        found := child.get_element_by_id id
+        if found: return found
+    return null
+
   x= value/int -> none:
     invalidate
     x_ = value

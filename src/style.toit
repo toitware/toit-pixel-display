@@ -20,9 +20,8 @@ That style has general rules, but also rules that only apply to a particular id,
   use the CSS prefixes '#' and '.' for id and class, preferring to use the same
   syntax, but different maps.
 
-Styles are generally immutable, but their parent pointer is set late (by the
-  constructor of the parent), so that we can use constructors with literal maps
-  to build up the style.
+Styles are generally immutable, so that we can use constructors with literal
+  maps to build up the style.
 
 ```css
 /* Styling for the button type. */
@@ -79,8 +78,7 @@ style := Style
 ```
 
 In CSS you can have several selectors for the same style, separated by commas.
-  In Toit you have to create a named style to do this, and it has to have the
-  same parent everywhere it appears.
+  In Toit you have to create a named style to do this.
 
 ```css
 /* Styling for things with classes 'fish' and 'fowl'. */
@@ -100,8 +98,8 @@ style := Style
     }
 ```
 
-Since an element can have more than one class, it's often better to make
-  a new class for the combination, and use that instead.
+Since an element can have more than one element class, it's often better to make
+  a new element class for the combination, and use that instead.
 
 ```toit
 style := Style
@@ -142,8 +140,6 @@ class Style:
           value.parent = this
 
   iterate_properties --type/string? --classes/List? --id/string? [child_block] [block]:
-    map_.do: | key/string value |
-      block.call key value
     if type_map_ and type:
       type_map_.get type --if_present=: | style/Style |
         style.map_.do: | key/string value |
@@ -151,10 +147,10 @@ class Style:
         child_block.call style
     if class_map_ and classes and classes.size != 0:
       if classes.size == 1:
-      class_map_.get classes[0] --if_present=: | style/Style |
-        style.map_.do: | key/string value |
-          block.call key value
-        child_block.call style
+        class_map_.get classes[0] --if_present=: | style/Style |
+          style.map_.do: | key/string value |
+            block.call key value
+          child_block.call style
       else:
         class_map_.do: | key/string style/Style |
           if classes.contains key:

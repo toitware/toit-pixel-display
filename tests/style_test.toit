@@ -10,38 +10,75 @@ import pixel_display.style show *
 
 toit_doc_examples_test:
   style := Style
-      --type-map={
+      --type_map={
           "button": Style --color=0xffffff --background=0x606060,
       }
-      --class-map={
-          "box": Style --border-color=0xff0000,
+      --class_map={
+          "box": Style --border_color=0xff0000,
       }
-      --id-map={
+      --id_map={
           "fish": Style --color=0x00ff00,
       }
 
   style2 := Style
-      --class-map={
+      --class_map={
           "box": Style
-              --type-map={
+              --type_map={
                   "p": Style --color=0xffffff,
               },
       }
 
-  FISH-OR-FOWL-STYLE ::= Style --color=0xffffff --background=0x606060
+  FISH_OR_FOWL_STYLE ::= Style --color=0xffffff --background=0x606060
 
   style3 := Style
-      --class-map={
-          "fish": FISH-OR-FOWL-STYLE,
-          "fowl": FISH-OR-FOWL-STYLE,
+      --class_map={
+          "fish": FISH_OR_FOWL_STYLE,
+          "fowl": FISH_OR_FOWL_STYLE,
       }
 
   style4 := Style
-      --class-map={
+      --class_map={
           "fish-or-fowl": Style --color=0xffffff --background=0x606060,
       }
 
 element_tree_test:
+  elements := Div [
+      Square --id="first-square",
+      Square --element_class="fish",
+      ]
+
+  first := elements.get_element_by_id "first-square"
+  expect first.id == "first-square"
+
+combine_test:
+  elements := Div [
+      Div --id="special" [
+          Square --id="first-square",
+          Square --id="second-square" --element_class="fish",
+          ],
+      Square --element_class="fish",
+      Square --element_class="fowl",
+      ]
+
+  style := Style
+      --class_map={
+          "fish": Style --color=0xffffff --background=0x606060,
+          "fowl": Style --color=0x123456 --background=0x606060,
+      }
+      --id_map={
+          "special": Style --type_map={
+              // Squares inside the special div get a different backgorund.
+              "square": Style --background=0xabcdef,
+          },
+      }
+
+  elements.set_styles [style]
+
+  first/Square := elements.get_element_by_id "first-square"
+  second/Square := elements.get_element_by_id "second-square"
+  expect_equals 0 first.color
+  expect_equals 0xffffff second.color
+  expect_equals [0xabcdef] first.background
 
 abstract class TestElement extends Element:
   constructor --style/Style?=null --element_class/string?=null --classes/List?=null --id/string?=null children/List?=null:
@@ -61,11 +98,31 @@ abstract class TestElement extends Element:
 
 class Square extends TestElement:
   type -> string: return "square"
+  color/int := 0
+  background/List? := null
   w/int? := null
   h/int? := null
 
-  constructor --style/Style?=null --element_class/string?=null --classes/List?=null --id/string?=null:
-    super --style=style --element_class=element_class --classes=classes --id=id
+  constructor --style/Style?=null --element_class/string?=null --classes/List?=null --id/string?=null children/List?=null:
+    super --style=style --element_class=element_class --classes=classes --id=id children
+
+  set_attribute key/string value -> none:
+    if key == "width":
+      w = value
+    else if key == "height":
+      h = value
+    else if key == "color":
+      color = value
+    else if key == "background":
+      background = value
+
+class Div extends TestElement:
+  type -> string: return "div"
+  w/int? := null
+  h/int? := null
+
+  constructor --style/Style?=null --element_class/string?=null --classes/List?=null --id/string?=null children/List?=null:
+    super --style=style --element_class=element_class --classes=classes --id=id children
 
   set_attribute key/string value -> none:
     if key == "width":
@@ -76,3 +133,4 @@ class Square extends TestElement:
 main:
   toit_doc_examples_test
   element_tree_test
+  combine_test
