@@ -112,60 +112,57 @@ style := Style
 */
 class Style:
   map_/Map := {:}
-  id_map_/Map := {:}
-  class_map_/Map := {:}
-  type_map_/Map := {:}
-  parent/Style?                 // Set by parent.
+  id_map_/Map? := ?
+  class_map_/Map? := ?
+  type_map_/Map? := ?
+  parent/Style? := null                // Set by parent.
 
   constructor.empty: return EMPTY_STYLE_
 
   constructor --.parent=null
       --color/int?=null
       --font/Font?=null
-      --background/List?=null
+      --background=null
+      --border_color/int?=null
       --class_map/Map?=null
-      --id_map/Map?=null:
-    if color != null: color= color
-    if font != null: font= font
-    if background != null: background= background
-    if class_map != null: class_map= class_map
-    if id_map != null: id_map= id_map
+      --id_map/Map?=null
+      --type_map/Map?=null:
+    if color != null: map_["color"] = color
+    if font != null: map_["font"] = font
+    if border_color != null: map_["border-color"] = border_color
+    if background != null:
+      map_["background"] = (background is List) ? background : [background]
+    class_map_ = class_map
+    id_map_ = id_map
+    type_map_ = type_map
 
-  get_ --type/string --classes/List? --id/string? key/string:
-    return get_helper_ parent type classes id key this
+    [class_map_, id_map_, type_map_].do: | map/Map? |
+      if map:
+        map.do: | key/string value/Style |
+          value.parent = this
 
-  static get_helper_ parent/Style? type/string classes/List? id/string? key/string child/Style:
-    leaf_lookup := : | style/Style key/string |
-      value := style.map_.get key
-      if value: return value
-
-    leaf_lookup.call child key
-    if not parent: return null
-    if id:
-      id_style := parent.id_map_.get id
-      if id_style and id_style != child:
-        leaf_lookup.call id_style key
-    if classes:
-      classes.do: | element_class/string |
-        class_style := parent.class_map_.get element_class
-        if class_style and class_style != child:
-          leaf_lookup.call class_style key
-    type_style := parent.type_map_.get type
-    if type_style and type_style != child:
-      leaf_lookup.call type_style key
-    default_style := parent.type_map_.get "*"
-    if default_style and default_style != child:
-      leaf_lookup.call default_style key
-    return get_helper_ parent.parent type classes id key parent
-
-  color --type/string --classes/List?=null --id/string?=null -> int?:
-    return get_ --type=type --classes=classes --id=id "color"
-
-  font --type/string --classes/List?=null --id/string?=null -> Font?:
-    return get_ --type=type --classes=classes --id=id "font"
-
-  background --type/string --classes/List?=null --id/string?=null -> List?:
-    return get_ --type=type --classes=classes --id=id "background"
-
-  get key/string --type/string --classes/List?=null --id/string?=null:
-    return get_ --type=type --classes=classes --id=id key
+  iterate_properties --type/string? --classes/List? --id/string? [child_block] [block]:
+    map_.do: | key/string value |
+      block.call key value
+    if type_map_ and type:
+      type_map_.get type --if_present=: | style/Style |
+        style.map_.do: | key/string value |
+          block.call key value
+        child_block.call style
+    if class_map_ and classes and classes.size != 0:
+      if classes.size == 1:
+      class_map_.get classes[0] --if_present=: | style/Style |
+        style.map_.do: | key/string value |
+          block.call key value
+        child_block.call style
+      else:
+        class_map_.do: | key/string style/Style |
+          if classes.contains key:
+            style.map_.do: | key/string value |
+              block.call key value
+            child_block.call style
+    if id_map_ and id:
+      id_map_.get id --if_present=: | style/Style |
+        style.map_.do: | key/string value |
+          block.call key value
+        child_block.call style

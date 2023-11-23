@@ -17,9 +17,10 @@ import math
 import png_tools.png_reader show *
 
 abstract class Element extends ElementOrTexture_:
-  style_/Style? := null
-  classes/List?
-  id/string?
+  style_/Style? := ?
+  classes/List? := ?
+  id/string? := ?
+  children/List? := ?
 
   x_ /int? := null
   y_ /int? := null
@@ -27,9 +28,10 @@ abstract class Element extends ElementOrTexture_:
   x -> int?: return x_
   y -> int?: return y_
 
-  constructor --x/int?=null --y/int?=null --element_class/string?=null --.classes/List?=null --.id/string?=null:
+  constructor --x/int?=null --y/int?=null --style/Style?=null --element_class/string?=null --.classes/List?=null --.id/string?=null .children/List?=null:
     x_ = x
     y_ = y
+    style_ = style
     if element_class:
       if not classes: classes = []
       classes.add element_class
@@ -58,12 +60,20 @@ abstract class Element extends ElementOrTexture_:
   abstract min_w -> int
   abstract min_h -> int
 
-  set_style style/Style -> none:
-    if not style_:
-      style_ = style
-    set_attributes
+  set_styles styles/List -> none:
+    styles_for_children := null
+    child_block := : | child_style/Style |
+      if children:
+        if not styles_for_children: styles_for_children = styles.copy
+        styles_for_children.add child_style
+    styles.do: | style/Style |
+      style.iterate_properties --type=type --classes=classes --id=id child_block: | key/string value |
+        set_attribute key value
+    if children:
+      children.do: | child/Element |
+        child.set_styles (styles_for_children or styles)
 
-  abstract set_attributes -> none
+  abstract set_attribute key/string value -> none
 
   abstract type -> string
 
@@ -109,11 +119,11 @@ abstract class ResizableElement extends Element:
   min_w: return w_
   min_h: return h_
 
-  set_attributes -> none:
-    if not w_:
-      w = style_.get --type=type --classes=classes --id=id "width"
-    if not h_:
-      h = style_.get --type=type --classes=classes --id=id "height"
+  set_attribute key/string value -> none:
+    if key == "width":
+      w = value
+    else if key == "height":
+      h = value
 
 abstract class RectangleElement extends ResizableElement implements ColoredElement:
   color_ /int? := ?
@@ -129,10 +139,11 @@ abstract class RectangleElement extends ResizableElement implements ColoredEleme
     color_ = color
     super --x=x --y=y --w=w --h=h
 
-  set_attributes -> none:
-    super
-    if not color_:
-      color = style_.get --type=type --classes=classes --id=id "color"
+  set_attribute key/string value -> none:
+    if key == "color":
+      color = value
+    else:
+      super key value
 
 class GradientSpecifier:
   color/int
@@ -525,11 +536,11 @@ class Label extends Element implements ColoredElement:
 
   type -> string: return "label"
 
-  set_attributes -> none:
-    if not color_:
-      color = style_.get --type=type --classes=classes --id=id "color"
-    if not font_:
-      font = style_.get --type=type --classes=classes --id=id "font"
+  set_attribute key/string value -> none:
+    if key == "color":
+      color = value
+    else if key == "font":
+      font = value
 
   color -> int?: return color_
 
@@ -697,7 +708,7 @@ class BarCodeEanElement extends CustomElement:
 
   type -> string: return "bar-code-ean"
 
-  set_attributes -> none:
+  set_attribute key/string value -> none:
 
   min_w: return w
   min_h: return h
@@ -998,11 +1009,11 @@ abstract class WindowElement extends BorderlessWindowElement implements Window:
 
   type -> string: return "window"
 
-  set_attributes -> none:
-    if not inner_width:
-      w = style_.get --type=type --classes=classes --id=id "width"
-    if not inner_height:
-      h = style_.get --type=type --classes=classes --id=id "height"
+  set_attribute key/string value -> none:
+    if key == "width":
+      w = value
+    else if key == "height":
+      h = value
 
 /**
 A rectangular window with a fixed width colored border.  The border is
@@ -1449,4 +1460,4 @@ class PngElement extends CustomElement:
 
   type -> string: return "png"
 
-  set_attributes -> none:
+  set_attribute key/string value -> none:
