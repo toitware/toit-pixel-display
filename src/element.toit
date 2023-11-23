@@ -1445,14 +1445,14 @@ class PngElement extends CustomElement:
     while y2 < h and (canvas.bounds_analysis x (y + y2) w (h - y2)) != Canvas.ALL_OUTSIDE:
       png_.get_indexed_image_data y2 h
           --accept_8_bit=canvas.supports_8_bit
-          --need-gray-palette=canvas.gray_scale: | y_from/int y_to/int bits_per_pixel/int pixels/ByteArray line_stride/int palette/ByteArray alpha-palette/ByteArray |
+          --need_gray_palette=canvas.gray_scale: | y_from/int y_to/int bits_per_pixel/int pixels/ByteArray line_stride/int palette/ByteArray alpha_palette/ByteArray |
         if bits_per_pixel == 1:
           // Last line a little shorter because it has no stride padding.
           adjust := line_stride - ((round_up w 8) >> 3)
           pixels = pixels[0 .. (y_to - y_from) * line_stride - adjust]
           canvas.bitmap x (y + y_from)
               --pixels=pixels
-              --alpha=alpha-palette
+              --alpha=alpha_palette
               --palette=palette
               --source_width=w
               --source_line_stride=line_stride
@@ -1460,7 +1460,7 @@ class PngElement extends CustomElement:
           adjust := line_stride - w
           pixels = pixels[0 .. (y_to - y_from) * line_stride - adjust]
           canvas.pixmap x (y + y_from) --pixels=pixels
-              --alpha=alpha-palette
+              --alpha=alpha_palette
               --palette=palette
               --source_width=w
               --source_line_stride=line_stride
