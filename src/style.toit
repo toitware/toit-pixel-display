@@ -113,11 +113,10 @@ class Style:
   id_map_/Map? := ?
   class_map_/Map? := ?
   type_map_/Map? := ?
-  parent/Style? := null                // Set by parent.
 
   constructor.empty: return EMPTY_STYLE_
 
-  constructor --.parent=null
+  constructor
       --color/int?=null
       --font/Font?=null
       --background=null
@@ -134,31 +133,22 @@ class Style:
     id_map_ = id_map
     type_map_ = type_map
 
-    [class_map_, id_map_, type_map_].do: | map/Map? |
-      if map:
-        map.do: | key/string value/Style |
-          value.parent = this
+  iterate_properties [block]:
+    map_.do: | key/string value |
+      block.call key value
 
-  iterate_properties --type/string? --classes/List? --id/string? [child_block] [block]:
+  matching_styles --type/string? --classes/List? --id/string? [block]:
     if type_map_ and type:
       type_map_.get type --if_present=: | style/Style |
-        style.map_.do: | key/string value |
-          block.call key value
-        child_block.call style
+        block.call style
     if class_map_ and classes and classes.size != 0:
       if classes.size == 1:
         class_map_.get classes[0] --if_present=: | style/Style |
-          style.map_.do: | key/string value |
-            block.call key value
-          child_block.call style
+          block.call style
       else:
         class_map_.do: | key/string style/Style |
           if classes.contains key:
-            style.map_.do: | key/string value |
-              block.call key value
-            child_block.call style
+            block.call style
     if id_map_ and id:
       id_map_.get id --if_present=: | style/Style |
-        style.map_.do: | key/string value |
-          block.call key value
-        child_block.call style
+        block.call style

@@ -8,6 +8,7 @@ import pixel_display.common show Canvas
 import pixel_display.element show Element
 import pixel_display.style show *
 
+/// Test that the examples from style.toit are well-formed.
 toit_doc_examples_test:
   style := Style
       --type_map={
@@ -41,6 +42,8 @@ toit_doc_examples_test:
           "fish-or-fowl": Style --color=0xffffff --background=0x606060,
       }
 
+/// Test a literal element tree can be constructed and get_element_by_id can be
+///   used to find a named element.
 element_tree_test:
   elements := Div [
       Square --id="first-square",
@@ -50,6 +53,8 @@ element_tree_test:
   first := elements.get_element_by_id "first-square"
   expect first.id == "first-square"
 
+/// Test that we can use set_styles to distribute the styles to all the
+///   elements.
 combine_test:
   elements := Div [
       Div --id="special" [
@@ -66,7 +71,9 @@ combine_test:
           "fowl": Style --color=0x123456 --background=0x606060,
       }
       --id_map={
-          "special": Style --type_map={
+          // The special div gets a different color and its children
+          // get a different background if they are squares.
+          "special": Style --color=424242 --type_map={
               // Squares inside the special div get a different backgorund.
               "square": Style --background=0xabcdef,
           },
@@ -74,12 +81,39 @@ combine_test:
 
   elements.set_styles [style]
 
+  special := elements.get_element_by_id "special"
   first/Square := elements.get_element_by_id "first-square"
   second/Square := elements.get_element_by_id "second-square"
   expect_equals 0 first.color
   expect_equals 0xffffff second.color
   expect_equals [0xabcdef] first.background
 
+/// Test that we can attach an overriding style to a single element.
+single_element_style_test:
+  first_style := Style --color=0x8090a0 --background=0x403020
+  elements := Div [
+      Div --id="special" [
+          Square --id="first-square" --style=first_style,
+          Square --id="second-square",
+          ],
+      Square --id="third-square",
+      Square,
+      ]
+
+  style := Style
+      --type_map={
+          "square": Style --color=0xffffff --background=0x606060,
+      }
+
+  elements.set_styles [style]
+
+  expect_equals 0xffffff
+      (elements.get_element_by_id "second-square").color
+  expect_equals 0x8090a0
+      (elements.get_element_by_id "first-square").color
+
+/// A class that stubs out the display methods we don't need
+///   for test purposes.
 abstract class TestElement extends Element:
   constructor --style/Style?=null --element_class/string?=null --classes/List?=null --id/string?=null children/List?=null:
     super --style=style --element_class=element_class --classes=classes --id=id children
@@ -134,3 +168,4 @@ main:
   toit_doc_examples_test
   element_tree_test
   combine_test
+  single_element_style_test

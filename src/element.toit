@@ -70,13 +70,18 @@ abstract class Element extends ElementOrTexture_:
 
   set_styles styles/List -> none:
     styles_for_children := null
-    child_block := : | child_style/Style |
-      if children:
-        if not styles_for_children: styles_for_children = styles.copy
-        styles_for_children.add child_style
-    styles.do: | style/Style |
-      style.iterate_properties --type=type --classes=classes --id=id child_block: | key/string value |
+    install_style := : | style/Style |
+      style.matching_styles --type=type --classes=classes --id=id: | style/Style |
+        style.iterate_properties: | key/string value |
+          set_attribute key value
+        if children:
+          if not styles_for_children: styles_for_children = styles.copy
+          styles_for_children.add style
+    styles.do install_style
+    if style_:
+      style_.iterate_properties: | key/string value |
         set_attribute key value
+      install_style.call style_
     if children:
       children.do: | child/Element |
         child.set_styles (styles_for_children or styles)
