@@ -112,6 +112,23 @@ single_element_style_test:
   expect_equals 0x8090a0
       (elements.get_element_by_id "first-square").color
 
+/// Test that we can add custom properties to a style and use them
+///   from an element with the same custom property name.
+extra_properties_test:
+  style := Style
+      --type_map={
+          "foo-haver": Style { "foo": "bar" },
+      }
+
+  elements := Div [
+      FooHaver --id="first-foo-haver",
+  ]
+
+  elements.set_styles [style]
+
+  expect-equals "bar"
+      (elements.get_element_by_id "first-foo-haver").foo
+
 /// A class that stubs out the display methods we don't need
 ///   for test purposes.
 abstract class TestElement extends Element:
@@ -164,8 +181,20 @@ class Div extends TestElement:
     else if key == "height":
       h = value
 
+class FooHaver extends TestElement:
+  type -> string: return "foo-haver"
+  foo/string? := null
+
+  constructor --style/Style?=null --element_class/string?=null --classes/List?=null --id/string?=null children/List?=null:
+    super --style=style --element_class=element_class --classes=classes --id=id children
+  
+  set_attribute key/string value -> none:
+    if key == "foo":
+      foo = value
+
 main:
   toit_doc_examples_test
   element_tree_test
   combine_test
   single_element_style_test
+  extra_properties_test

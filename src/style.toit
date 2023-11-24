@@ -109,7 +109,7 @@ style := Style
 ```
 */
 class Style:
-  map_/Map := {:}
+  map_/Map
   id_map_/Map? := ?
   class_map_/Map? := ?
   type_map_/Map? := ?
@@ -123,7 +123,8 @@ class Style:
       --border_color/int?=null
       --class_map/Map?=null
       --id_map/Map?=null
-      --type_map/Map?=null:
+      --type_map/Map?=null
+      .map_={:}:
     if color != null: map_["color"] = color
     if font != null: map_["font"] = font
     if border_color != null: map_["border-color"] = border_color
