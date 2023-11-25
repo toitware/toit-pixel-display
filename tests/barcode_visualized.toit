@@ -8,6 +8,7 @@
 import expect show *
 import pixel_display show *
 import pixel_display.element show *
+import pixel_display.style show Style
 import .png_visualizer
 
 main args:
@@ -18,8 +19,13 @@ main args:
   display := SeveralColorPixelDisplay driver --portrait=false
   display.background = SEVERAL_GRAY
 
-  barcode := BarCodeEanElement "4035999001512" 15 15 --foreground=SEVERAL_BLACK --background=SEVERAL_WHITE
+  style := Style --type_map={
+      "bar-code-ean": Style --color=SEVERAL_BLACK --background=SEVERAL_WHITE,
+  }
+
+  barcode := BarCodeEanElement "4035999001512" 15 15
   display.add barcode
+  display.set_styles [style]
   display.draw
 
   barcode.move_to 20 20

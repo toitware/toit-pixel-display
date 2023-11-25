@@ -86,7 +86,7 @@ combine_test:
   second/Square := elements.get_element_by_id "second-square"
   expect_equals 0 first.color
   expect_equals 0xffffff second.color
-  expect_equals [0xabcdef] first.background
+  expect_equals 0xabcdef first.background
 
 /// Test that we can attach an overriding style to a single element.
 single_element_style_test:
@@ -150,7 +150,7 @@ abstract class TestElement extends Element:
 class Square extends TestElement:
   type -> string: return "square"
   color/int := 0
-  background/List? := null
+  background := null
   w/int? := null
   h/int? := null
 

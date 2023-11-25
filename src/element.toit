@@ -21,6 +21,7 @@ abstract class Element extends ElementOrTexture_:
   classes/List? := ?
   id/string? := ?
   children/List? := ?
+  background_ := null
 
   x_ /int? := null
   y_ /int? := null
@@ -714,14 +715,22 @@ abstract class CustomElement extends Element:
 class BarCodeEanElement extends CustomElement:
   w/int
   h/int
-  foreground/int
-  background/int
+  color_/int? := 0
+  background_ := 0xff
   sans10_ ::= Font.get "sans10"
   number_height_ := EAN_13_BOTTOM_SPACE
 
   type -> string: return "bar-code-ean"
 
   set_attribute key/string value -> none:
+    if key == "color":
+      if color_ != value:
+        invalidate
+        color_ = value
+    else if key == "background":
+      if background_ != value:
+        invalidate
+        background_ = value
 
   min_w: return w
   min_h: return h
@@ -738,9 +747,9 @@ class BarCodeEanElement extends CustomElement:
   $code_: The 13 digit product code.
   $x: The left edge of the barcode in the coordinate system of the transform.
   $y: The top edge of the barcode in the coordinate system of the transform.
-  $background should normally be white and foreground should normally be black.
+  Use $set_styles to set the background to white and the color to black.
   */
-  constructor .code_/string x/int?=null y/int?=null --.background/int=0 --.foreground/int=0xff:
+  constructor .code_/string x/int?=null y/int?=null:
     // The numbers go below the bar code in a way that depends on the size
     // of the digits, so we need to take that into account when calculating
     // the bounding box.
@@ -762,26 +771,26 @@ class BarCodeEanElement extends CustomElement:
   // Make a white background behind the bar code and draw the digits along the bottom.
   draw_background_ canvas/Canvas:
     if not (x and y): return
-    canvas.rectangle x_ y_ --w=w --h=h --color=background
+    Background.draw background_ canvas x_ y_ w h
 
     // Bar code coordinates.
     text_x := x + EAN_13_QUIET_ZONE_WIDTH + EAN_13_START_WIDTH
     text_y := y + EAN_13_HEIGHT + number_height_ - EAN_13_BOTTOM_SPACE + 1
 
-    canvas.text (x + 1) text_y --text=code_[..1] --color=foreground --font=sans10_
+    canvas.text (x + 1) text_y --text=code_[..1] --color=color_ --font=sans10_
 
     code_[1..7].split "":
       if it != "":
-        canvas.text text_x text_y --text=it --color=foreground --font=sans10_
+        canvas.text text_x text_y --text=it --color=color_ --font=sans10_
         text_x += EAN_13_DIGIT_WIDTH
     text_x += EAN_13_MIDDLE_WIDTH - 1
     code_[7..13].split "":
       if it != "":
-        canvas.text text_x text_y --text=it --color=foreground --font=sans10_
+        canvas.text text_x text_y --text=it --color=color_ --font=sans10_
         text_x += EAN_13_DIGIT_WIDTH
     marker_width := (sans10_.text_extent ">")[0]
     text_x += EAN_13_START_WIDTH + EAN_13_QUIET_ZONE_WIDTH - marker_width
-    canvas.text text_x text_y --text=">" --color=foreground --font=sans10_
+    canvas.text text_x text_y --text=">" --color=color_ --font=sans10_
 
   // Redraw routine.
   draw canvas/Canvas:
@@ -794,8 +803,8 @@ class BarCodeEanElement extends CustomElement:
     long_height := EAN_13_HEIGHT
     short_height := EAN_13_HEIGHT - EAN_13_BOTTOM_SPACE
     // Start bars: 101.
-    canvas.rectangle x     top --w=1 --h=long_height --color=foreground
-    canvas.rectangle x + 2 top --w=1 --h=long_height --color=foreground
+    canvas.rectangle x     top --w=1 --h=long_height --color=color_
+    canvas.rectangle x + 2 top --w=1 --h=long_height --color=color_
     x += 3
     first_code := EAN_13_FIRST_CODES_[code_[0] & 0xf]
     // Left digits using the L or G mapping.
@@ -804,11 +813,11 @@ class BarCodeEanElement extends CustomElement:
       code := ((first_code >> (6 - i)) & 1) == 0 ? (l_ digit) : (g_ digit)
       for b := 6; b >= 0; b--:
         if ((1 << b) & code) != 0:
-          canvas.rectangle x top --w=1 --h=short_height --color=foreground
+          canvas.rectangle x top --w=1 --h=short_height --color=color_
         x++
     // Middle bars: 01010
-    canvas.rectangle x + 1 top --w=1 --h=long_height --color=foreground
-    canvas.rectangle x + 3 top --w=1 --h=long_height --color=foreground
+    canvas.rectangle x + 1 top --w=1 --h=long_height --color=color_
+    canvas.rectangle x + 3 top --w=1 --h=long_height --color=color_
     x += 5
     // Left digits using the R mapping.
     for i := 7; i < 13; i++:
@@ -816,11 +825,11 @@ class BarCodeEanElement extends CustomElement:
       code := r_ digit
       for b := 6; b >= 0; b--:
         if ((1 << b) & code) != 0:
-          canvas.rectangle x top --w=1 --h=short_height --color=foreground
+          canvas.rectangle x top --w=1 --h=short_height --color=color_
         x++
     // End bars: 101.
-    canvas.rectangle x     top --w=1 --h=long_height --color=foreground
-    canvas.rectangle x + 2 top --w=1 --h=long_height --color=foreground
+    canvas.rectangle x     top --w=1 --h=long_height --color=color_
+    canvas.rectangle x + 2 top --w=1 --h=long_height --color=color_
 
 abstract class BorderlessWindowElement extends Element implements Window:
   inner_width/int? := ?

@@ -3,12 +3,103 @@
 // be found in the TESTS_LICENSE file.
 
 import font show Font
+import .common
 
 ALIGN_LEFT ::= 0
 ALIGN_CENTER ::= 1
 ALIGN_RIGHT ::= 2
 
 EMPTY_STYLE_ ::= Style
+
+/**
+A background is anything that can draw itself on an element as a background.
+*/
+interface Background:
+  draw canvas/Canvas x/int y/int w/int h/int -> none
+
+  /**
+  We also use colors (ints) as backgrounds, so this helper method will
+    either just draw the plain color background, or call the draw method
+    on a real Background object.
+  */
+  static draw background canvas/Canvas x/int y/int w/int h/int -> none:
+    if background is int:
+      canvas.rectangle x y --w=w --h=h --color=background
+    else if background != null:
+      (background as Background).draw canvas x y w h
+
+  static check_valid background -> none:
+    if background != null and background is not int and background is not Background:
+      throw "INVALID_ARGUMENT"
+
+class MultipleBackgrounds implements Background:
+  list_/List
+
+  constructor .list_:
+    list_.do: if list_ is not Background: throw "INVALID_ARGUMENT"
+
+  draw canvas/Canvas x/int y/int w/int h/int -> none:
+    list_.do:
+      Background.draw it canvas x y w h
+
+abstract class Border:
+  border_width_/BorderWidth
+
+  /// Draws the border within the given rectangle.
+  abstract draw canvas/Canvas x/int y/int w/int h/int -> none
+
+  inner_dimensions w/int h/int [block] -> none:
+    border_width_.inner_dimensions w h block
+
+  offsets [block] -> none:
+    border_width_.offsets block
+
+  constructor .border_width_/BorderWidth:
+
+class SolidBorder extends Border:
+  color_/int
+
+  constructor --width/int --color/int:
+    color_ = color
+    super (BorderWidth width)
+
+  constructor --border_width/BorderWidth --color/int:
+    color_ = color
+    super border_width
+
+  draw canvas/Canvas x/int y/int w/int h/int -> none:
+    if border_width_.left != 0:
+      canvas.rectangle x y --w=border_width_.left --h=h --color=color_
+    if border_width_.right != 0:
+      canvas.rectangle (x + w - border_width_.right) y --w=border_width_.right --h=h --color=color_
+    if border_width_.top != 0:
+      canvas.rectangle x y --w=w --h=border_width_.top --color=color_
+    if border_width_.bottom != 0:
+      canvas.rectangle x (y + h - border_width_.bottom) --w=w --h=border_width_.bottom --color=color_
+
+class BorderWidth:
+  left/int
+  top/int
+  right/int
+  bottom/int
+
+  /// A border that has the same thickness on all sides.
+  constructor width/int:
+    left = top = right = bottom = width
+
+  /// A constructor with a different thickness on the top and bottom vs. the sides.
+  constructor --top_and_bottom/int --left_and_right/int:
+    top = bottom = top_and_bottom
+    left = right = left_and_right
+
+  /// A constructor with arbitrary thickness on all sides and zero on all unmentioned sides.
+  constructor --.top/int=0 --.right/int=0 --.bottom/int=0 --.left/int=0:
+
+  inner_dimensions w/int h/int [block]:
+    block.call (w - left - right) (h - top - bottom)
+
+  offsets [block]:
+    block.call left top
 
 /**
 A container (starting with a PixelDisplay) has a Style associated with it.
@@ -128,8 +219,8 @@ class Style:
     if color != null: map_["color"] = color
     if font != null: map_["font"] = font
     if border_color != null: map_["border-color"] = border_color
-    if background != null:
-      map_["background"] = (background is List) ? background : [background]
+    Background.check_valid background
+    map_["background"] = background
     class_map_ = class_map
     id_map_ = id_map
     type_map_ = type_map

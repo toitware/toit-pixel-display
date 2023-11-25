@@ -111,13 +111,6 @@ abstract class PixelDisplay implements Window:
   inner_width: return driver_.width
   inner_height: return driver_.width
 
-  default_style_ /Style := Style.empty
-  style_class_map_ := Map
-
-  /// Set the default style for the whole display.
-  style= style/Style -> none:
-    default_style_ = style
-
   // Need-to-redraw is tracked as a bit array of dirty bits, arranged in
   // SSD1306 layout so we can use bitmap_rectangle to invalidate areas.
   // One bit in the dirty map covers an area of 8x8 pixels of the display.
@@ -260,6 +253,12 @@ abstract class PixelDisplay implements Window:
   inverted_landscape_ := null
 
   abstract background= color/int -> none
+
+  set_styles styles/List -> none:
+    textures_.do:
+      if it is Element:
+        element := it as Element
+        element.set_styles styles
 
   /**
   Adds a texture to a display.  The next time the display is refreshed, this
