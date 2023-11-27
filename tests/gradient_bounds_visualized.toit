@@ -10,6 +10,7 @@ import expect show *
 import font show *
 import pixel_display show *
 import pixel_display.element show *
+import pixel_display.gradient show *
 import .png_visualizer
 
 main args:
@@ -34,11 +35,11 @@ main args:
       h = 20
     x := 20 + (it % 4) * 50
     y := 20 + (it / 4) * 50
-    gradient := Gradient --angle=angle --specifiers=[
+    gradient := GradientBackground --angle=angle --specifiers=[
         GradientSpecifier --color=0xff0000 0,
         GradientSpecifier --color=0x00ff00 100,
         ]
-    gradient_element := GradientElement --x=x --y=y --w=w --h=h --gradient=gradient
+    gradient_element := Div --x=x --y=y --w=w --h=h --background=gradient
     display.add gradient_element
     gradient_elements.add gradient_element
     dot1 := Div --x=(x - 1) --y=(y - 1) --w=1 --h=1 --background=0xffffff
@@ -55,7 +56,7 @@ main args:
   // Rotate all gradient_elements 30 degrees.
   angle := 30
   gradient_elements.do:
-    it.gradient = Gradient --angle=angle --specifiers=it.gradient.specifiers
+    it.background = GradientBackground --angle=angle --specifiers=it.background.specifiers
     angle = (angle + 45) % 360
 
   display.draw

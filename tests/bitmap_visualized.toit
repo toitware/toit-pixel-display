@@ -12,6 +12,7 @@ import font
 import host.file
 import pixel_display show *
 import pixel_display.element show *
+import pixel_display.gradient show *
 import .png_visualizer
 
 SANS := font.Font.get "sans10"
@@ -38,11 +39,11 @@ do basename/string w/int h/int:
   // a real alpha channel (and it has a gray background in the output).
   purifier_compressed := file.read_content "tests/third_party/pictogrammers/air-purifier-bit.png"
 
-  gradient := Gradient --angle=160 --specifiers=[
+  gradient := GradientBackground --angle=160 --specifiers=[
       GradientSpecifier --color=0xe0e0ff 10,
       GradientSpecifier --color=0x8080c0 90,
       ]
-  gradient_element := GradientElement --x=0 --y=0 --w=340 --h=320 --gradient=gradient
+  gradient_element := Div --x=0 --y=0 --w=340 --h=320 --background=gradient
   display.add gradient_element
 
   display.draw

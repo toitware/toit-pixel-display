@@ -6,6 +6,7 @@ import bitmap show *
 import font show Font
 import pixel_display show *
 import pixel_display.element show *
+import pixel_display.gradient show *
 import .png_visualizer
 
 main args:
@@ -18,23 +19,23 @@ main args:
   display := GrayScalePixelDisplay driver
   display.background = 160
 
-  background_gradient := Gradient --angle=180
+  background_gradient := GradientBackground --angle=180
       --specifiers=[
           GradientSpecifier --color=0x20 10,
           GradientSpecifier --color=0x60 90,
       ]
-  background_gradient_element := GradientElement --x=0 --y=0 --w=240 --h=160 --gradient=background_gradient
+  background_gradient_element := Div --x=0 --y=0 --w=240 --h=160 --background=background_gradient
   display.add background_gradient_element
 
   win := SimpleWindowElement --x=30 --y=30 --w=180 --h=100 --border_width=0
   display.add win
 
-  gradient := Gradient --angle=0
+  gradient := GradientBackground --angle=0
       --specifiers=[
           GradientSpecifier --color=0x90 10,
           GradientSpecifier --color=0xe0 90,
       ]
-  gradient_element := GradientElement --x=0 --y=0 --w=180 --h=100 --gradient=gradient
+  gradient_element := Div --x=0 --y=0 --w=180 --h=100 --background=gradient
   win.add gradient_element
 
   text := Label --x=90 --y=55 --label="Hello, World!" --font=sans10 --color=0x10

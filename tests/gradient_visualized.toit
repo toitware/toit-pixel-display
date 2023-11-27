@@ -10,6 +10,7 @@ import expect show *
 import font show *
 import pixel_display show *
 import pixel_display.element show *
+import pixel_display.gradient show *
 import .png_visualizer
 
 main args:
@@ -20,30 +21,30 @@ main args:
   display := TrueColorPixelDisplay driver
   display.background = 0x808080
 
-  gradient := Gradient --angle=0 --specifiers=[
+  gradient := GradientBackground --angle=0 --specifiers=[
       GradientSpecifier --color=0xffff00 10,
       GradientSpecifier --color=0xffc000 50,
       GradientSpecifier --color=0x808000 90,
       ]
-  gradient_element := GradientElement --x=20 --y=10 --w=100 --h=60 --gradient=gradient
+  gradient_element := Div --x=20 --y=10 --w=100 --h=60 --background=gradient
   display.add gradient_element
 
   display.draw
 
-  gradient_2 := Gradient --angle=180 --specifiers=[
+  gradient_2 := GradientBackground --angle=180 --specifiers=[
       GradientSpecifier --color=0x00ff00 10,
       GradientSpecifier --color=0x00ffc0 50,
       GradientSpecifier --color=0xc0ffff 90,
       ]
-  gradient_2_element := GradientElement --x=50 --y=20 --w=100 --h=40 --gradient=gradient_2
+  gradient_2_element := Div --x=50 --y=20 --w=100 --h=40 --background=gradient_2
   display.add gradient_2_element
 
   display.draw
 
-  gradient_element.gradient = Gradient --angle=90 --specifiers=gradient.specifiers
+  gradient_element.background = GradientBackground --angle=90 --specifiers=gradient.specifiers
   gradient_element.h = 10
   gradient_element.w = 30
-  gradient_2_element.gradient = Gradient --angle=270 --specifiers=gradient_2.specifiers
+  gradient_2_element.background = GradientBackground --angle=270 --specifiers=gradient_2.specifiers
   gradient_2_element.h = 10
   gradient_2_element.w = 30
 
