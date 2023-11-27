@@ -525,10 +525,14 @@ class BarCodeEanElement extends CustomElement:
     canvas.rectangle x     top --w=1 --h=long_height --color=color_
     canvas.rectangle x + 2 top --w=1 --h=long_height --color=color_
 
-abstract class BorderlessWindowElement extends Div implements Window:
-
-  constructor --x/int?=null --y/int?=null --w/int?=null --h/int?=null:
-    super --x=x --y=y --w=w --h=h
+/**
+A WindowElement is a collections of elements.  It is modeled like a painting hung on
+  a wall.  It consists (from back to front) of a wall, a frame and the painting
+  itself. The optional frame extends around and behind the picture, and can be
+  partially transparent on true-color displays, which enables drop shadows.  The
+  painting can also be partially transparent.
+*/
+abstract class WindowElement extends Div implements Window:
 
   /**
   Calls the block with x, y, w, h, which includes the frame/border.
@@ -540,15 +544,6 @@ abstract class BorderlessWindowElement extends Div implements Window:
     if change_tracker:
       extent: | outer_x outer_y outer_w outer_h |
         change_tracker.child_invalidated_element outer_x outer_y outer_w outer_h
-
-/**
-A WindowElement is a collections of elements.  It is modeled like a painting hung on
-  a wall.  It consists (from back to front) of a wall, a frame and the painting
-  itself. The optional frame extends around and behind the picture, and can be
-  partially transparent on true-color displays, which enables drop shadows.  The
-  painting can also be partially transparent.
-*/
-abstract class WindowElement extends BorderlessWindowElement implements Window:
 
   static ALL_TRANSPARENT ::= ByteArray 1: 0
   static ALL_OPAQUE ::= ByteArray 1: 0xff
