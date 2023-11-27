@@ -26,8 +26,8 @@ main args:
   texture_rect := display.filled_rectangle (ctx.with --color=SEVERAL_BLUE) 10 20 30 20
   texture_rect_2 := display.filled_rectangle (ctx.with --color=SEVERAL_BLUE) 10 65 30 20
   // Slightly smaller element-based rectangle.
-  element_rect := FilledRectangleElement --x=11 --y=21 --w=28 --h=18 --color=SEVERAL_BLACK
-  element_rect_2 := FilledRectangleElement --x=10 --y=110 --w=30 --h=20 --color=SEVERAL_GREEN
+  element_rect := Div --x=11 --y=21 --w=28 --h=18 --background=SEVERAL_BLACK
+  element_rect_2 := Div --x=10 --y=110 --w=30 --h=20 --background=SEVERAL_GREEN
   display.add element_rect
   display.add element_rect_2
   display.draw

@@ -41,13 +41,13 @@ main args:
     gradient_element := GradientElement --x=x --y=y --w=w --h=h --gradient=gradient
     display.add gradient_element
     gradient_elements.add gradient_element
-    dot1 := FilledRectangleElement --x=(x - 1) --y=(y - 1) --w=1 --h=1 --color=0xffffff
+    dot1 := Div --x=(x - 1) --y=(y - 1) --w=1 --h=1 --background=0xffffff
     display.add dot1
-    dot2 := FilledRectangleElement --x=(x + w) --y=(y + h) --w=1 --h=1 --color=0xffffff
+    dot2 := Div --x=(x + w) --y=(y + h) --w=1 --h=1 --background=0xffffff
     display.add dot2
-    dot3 := FilledRectangleElement --x=(x - 1) --y=(y + h) --w=1 --h=1 --color=0xffffff
+    dot3 := Div --x=(x - 1) --y=(y + h) --w=1 --h=1 --background=0xffffff
     display.add dot3
-    dot4 := FilledRectangleElement --x=(x + w) --y=(y - 1) --w=1 --h=1 --color=0xffffff
+    dot4 := Div --x=(x + w) --y=(y - 1) --w=1 --h=1 --background=0xffffff
     display.add dot4
 
   display.draw

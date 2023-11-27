@@ -22,6 +22,7 @@ abstract class Element extends ElementOrTexture_:
   id/string? := ?
   children/List? := ?
   background_ := null
+  border_/Border? := null
 
   x_ /int? := null
   y_ /int? := null
@@ -29,13 +30,24 @@ abstract class Element extends ElementOrTexture_:
   x -> int?: return x_
   y -> int?: return y_
 
-  constructor --x/int?=null --y/int?=null --style/Style?=null --element_class/string?=null --.classes/List?=null --.id/string?=null .children/List?=null:
+  constructor
+      --x/int?=null
+      --y/int?=null
+      --style/Style?=null
+      --element_class/string?=null
+      --.classes/List?=null
+      --.id/string?=null
+      --background=null
+      --border/Border?=null
+      .children/List?=null:
     x_ = x
     y_ = y
     style_ = style
     if element_class:
       if not classes: classes = []
       classes.add element_class
+    background_=background
+    border_=border
 
   get_element_by_id id/string:
     if id == this.id: return this
@@ -60,6 +72,12 @@ abstract class Element extends ElementOrTexture_:
     x_ = x
     y_ = y
     invalidate
+
+  border= value/Border?:
+    if value != border_:
+      invalidate
+      border_ = value
+      invalidate
 
   write_ canvas -> none:
     throw "Can't call write_ on an Element"
@@ -87,7 +105,11 @@ abstract class Element extends ElementOrTexture_:
       children.do: | child/Element |
         child.set_styles (styles_for_children or styles)
 
-  abstract set_attribute key/string value -> none
+  set_attribute key/string value -> none:
+    if key == "background":
+      if background_ != value:
+        invalidate
+        background_ = value
 
   abstract type -> string
 
@@ -95,14 +117,27 @@ interface ColoredElement:
   color -> int?
   color= value/int -> none
 
-abstract class ResizableElement extends Element:
+class Div extends Element:
   w_ /int? := null
   h_ /int? := null
 
-  constructor --x/int?=null --y/int?=null --w/int?=null --h/int?=null:
+  type -> string: return "div"
+
+  constructor
+      --x/int?=null
+      --y/int?=null
+      --w/int?=null
+      --h/int?=null
+      --style/Style?=null
+      --element_class/string?=null
+      --classes/List?=null
+      --id/string?=null
+      --background=null
+      --border/Border?=null
+      children/List?=null:
     w_ = w
     h_ = h
-    super --x=x --y=y
+    super --x=x --y=y --style=style --element_class=element_class --classes=classes --id=id --background=background --border=border children
 
   invalidate:
     if change_tracker and x and y and w and h:
@@ -139,25 +174,9 @@ abstract class ResizableElement extends Element:
     else if key == "height":
       h = value
 
-abstract class RectangleElement extends ResizableElement implements ColoredElement:
-  color_ /int? := ?
-
-  color -> int?: return color_
-
-  color= value/int -> none:
-    if color_ != value:
-      color_ = value
-      invalidate
-
-  constructor --x/int?=null --y/int?=null --w/int?=null --h/int?=null --color/int?=null:
-    color_ = color
-    super --x=x --y=y --w=w --h=h
-
-  set_attribute key/string value -> none:
-    if key == "color":
-      color = value
-    else:
-      super key value
+  draw canvas/Canvas -> none:
+    Background.draw background_ canvas x y w h
+    if border_: border_.draw canvas x y w h
 
 class GradientSpecifier:
   color/int
@@ -460,7 +479,7 @@ Example:
   display.add gradient_element
 ```
 */
-class GradientElement extends ResizableElement:
+class GradientElement extends Div:
   gradient_/Gradient := ?
   specification_/GradientSpecification_? := null
   rendering_/GradientRendering_? := null
@@ -493,47 +512,6 @@ class GradientElement extends ResizableElement:
     rendering_.draw canvas x y
 
   type -> string: return "gradient"
-
-class FilledRectangleElement extends RectangleElement:
-  constructor --x/int?=null --y/int?=null --w/int?=null --h/int?=null --color/int?=null:
-    super --x=x --y=y --w=w --h=h --color=color
-
-  draw canvas/Canvas -> none:
-    canvas.rectangle x_ y_ --w=w_ --h=h_ --color=color_
-
-  type -> string: return "filled-rectangle"
-
-class OutlineRectangleElement extends RectangleElement:
-  thickness_/int := ?
-
-  constructor --x/int?=null --y/int?=null --w/int?=null --h/int?=null --color/int?=0 --thickness/int=1:
-    thickness_ = thickness
-    super --x=x --y=y --w=w --h=h --color=color
-
-  thickness -> int: return thickness_
-
-  thickness= value/int -> none:
-    if thickness_ != value:
-      if value > (min h_ w_): throw "INVALID_ARGUMENT"
-      thickness_ = max thickness_ value
-      invalidate
-      thickness_ = value
-
-  invalidate -> none:
-    if change_tracker and x and y and w and h:
-      change_tracker.child_invalidated_element x y w thickness
-      change_tracker.child_invalidated_element x y thickness h
-      change_tracker.child_invalidated_element x (y + h - thickness) w thickness
-      change_tracker.child_invalidated_element (x + w - thickness) y thickness h
-
-  draw canvas /Canvas -> none:
-    if not (x and y and w and h): return
-    canvas.rectangle x_ y_                     --w=thickness_ --h=h_         --color=color_
-    canvas.rectangle x_ y_                     --w=w_         --h=thickness_ --color=color_
-    canvas.rectangle (x_ + w_ - thickness_) y_ --w=thickness_ --h=h_         --color=color_
-    canvas.rectangle x_ (y + h_ - thickness_)  --w=w_         --h=thickness_ --color=color_
-
-  type -> string: return "outline-rectangle"
 
 class Label extends Element implements ColoredElement:
   color_/int := ?

@@ -8,6 +8,7 @@
 import expect show *
 import pixel_display show *
 import pixel_display.element show *
+import pixel_display.style show *
 import pixel_display.texture show *
 import .png_visualizer
 
@@ -25,9 +26,9 @@ main args:
   texture_rect := display.filled_rectangle (ctx.with --color=SEVERAL_BLUE) 10 20 30 20
   texture_rect_2 := display.filled_rectangle (ctx.with --color=SEVERAL_BLUE) 60 20 30 20
   // Slightlly smaller element-based rectangle.
-  element_rect := FilledRectangleElement --x=11 --y=21 --w=28 --h=18 --color=SEVERAL_BLACK
-  element_rect_2 := FilledRectangleElement --x=110 --y=20 --w=30 --h=20 --color=SEVERAL_GREEN
-  element_rect_3 := OutlineRectangleElement --x=160 --y=10 --w=30 --h=30 --color=SEVERAL_BLUE --thickness=5
+  element_rect   := Div --x=11  --y=21 --w=28 --h=18 --background=SEVERAL_BLACK
+  element_rect_2 := Div --x=110 --y=20 --w=30 --h=20 --background=SEVERAL_GREEN
+  element_rect_3 := Div --x=160 --y=10 --w=30 --h=30 --border=(SolidBorder --color=SEVERAL_BLUE --width=5)
   display.add element_rect
   display.add element_rect_2
   display.add element_rect_3
@@ -51,10 +52,10 @@ main args:
   element_rect_3.move_to 160 20
   display.draw
 
-  element_rect_3.thickness = 2
+  element_rect_3.border = SolidBorder --color=SEVERAL_BLUE --width=2
   display.draw
 
-  element_rect_3.thickness = 7
+  element_rect_3.border = SolidBorder --color=SEVERAL_BLUE --width=7
   display.draw
 
   driver.write_png
