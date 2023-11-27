@@ -185,6 +185,9 @@ class FooHaver extends TestElement:
   type -> string: return "foo-haver"
   foo/string? := null
 
+  w: return 0
+  h: return 0
+
   constructor --style/Style?=null --element_class/string?=null --classes/List?=null --id/string?=null children/List?=null:
     super --style=style --element_class=element_class --classes=classes --id=id children
   

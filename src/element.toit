@@ -16,7 +16,7 @@ import math
 
 import png_tools.png_reader show *
 
-abstract class Element extends ElementOrTexture_:
+abstract class Element extends ElementOrTexture_ implements Window:
   style_/Style? := ?
   classes/List? := ?
   id/string? := ?
@@ -57,6 +57,39 @@ abstract class Element extends ElementOrTexture_:
         if found: return found
     return null
 
+  add element/Element -> none:
+    if not children: children = []
+    children.add element
+    element.change_tracker = this
+    element.invalidate
+
+  remove element/Element -> none:
+    if children:
+      children.remove element
+      element.invalidate
+      element.change_tracker = null
+
+  inner_width -> int:
+    if border_:
+      border_.inner_dimensions w h: | w2 _ |
+        return w2
+    return w
+
+  child_invalidated x/int y/int w/int h/int -> none:
+    unreachable  // This is only for textures, but we don't allow those.
+
+  inner_height -> int:
+    if border_:
+      border_.inner_dimensions w h: | _ h2 |
+        return h2
+    return h
+
+  remove_all -> none:
+    children.do:
+      it.invalidate
+      it.change_tracker = null
+    children = null
+
   x= value/int -> none:
     invalidate
     x_ = value
@@ -92,9 +125,20 @@ abstract class Element extends ElementOrTexture_:
     throw "Can't call write_ on an Element"
 
   abstract draw canvas/Canvas -> none
-
   abstract min_w -> int
   abstract min_h -> int
+
+  child_invalidated_element x/int y/int w/int h/int -> none:
+    if change_tracker:
+      x2 := max x_ (x_ + x)
+      y2 := max y_ (y_ + y)
+      right := min (x_ + inner_width) (x_ + x + w)
+      bottom := min (y_ + inner_height) (y_ + y + h)
+      if x2 < right and y2 < bottom:
+        change_tracker.child_invalidated_element x2 y2 (right - x2) (bottom - y2)
+
+  abstract w -> int?
+  abstract h -> int?
 
   set_styles styles/List -> none:
     styles_for_children := null
@@ -286,6 +330,16 @@ class Label extends Element implements ColoredElement:
         width_  = extent[1]
         height_ = extent[0]
     block.call (x_ + left_) (y_ + top_) width_ height_
+
+  w -> int:
+    if not left_:
+      xywh_: null
+    return width_
+
+  h -> int:
+    if not left_:
+      xywh_: null
+    return height_
 
   invalidate:
     if change_tracker and x and y:
@@ -486,46 +540,17 @@ class BarCodeEanElement extends CustomElement:
 abstract class BorderlessWindowElement extends Element implements Window:
   inner_width/int? := ?
   inner_height/int? := ?
-  elements_ := {}
 
   constructor --x/int?=null --y/int?=null --w/int?=null --h/int?=null:
     inner_width = w
     inner_height = h
     super --x=x --y=y
 
-  add element/Element -> none:
-    elements_.add element
-    element.change_tracker = this
-    element.invalidate
-
-  remove element/Element -> none:
-    elements_.remove element
-    element.invalidate
-    element.change_tracker = null
-
-  remove_all -> none:
-    elements_.do:
-      it.invalidate
-      it.change_tracker = null
-    elements_.remove_all
-
   /**
   Calls the block with x, y, w, h, which includes the frame/border.
   */
   extent [block] -> none:
     block.call x_ y_ inner_width inner_height
-
-  child_invalidated_element x/int y/int w/int h/int -> none:
-    if change_tracker:
-      x2 := max x_ (x_ + x)
-      y2 := max y_ (y_ + y)
-      right := min (x_ + inner_width) (x_ + x + w)
-      bottom := min (y_ + inner_height) (y_ + y + h)
-      if x2 < right and y2 < bottom:
-        change_tracker.child_invalidated_element x2 y2 (right - x2) (bottom - y2)
-
-  child_invalidated x/int y/int w/int h/int -> none:
-    unreachable  // This is only for textures, but we don't allow those.
 
   invalidate:
     if change_tracker:
@@ -656,7 +681,7 @@ abstract class WindowElement extends BorderlessWindowElement implements Window:
     // the window background color and then draw the textures.
     if is_all_opaque painting_opacity:
       draw_background canvas
-      elements_.do: it.draw canvas
+      children.do: it.draw canvas
       canvas.transform = old_transform
       return
 
@@ -675,7 +700,7 @@ abstract class WindowElement extends BorderlessWindowElement implements Window:
 
     painting_canvas := canvas.create_similar
     draw_background painting_canvas
-    elements_.do: it.draw painting_canvas
+    children.do: it.draw painting_canvas
 
     canvas.composit frame_opacity frame_canvas painting_opacity painting_canvas
 
