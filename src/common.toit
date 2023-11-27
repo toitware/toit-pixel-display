@@ -18,8 +18,6 @@ interface Window:
   add element /ElementOrTexture_ -> none
   remove element /ElementOrTexture_ -> none
   remove_all -> none
-  inner_width -> int?
-  inner_height -> int?
 
   // Called by elements that have been added to this.
   child_invalidated x/int y/int w/int h/int ->none

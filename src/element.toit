@@ -69,20 +69,8 @@ abstract class Element extends ElementOrTexture_ implements Window:
       element.invalidate
       element.change_tracker = null
 
-  inner_width -> int:
-    if border_:
-      border_.inner_dimensions w h: | w2 _ |
-        return w2
-    return w
-
   child_invalidated x/int y/int w/int h/int -> none:
     unreachable  // This is only for textures, but we don't allow those.
-
-  inner_height -> int:
-    if border_:
-      border_.inner_dimensions w h: | _ h2 |
-        return h2
-    return h
 
   remove_all -> none:
     children.do:
@@ -132,8 +120,8 @@ abstract class Element extends ElementOrTexture_ implements Window:
     if change_tracker:
       x2 := max x_ (x_ + x)
       y2 := max y_ (y_ + y)
-      right := min (x_ + inner_width) (x_ + x + w)
-      bottom := min (y_ + inner_height) (y_ + y + h)
+      right := min (x_ + this.w) (x_ + x + w)
+      bottom := min (y_ + this.h) (y_ + y + h)
       if x2 < right and y2 < bottom:
         change_tracker.child_invalidated_element x2 y2 (right - x2) (bottom - y2)
 
@@ -537,20 +525,16 @@ class BarCodeEanElement extends CustomElement:
     canvas.rectangle x     top --w=1 --h=long_height --color=color_
     canvas.rectangle x + 2 top --w=1 --h=long_height --color=color_
 
-abstract class BorderlessWindowElement extends Element implements Window:
-  inner_width/int? := ?
-  inner_height/int? := ?
+abstract class BorderlessWindowElement extends Div implements Window:
 
   constructor --x/int?=null --y/int?=null --w/int?=null --h/int?=null:
-    inner_width = w
-    inner_height = h
-    super --x=x --y=y
+    super --x=x --y=y --w=w --h=h
 
   /**
   Calls the block with x, y, w, h, which includes the frame/border.
   */
   extent [block] -> none:
-    block.call x_ y_ inner_width inner_height
+    block.call x_ y_ w_ h_
 
   invalidate:
     if change_tracker:
@@ -565,48 +549,6 @@ A WindowElement is a collections of elements.  It is modeled like a painting hun
   painting can also be partially transparent.
 */
 abstract class WindowElement extends BorderlessWindowElement implements Window:
-  /**
-  Changes the inner width (without any borders) of the window.
-  */
-  w= new_width/int:
-    if new_width != inner_width:
-      invalidate
-      inner_width = new_width
-      invalidate
-
-  /**
-  Changes the inner height (without any borders) of the window.
-  */
-  h= new_height/int:
-    if new_height != inner_height:
-      invalidate
-      inner_height = new_height
-      invalidate
-
-  /**
-  Gets the inner width (without any borders) of the window.
-  */
-  w -> int?:
-    return inner_width
-
-  /**
-  Gets the inner height (without any borders) of the window.
-  */
-  h -> int?:
-    return inner_height
-
-  min_w -> int?: return inner_width
-  min_h -> int?: return inner_height
-
-  /**
-  Changes the top left corner (without any borders) of the window.
-  */
-  move_to new_x/int new_y/int -> none:
-    if new_x != x_ or new_y != y_:
-      invalidate
-      x_ = new_x
-      y_ = new_y
-      invalidate
 
   static ALL_TRANSPARENT ::= ByteArray 1: 0
   static ALL_OPAQUE ::= ByteArray 1: 0xff
@@ -762,7 +704,7 @@ class SimpleWindowElement extends WindowElement:
   background_color= new_color/int? -> none:
     if new_color != background_color_:
       if change_tracker:
-        change_tracker.child_invalidated_element x_ y_ inner_width inner_height
+        change_tracker.child_invalidated_element x_ y_ w_ h_
       background_color_ = new_color
 
   // Draws 100% opacity for the frame shape, a filled rectangle.
@@ -771,15 +713,15 @@ class SimpleWindowElement extends WindowElement:
   frame_map canvas/Canvas:
     if border_width_ == 0: return WindowElement.ALL_TRANSPARENT  // The frame is not visible anywhere.
     // Transform inner dimensions not including border
-    canvas.transform.xywh 0 0 inner_width inner_height: | x2 y2 w2 h2 |
+    canvas.transform.xywh 0 0 w_ h_: | x2 y2 w2 h2 |
       if x2 <= 0 and y2 <= 0 and x2 + w2 >= canvas.width_ and y2 + h2 >= canvas.height_:
         // In the middle, the window content is 100% opaque and draw on top of the
         // frame.  There is no need to provide a frame alpha map, so for efficiency we
         // just return 0 which indicates the frame is 100% transparent.
         return WindowElement.ALL_TRANSPARENT
     // Transform outer dimensions including border.
-    outer_w := inner_width + 2 * border_width_
-    outer_h := inner_height + 2 * border_width_
+    outer_w := w_ + 2 * border_width_
+    outer_h := h_ + 2 * border_width_
     canvas.transform.xywh -border_width_ -border_width_ outer_w outer_h: | x2 y2 w2 h2 |
       right := x2 + w2
       bottom := y2 + h2
@@ -798,7 +740,7 @@ class SimpleWindowElement extends WindowElement:
 
   // Draws 100% opacity for the window content, a filled rectangle.
   painting_map canvas/Canvas:
-    canvas.transform.xywh 0 0 inner_width inner_height: | x2 y2 w2 h2 |
+    canvas.transform.xywh 0 0 w_ h_: | x2 y2 w2 h2 |
       if x2 <= 0 and y2 <= 0 and x2 + w2 >= canvas.width_ and y2 + h2 >= canvas.height_:
         return WindowElement.ALL_OPAQUE  // The content is 100% opaque in the middle.
       right := x2 + w2
@@ -810,8 +752,8 @@ class SimpleWindowElement extends WindowElement:
     // Declare the whole area inside the content's extent opaque.  The window content will
     // draw on top of this as needed.
     transparency_map.rectangle 0 0
-      --w=inner_width
-      --h=inner_height
+      --w=w_
+      --h=h_
       --color=0xffffff
     return transparency_map
 
@@ -929,7 +871,7 @@ class RoundedCornerWindowElement extends WindowElement:
 
   // Draws 100% opacity for the window content, a filled rounded-corner rectangle.
   painting_map canvas/Canvas:
-    canvas.transform.xywh 0 0 inner_width inner_height: | x2 y2 w2 h2 |
+    canvas.transform.xywh 0 0 w_ h_: | x2 y2 w2 h2 |
       right := x2 + w2
       bottom := y2 + h2
       if x2 >= canvas.width_ or y2 >= canvas.height_ or right <= 0 or bottom <= 0:
@@ -939,7 +881,7 @@ class RoundedCornerWindowElement extends WindowElement:
         return WindowElement.ALL_OPAQUE  // The content is 100% opaque in the cross in the middle where there are no corners.
     // We need to create a bitmap to describe the content's extent.
     transparency_map := canvas.make_alpha_map
-    draw_rounded_corners_ transparency_map 0 0 inner_width inner_height 0xff
+    draw_rounded_corners_ transparency_map 0 0 w_ h_ 0xff
     return transparency_map
 
   draw_rounded_corners_ transparency_map x2/int y2/int w2/int h2/int opacity/int -> none:
@@ -1061,7 +1003,7 @@ class DropShadowWindowElement extends RoundedCornerWindowElement:
   frame_map canvas/Canvas:
     // Transform inner dimensions excluding shadow to determine if the canvas
     // is wholly inside the window.
-    canvas.transform.xywh 0 0 inner_width inner_height: | x2 y2 w2 h2 |
+    canvas.transform.xywh 0 0 w_ h_: | x2 y2 w2 h2 |
       right := x2 + w2
       bottom := y2 + h2
       if x2                  <= 0 and y2 + corner_radius_ <= 0 and right                  >= canvas.width_ and bottom - corner_radius_ >= canvas.height_ or
@@ -1074,7 +1016,7 @@ class DropShadowWindowElement extends RoundedCornerWindowElement:
     // Transform outer dimensions including border to determine if the canvas
     // is wholly outside the window and its shadow.
     extent_helper_: | left top right bottom |
-      canvas.transform.xywh -left -top (inner_width + left + right) (inner_height + top + bottom): | x2 y2 w2 h2 |
+      canvas.transform.xywh -left -top (w_ + left + right) (h_ + top + bottom): | x2 y2 w2 h2 |
         if x2 + w2 <= 0 or y2 + h2 <= 0 or x2 >= canvas.width_ or y2 >= canvas.height_:
           return WindowElement.ALL_TRANSPARENT  // The frame is not opaque outside the shadow
 
@@ -1084,7 +1026,7 @@ class DropShadowWindowElement extends RoundedCornerWindowElement:
     transparency_map.transform = (canvas.transform.invert.translate -blur_radius -blur_radius).invert
 
     max_shadow_opacity := (shadow_opacity_percent * 2.5500001).to_int
-    draw_rounded_corners_ transparency_map drop_distance_x_ drop_distance_y_ inner_width inner_height max_shadow_opacity
+    draw_rounded_corners_ transparency_map drop_distance_x_ drop_distance_y_ w_ h_ max_shadow_opacity
 
     if blur_radius == 0 or transparency_map is not one_byte.Canvas_:
       return transparency_map
