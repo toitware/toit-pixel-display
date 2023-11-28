@@ -20,7 +20,7 @@ main args:
   display := TwoColorPixelDisplay driver
   display.background = BLACK
 
-  win := SimpleWindowElement --x=30 --y=30 --w=180 --h=100 --background=WHITE --border=(RoundedCornerBorder --radius=17)
+  win := ClippingDiv --x=30 --y=30 --w=180 --h=100 --background=WHITE --border=(RoundedCornerBorder --radius=17)
   display.add win
 
   text := Label --x=90 --y=55 --label="Hello, World!" --font=sans10 --color=BLACK

@@ -19,7 +19,7 @@ main args:
   display := SeveralColorPixelDisplay driver
   display.background = SEVERAL_BLUE
 
-  win := SimpleWindowElement --x=30 --y=30 --w=180 --h=100 --background=SEVERAL_LIGHT_GRAY --border=(RoundedCornerBorder --radius=15)
+  win := ClippingDiv --x=30 --y=30 --w=180 --h=100 --background=SEVERAL_LIGHT_GRAY --border=(RoundedCornerBorder --radius=15)
   display.add win
 
   text := Label --x=90 --y=55 --label="Hello, World!" --font=sans10 --color=SEVERAL_BLACK

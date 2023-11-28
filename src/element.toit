@@ -536,13 +536,14 @@ class BarCodeEanElement extends CustomElement:
     canvas.rectangle x + 2 top --w=1 --h=long_height --color=color_
 
 /**
-A WindowElement is like a div, but it clips any draws inside of it.  It can
+A ClippingDiv is like a div, but it clips any draws inside of it.  It can
   have a shadow or other drawing outside its raw x y w h area, called the
   decoration.
-Because it has clipping and compositing, it can have more interesting bounds
+For style purposes it has the type "div", not "clipping-div".
+Because it has clipping and compositing, it can have more interesting borders
   like rounded corners.
 */
-abstract class WindowElement extends Div implements Window:
+class ClippingDiv extends Div implements Window:
   /**
   Calls the block with x, y, w, h, which includes the decoration.
   */
@@ -570,30 +571,6 @@ abstract class WindowElement extends Div implements Window:
   static is_all_opaque opacity -> bool:
     if opacity is not ByteArray: return false
     return opacity.size == 1 and opacity[0] == 0xff
-
-  /**
-  Returns a canvas that is an alpha map for the given area that describes where
-    the things behind around this window shines through.  This is mainly used for
-    rounded corners, but also for other decorations.
-  For 2-color and 3-color textures this is a bitmap with 0 for transparent and
-    1 for opaque.  For true-color and gray-scale textures it is a bytemap with
-    0 for transparent and 0xff for opaque.  As a special case it may return a
-    single-entry byte array, which means all pixels have the same transparency.
-  The coordinate system of the canvas is the coordinate system of the window, so
-    the top and left edges may be plotted at negative coordinates.
-  */
-  abstract frame_map canvas/Canvas -> ByteArray
-
-  /**
-  Returns a canvas that is an alpha map for the given area that describes where
-    the window content (background of the window and children) are visible.
-  For 2-color and 3-color textures this is a bitmap with 0 for transparent and
-    1 for opaque.  For true-color and gray-scale textures it is a bytemap with
-    0 for transparent and 0xff for opaque.  As a special case it may return a
-    single-entry byte array, which means all pixels have the same transparency.
-  The coordinate system of the canvas is the coordinate system of the window.
-  */
-  abstract content_map canvas/Canvas -> ByteArray
 
   constructor --x/int?=null --y/int?=null --w/int?=null --h/int?=null --background=null --border/Border?=null:
     super --x=x --y=y --w=w --h=h --background=background --border=border
@@ -636,37 +613,37 @@ abstract class WindowElement extends Div implements Window:
 
     canvas.transform = old_transform
 
-  type -> string: return "window"
+  type -> string: return "div"
 
-  set_attribute key/string value -> none:
-    if key == "width":
-      w = value
-    else if key == "height":
-      h = value
-
-/**
-A rectangular window with a fixed width colored border.  The border is
-  added to the visible area inside the window.
-*/
-class SimpleWindowElement extends WindowElement:
-  constructor --x/int?=null --y/int?=null --w/int?=null --h/int?=null --background=null --border/Border?=null:
-    super --x=x --y=y --w=w --h=h --background=background --border=border
-
-  // Draws 100% opacity for the frame shape, a filled rectangle.
-  // (The frame is behind the painting, so this doesn't mean we only
-  // see the frame.)
+  /**
+  Returns a canvas that is an alpha map for the given area that describes where
+    the things behind around this window shines through.  This is mainly used for
+    rounded corners, but also for other decorations.
+  For 2-color and 3-color textures this is a bitmap with 0 for transparent and
+    1 for opaque.  For true-color and gray-scale textures it is a bytemap with
+    0 for transparent and 0xff for opaque.  As a special case it may return a
+    single-entry byte array, which means all pixels have the same transparency.
+  The coordinate system of the canvas is the coordinate system of the window, so
+    the top and left edges may be plotted at negative coordinates.
+  */
   frame_map canvas/Canvas:
-    if not border_: return WindowElement.ALL_TRANSPARENT  // No border visible.
+    if not border_: return ClippingDiv.ALL_TRANSPARENT  // No border visible.
     return border_.frame_map canvas w h
 
-  // Draws 100% opacity for the window content, a filled rectangle.
+  /**
+  Returns a canvas that is an alpha map for the given area that describes where
+    the window content (background of the window and children) are visible.
+  For 2-color and 3-color textures this is a bitmap with 0 for transparent and
+    1 for opaque.  For true-color and gray-scale textures it is a bytemap with
+    0 for transparent and 0xff for opaque.  As a special case it may return a
+    single-entry byte array, which means all pixels have the same transparency.
+  The coordinate system of the canvas is the coordinate system of the window.
+  */
   content_map canvas/Canvas:
     return (border_ or NO_BORDER_).content_map canvas w h
 
   draw_frame canvas/Canvas:
     if border_: border_.draw canvas 0 0 w h
-
-  type -> string: return "simple-window"
 
 // Element that draws a PNG image.
 class PngElement extends CustomElement:
