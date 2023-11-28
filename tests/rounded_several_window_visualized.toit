@@ -6,6 +6,7 @@ import bitmap show *
 import font show Font
 import pixel_display show *
 import pixel_display.element show *
+import pixel_display.style show *
 import .png_visualizer
 
 main args:
@@ -18,7 +19,7 @@ main args:
   display := SeveralColorPixelDisplay driver
   display.background = SEVERAL_BLUE
 
-  win := RoundedCornerWindowElement --x=30 --y=30 --w=180 --h=100 --corner_radius=15 --background=SEVERAL_LIGHT_GRAY
+  win := SimpleWindowElement --x=30 --y=30 --w=180 --h=100 --background=SEVERAL_LIGHT_GRAY --border=(RoundedCornerBorder --radius=15)
   display.add win
 
   text := Label --x=90 --y=55 --label="Hello, World!" --font=sans10 --color=SEVERAL_BLACK

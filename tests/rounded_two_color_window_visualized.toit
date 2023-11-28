@@ -6,6 +6,7 @@ import bitmap show *
 import font show Font
 import pixel_display show *
 import pixel_display.element show *
+import pixel_display.style show *
 import pixel_display.two_color show BLACK WHITE
 import .png_visualizer
 
@@ -19,7 +20,7 @@ main args:
   display := TwoColorPixelDisplay driver
   display.background = BLACK
 
-  win := RoundedCornerWindowElement --x=30 --y=30 --w=180 --h=100 --corner_radius=17 --background=WHITE
+  win := SimpleWindowElement --x=30 --y=30 --w=180 --h=100 --background=WHITE --border=(RoundedCornerBorder --radius=17)
   display.add win
 
   text := Label --x=90 --y=55 --label="Hello, World!" --font=sans10 --color=BLACK
@@ -28,13 +29,13 @@ main args:
   display.draw
 
   text.move_to 120 65
-  win.corner_radius--
+  win.border = RoundedCornerBorder --radius=16
 
   display.draw
 
   // Window-relative coordinates.
   text.move_to -10 7
-  win.corner_radius--
+  win.border = RoundedCornerBorder --radius=15
 
   display.draw
 

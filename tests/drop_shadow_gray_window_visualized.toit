@@ -7,6 +7,7 @@ import font show Font
 import pixel_display show *
 import pixel_display.element show *
 import pixel_display.gradient show *
+import pixel_display.style show *
 import .png_visualizer
 
 main args:
@@ -27,7 +28,7 @@ main args:
   background_gradient_element := Div --x=0 --y=0 --w=240 --h=160 --background=background_gradient
   display.add background_gradient_element
 
-  win := DropShadowWindowElement --x=30 --y=30 --w=180 --h=100 --corner_radius=15
+  win := SimpleWindowElement --x=30 --y=30 --w=180 --h=100 --border=(ShadowRoundedCornerBorder --radius=15)
   display.add win
 
   gradient := GradientBackground --angle=0
@@ -49,7 +50,7 @@ main args:
 
   // Window-relative coordinates.
   text.move_to -10 7
-  win.shadow_opacity_percent = 50
+  win.border = ShadowRoundedCornerBorder --radius=15 --shadow_opacity_percent=50
 
   display.draw
 
