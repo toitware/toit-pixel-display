@@ -7,6 +7,7 @@
 
 import expect show *
 import pixel_display show *
+import pixel_display.bar_code show *
 import pixel_display.element show *
 import pixel_display.style show Style
 import .png_visualizer
@@ -23,7 +24,7 @@ main args:
       "bar-code-ean": Style --color=SEVERAL_BLACK --background=SEVERAL_WHITE,
   }
 
-  barcode := BarCodeEanElement "4035999001512" 15 15
+  barcode := BarCodeEanElement --x=15 --y=15 "4035999001512"
   display.add barcode
   display.set_styles [style]
   display.draw

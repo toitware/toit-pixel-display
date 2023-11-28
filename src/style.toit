@@ -66,6 +66,8 @@ interface Border:
   content_map canvas/Canvas w/int h/int
 
 class NoBorder implements Border:
+  needs_clipping -> bool: return false
+
   draw canvas x y w h:
     // Nothing to draw.
 
@@ -100,6 +102,8 @@ class SolidBorder implements Border:
   constructor --border_width/BorderWidth --color/int:
     color_ = color
     border_width_ = border_width
+
+  needs_clipping -> bool: return false
 
   invalidation_area x/int y/int w/int h/int [block]:
     block.call x y w h
@@ -205,6 +209,8 @@ class RoundedCornerBorder extends NoBorder:
   constructor --radius/int=5:
     if not 0 <= radius <= RoundedCornerOpacity_.TABLE_SIZE_: throw "OUT_OF_RANGE"
     radius_ = radius
+
+  needs_clipping -> bool: return true
 
   radius -> int: return radius_
 
@@ -537,16 +543,16 @@ class Style:
       --color/int?=null
       --font/Font?=null
       --background=null
-      --border_color/int?=null
+      --border/Border?=null
       --class_map/Map?=null
       --id_map/Map?=null
       --type_map/Map?=null
       .map_={:}:
     if color != null: map_["color"] = color
     if font != null: map_["font"] = font
-    if border_color != null: map_["border-color"] = border_color
+    if border != null: map_["border"] = border
     Background.check_valid background
-    map_["background"] = background
+    if background: map_["background"] = background
     class_map_ = class_map
     id_map_ = id_map
     type_map_ = type_map

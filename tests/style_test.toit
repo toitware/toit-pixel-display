@@ -15,7 +15,7 @@ toit_doc_examples_test:
           "button": Style --color=0xffffff --background=0x606060,
       }
       --class_map={
-          "box": Style --border_color=0xff0000,
+          "box": Style --border=(SolidBorder --color=0xff0000 --width=2)
       }
       --id_map={
           "fish": Style --color=0x00ff00,

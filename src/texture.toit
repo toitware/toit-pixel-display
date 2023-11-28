@@ -4,7 +4,7 @@
 
 import binary show LITTLE_ENDIAN
 import bitmap show *
-import .bar_code_impl_
+import .bar_code
 import .common
 import .true_color as true_color
 import .one_byte as one_byte
