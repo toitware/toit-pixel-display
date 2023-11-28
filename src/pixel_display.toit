@@ -42,8 +42,8 @@ abstract class AbstractDriver:
   abstract width -> int
   abstract height -> int
   abstract flags -> int
-  abstract x_rounding -> int
-  abstract y_rounding -> int
+  x_rounding -> int: return 8
+  y_rounding -> int: return 8
   start_partial_update speed/int -> none:
   start_full_update speed/int -> none:
   clean left/int top/int right/int bottom/int -> none:
@@ -108,6 +108,8 @@ abstract class PixelDisplay implements Window:
   // The image to display.
   textures_ := {}
   background_ := null
+  width: return driver_.width
+  height: return driver_.width
   inner_width: return driver_.width
   inner_height: return driver_.width
 

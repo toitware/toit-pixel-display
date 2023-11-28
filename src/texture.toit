@@ -509,6 +509,9 @@ class TextureGroup extends Texture implements Window:
       it.change_tracker = null
     elements_ = []
 
+  draw canvas/Canvas -> none:
+    write_ canvas
+
   // After the textures under us have drawn themselves, we draw on top.
   write_ canvas/Canvas -> none:
     elements_.do: it.write canvas
