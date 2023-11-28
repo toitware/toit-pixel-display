@@ -19,7 +19,7 @@ main args:
   display := TwoColorPixelDisplay driver
   display.background = BLACK
 
-  win := RoundedCornerWindowElement --x=30 --y=30 --w=180 --h=100 --corner_radius=17 --background_color=WHITE
+  win := RoundedCornerWindowElement --x=30 --y=30 --w=180 --h=100 --corner_radius=17 --background=WHITE
   display.add win
 
   text := Label --x=90 --y=55 --label="Hello, World!" --font=sans10 --color=BLACK

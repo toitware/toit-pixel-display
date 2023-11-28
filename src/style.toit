@@ -4,6 +4,7 @@
 
 import font show Font
 import .common
+import .element as element
 
 ALIGN_LEFT ::= 0
 ALIGN_CENTER ::= 1
@@ -56,6 +57,14 @@ abstract class Border:
 
   constructor .border_width_/BorderWidth:
 
+  // Draws 100% opacity for the border and frame shape.  We don't need to carve
+  // out the window content, there is assumed to be a different alpha map for
+  // that.
+  abstract frame_map canvas/Canvas w/int h/int
+
+  // Draws 100% opacity for the window content, a filled rectangle.
+  abstract content_map canvas/Canvas w/int h/int
+
 class SolidBorder extends Border:
   color_/int
 
@@ -76,6 +85,57 @@ class SolidBorder extends Border:
       canvas.rectangle x y --w=w --h=border_width_.top --color=color_
     if border_width_.bottom != 0:
       canvas.rectangle x (y + h - border_width_.bottom) --w=w --h=border_width_.bottom --color=color_
+
+  // Draws 100% opacity for the border and frame shape.  We don't need to carve
+  // out the window content, there is assumed to be a different alpha map for
+  // that.
+  frame_map canvas/Canvas w/int h/int:
+    if border_width_ == 0: return element.WindowElement.ALL_TRANSPARENT  // The frame is not visible anywhere.
+    // Transform inner dimensions not including border
+    border_widths := border_width_.left + border_width_.right
+    border_heights := border_width_.top + border_width_.bottom
+    canvas.transform.xywh border_width_.left border_width_.top (w - border_widths) (h - border_heights): | x2 y2 w2 h2 |
+      if x2 <= 0 and y2 <= 0 and x2 + w2 >= canvas.width_ and y2 + h2 >= canvas.height_:
+        // In the middle, the window content is 100% opaque and draw on top of the
+        // frame.  There is no need to provide a frame alpha map, so for efficiency we
+        // just return 0 which indicates the frame is 100% transparent.
+        return element.WindowElement.ALL_TRANSPARENT
+    canvas.transform.xywh 0 0 w h: | x2 y2 w2 h2 |
+      right := x2 + w2
+      bottom := y2 + h2
+      if right <= 0 or bottom <= 0 or x2 >= canvas.width_ or y2 >= canvas.height_:
+        // The frame is completely outside the window, so it is 100% transparent.
+        return element.WindowElement.ALL_TRANSPARENT
+    // We need to create a bitmap to describe the frame's extent.
+    transparency_map := canvas.make_alpha_map
+    // Declare the whole area inside the frame's extent opaque.  The window content will
+    // draw on top of this as needed.
+    transparency_map.rectangle 0 0
+        --w = w
+        --h = h
+        --color = 0xff
+    return transparency_map
+
+  // Draws 100% opacity for the window content, a filled rectangle.
+  content_map canvas/Canvas w/int h/int:
+    border_widths := border_width_.left + border_width_.right
+    border_heights := border_width_.top + border_width_.bottom
+    canvas.transform.xywh border_width_.left border_width_.top (w - border_widths) (h - border_heights): | x2 y2 w2 h2 |
+      if x2 <= 0 and y2 <= 0 and x2 + w2 >= canvas.width_ and y2 + h2 >= canvas.height_:
+        return element.WindowElement.ALL_OPAQUE  // The content is 100% opaque in the middle.
+      right := x2 + w2
+      bottom := y2 + h2
+      if right <= 0 or bottom <= 0 or x2 >= canvas.width_ or y2 >= canvas.height_:
+        return element.WindowElement.ALL_TRANSPARENT  // The content is 100% transparent outside the window.
+    // We need to create a bitmap to describe the content's extent.
+    transparency_map := canvas.make_alpha_map
+    // Declare the whole area inside the content's extent opaque.  The window content will
+    // draw on top of this as needed.
+    transparency_map.rectangle border_width_.left border_width_.top
+        --w = w - border_widths
+        --h = h - border_heights
+        --color = 0xff
+    return transparency_map
 
 class BorderWidth:
   left/int

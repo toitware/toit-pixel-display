@@ -18,7 +18,7 @@ main args:
   display := SeveralColorPixelDisplay driver
   display.background = SEVERAL_BLUE
 
-  win := RoundedCornerWindowElement --x=30 --y=30 --w=180 --h=100 --corner_radius=15 --background_color=SEVERAL_LIGHT_GRAY
+  win := RoundedCornerWindowElement --x=30 --y=30 --w=180 --h=100 --corner_radius=15 --background=SEVERAL_LIGHT_GRAY
   display.add win
 
   text := Label --x=90 --y=55 --label="Hello, World!" --font=sans10 --color=SEVERAL_BLACK

@@ -19,7 +19,7 @@ main args:
   display := TwoColorPixelDisplay driver
   display.background = BLACK
 
-  win := SimpleWindowElement --x=30 --y=30 --w=180 --h=100 --border_width=0 --background_color=WHITE
+  win := SimpleWindowElement --x=30 --y=30 --w=180 --h=100
   display.add win
 
   text := Label --x=90 --y=55 --label="Hello, World!" --font=sans10 --color=BLACK

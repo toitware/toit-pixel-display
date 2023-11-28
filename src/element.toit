@@ -216,8 +216,17 @@ class Div extends Element:
       h = value
 
   draw canvas/Canvas -> none:
-    Background.draw background_ canvas x y w h
-    if border_: border_.draw canvas x y w h
+    if children:
+      old_transform := canvas.transform
+      canvas.transform = old_transform.translate x_ y_
+      Background.draw background_ canvas 0 0 w h
+      if children: children.do: it.draw canvas
+      if border_: border_.draw canvas 0 0 w h
+      canvas.transform = old_transform
+    else:
+      // In the simple case, don't mess about with transforms.
+      Background.draw background_ canvas x y w h
+      if border_: border_.draw canvas x y w h
 
 class Label extends Element implements ColoredElement:
   color_/int := ?
@@ -526,20 +535,22 @@ class BarCodeEanElement extends CustomElement:
     canvas.rectangle x + 2 top --w=1 --h=long_height --color=color_
 
 /**
-A WindowElement is a collections of elements.  It is modeled like a painting hung on
-  a wall.  It consists (from back to front) of a wall, a frame and the painting
-  itself. The optional frame extends around and behind the picture, and can be
-  partially transparent on true-color displays, which enables drop shadows.  The
-  painting can also be partially transparent.
+A WindowElement is like a div, but it clips any draws inside of it.  It can
+  have a shadow or other drawing outside its raw x y w h area, called the
+  decoration.
+Because it has clipping and compositing, it can have more interesting bounds
+  like rounded corners.
 */
 abstract class WindowElement extends Div implements Window:
-
   /**
-  Calls the block with x, y, w, h, which includes the frame/border.
+  Calls the block with x, y, w, h, which includes the decoration.
   */
   extent [block] -> none:
     block.call x_ y_ w_ h_
 
+  /**
+  Invalidates the whole window including the decoration.
+  */
   invalidate:
     if change_tracker:
       extent: | outer_x outer_y outer_w outer_h |
@@ -558,88 +569,66 @@ abstract class WindowElement extends Div implements Window:
 
   /**
   Returns a canvas that is an alpha map for the given area that describes where
-    the wall around this window shines through.  This defines the edges and
-    shadows of a window frame.  For 2-color and 3-color textures this is a
-    bitmap with 0 for transparent and 1 for opaque.  For true-color and
-    gray-scale textures it is a bytemap with 0 for transparent and 0xff for
-    opaque.  As a special case it may return a single-entry byte array, which
-    means all pixels have the same transparency.
+    the things behind around this window shines through.  This is mainly used for
+    rounded corners, but also for other decorations.
+  For 2-color and 3-color textures this is a bitmap with 0 for transparent and
+    1 for opaque.  For true-color and gray-scale textures it is a bytemap with
+    0 for transparent and 0xff for opaque.  As a special case it may return a
+    single-entry byte array, which means all pixels have the same transparency.
   The coordinate system of the canvas is the coordinate system of the window, so
-    the top and left edges will normally be plotted at negative coordinates.
+    the top and left edges may be plotted at negative coordinates.
   */
   abstract frame_map canvas/Canvas -> ByteArray
 
   /**
   Returns a canvas that is an alpha map for the given area that describes where
-    the painting is visible.  This defines the edges of the content of this
-    window.  For 2-color and 3-color textures this is a bitmap with 0 for
-    transparent and 1 for opaque.  For true-color and gray-scale textures it is
-    a bytemap with 0 for transparent and 0xff for opaque.  As a special case it
-    may return a single-entry byte array, which means all pixels have the same
-    transparency.
+    the window content (background of the window and children) are visible.
+  For 2-color and 3-color textures this is a bitmap with 0 for transparent and
+    1 for opaque.  For true-color and gray-scale textures it is a bytemap with
+    0 for transparent and 0xff for opaque.  As a special case it may return a
+    single-entry byte array, which means all pixels have the same transparency.
   The coordinate system of the canvas is the coordinate system of the window.
   */
-  abstract painting_map canvas/Canvas -> ByteArray
+  abstract content_map canvas/Canvas -> ByteArray
 
-  /**
-  Draws the background on the canvas.  This represents the interior wall color
-    and other interior objects will be draw on top of this.  Does not need to
-    take the frame_map or painting_map into account: The canvas this function
-    draws on will be composited using them afterwards.
-  The coordinate system of the canvas is the coordinate system of the window.
-  */
-  abstract draw_background canvas/Canvas -> none
-
-  /**
-  Expected to draw the frame on the canvas.  This represents the window frame
-    color.  Does not need to take the frame_map or painting_map into account: The
-    return value from this function will be composited using them afterwards.
-  The coordinate system of the canvas is the coordinate system of the window, so
-    the top and left edges will normally be plotted at negative coordinates.
-  */
-  abstract draw_frame canvas
-
-  constructor --x/int?=null --y/int?=null --w/int?=null --h/int?=null:
-    super --x=x --y=y --w=w --h=h
+  constructor --x/int?=null --y/int?=null --w/int?=null --h/int?=null --background=null --border/Border?=null:
+    super --x=x --y=y --w=w --h=h --background=background --border=border
 
   // After the textures under us have drawn themselves, we draw on top.
   draw canvas/Canvas -> none:
-    if not (x and y and h and w): return
+    // If we are outside the window and the decorations, there is nothing to do.
     extent: | x2 y2 w2 h2 |
       if (canvas.bounds_analysis x2 y2 w2 h2) == Canvas.ALL_OUTSIDE: return
 
     old_transform := canvas.transform
     canvas.transform = old_transform.translate x_ y_
 
-    painting_opacity := painting_map canvas
+    content_opacity := content_map canvas
 
     // If the window is 100% painting at these coordinates then we can draw the
-    // elements of the window and no compositing is required.  We merely draw
-    // the window background color and then draw the textures.
-    if is_all_opaque painting_opacity:
-      draw_background canvas
-      children.do: it.draw canvas
+    // elements of the window and no compositing is required.
+    if is_all_opaque content_opacity:
       canvas.transform = old_transform
+      super canvas  // Use the unclipped drawing method from Div.
       return
 
     frame_opacity := frame_map canvas
 
-    if is_all_transparent frame_opacity and is_all_transparent painting_opacity:
+    if is_all_transparent frame_opacity and is_all_transparent content_opacity:
       canvas.transform = old_transform
       return
 
-    // The complicated case where we have to composit the tile from the wall,
-    // the frame, and the painting_opacity.
-    frame_canvas := null
+    // The complicated case where we have to composit the tile with the border and decorations.
+    border_canvas := null
     if not is_all_transparent frame_opacity:
-      frame_canvas = canvas.create_similar
-      draw_frame frame_canvas
+      border_canvas = canvas.create_similar
+      if border_: border_.draw border_canvas 0 0 w h
 
     painting_canvas := canvas.create_similar
-    draw_background painting_canvas
-    children.do: it.draw painting_canvas
+    Background.draw background_ painting_canvas 0 0 w h
+    if children: children.do: it.draw painting_canvas
 
-    canvas.composit frame_opacity frame_canvas painting_opacity painting_canvas
+    canvas.composit frame_opacity border_canvas content_opacity painting_canvas
 
     canvas.transform = old_transform
 
@@ -656,109 +645,26 @@ A rectangular window with a fixed width colored border.  The border is
   added to the visible area inside the window.
 */
 class SimpleWindowElement extends WindowElement:
-  border_width_/int := ?
-  border_color_/int? := ?
-  background_color_/int? := ?
-
-  constructor --x/int?=null --y/int?=null --w/int?=null --h/int?=null --border_width/int=0 --border_color/int=0 --background_color/int=0xffffff:
-    if border_width < 0 or (border_width != 0 and border_color == null): throw "INVALID_ARGUMENT"
-    border_width_ = border_width
-    border_color_ = border_color
-    background_color_ = background_color
-
-    super --x=x --y=y --w=w --h=h  // Inner dimensions.
-
-  extent [block]:
-    if x and y and w and h:
-      block.call
-          x - border_width_
-          y - border_width_
-          w + border_width_ * 2
-          h + border_width_ * 2
-
-  border_width -> int: return border_width_
-
-  border_color -> int: return border_color_
-
-  background_color -> int?: return background_color_
-
-  border_width= new_width/int -> none:
-    if new_width < 0 or (new_width != 0 and border_color_ == null): throw "INVALID_ARGUMENT"
-    if new_width > border_width_:
-      border_width_ = new_width
-      invalidate
-    else if new_width < border_width_:
-      invalidate
-      border_width_ = new_width
-
-  border_color= new_color/int -> none:
-    if new_color != border_color_:
-      if border_width_ != 0: invalidate
-      border_color_ = new_color
-
-  background_color= new_color/int? -> none:
-    if new_color != background_color_:
-      if change_tracker:
-        change_tracker.child_invalidated_element x_ y_ w_ h_
-      background_color_ = new_color
+  constructor --x/int?=null --y/int?=null --w/int?=null --h/int?=null --background=null --border/Border?=null:
+    super --x=x --y=y --w=w --h=h --background=background --border=border
 
   // Draws 100% opacity for the frame shape, a filled rectangle.
   // (The frame is behind the painting, so this doesn't mean we only
   // see the frame.)
   frame_map canvas/Canvas:
-    if border_width_ == 0: return WindowElement.ALL_TRANSPARENT  // The frame is not visible anywhere.
-    // Transform inner dimensions not including border
-    canvas.transform.xywh 0 0 w_ h_: | x2 y2 w2 h2 |
-      if x2 <= 0 and y2 <= 0 and x2 + w2 >= canvas.width_ and y2 + h2 >= canvas.height_:
-        // In the middle, the window content is 100% opaque and draw on top of the
-        // frame.  There is no need to provide a frame alpha map, so for efficiency we
-        // just return 0 which indicates the frame is 100% transparent.
-        return WindowElement.ALL_TRANSPARENT
-    // Transform outer dimensions including border.
-    outer_w := w_ + 2 * border_width_
-    outer_h := h_ + 2 * border_width_
-    canvas.transform.xywh -border_width_ -border_width_ outer_w outer_h: | x2 y2 w2 h2 |
-      right := x2 + w2
-      bottom := y2 + h2
-      if right <= 0 or bottom <= 0 or x2 >= canvas.width_ or y2 >= canvas.height_:
-        // The frame is completely outside the window, so it is 100% transparent.
-        return WindowElement.ALL_TRANSPARENT
-    // We need to create a bitmap to describe the frame's extent.
-    transparency_map := canvas.make_alpha_map
-    // Declare the whole area inside the frame's extent opaque.  The window content will
-    // draw on top of this as needed.
-    transparency_map.rectangle -border_width -border_width_
-        --w=outer_w
-        --h=outer_h
-        --color=0xffffff
-    return transparency_map
+    if not border_: return WindowElement.ALL_TRANSPARENT  // No border visible.
+    return border_.frame_map canvas w h
 
   // Draws 100% opacity for the window content, a filled rectangle.
-  painting_map canvas/Canvas:
-    canvas.transform.xywh 0 0 w_ h_: | x2 y2 w2 h2 |
-      if x2 <= 0 and y2 <= 0 and x2 + w2 >= canvas.width_ and y2 + h2 >= canvas.height_:
-        return WindowElement.ALL_OPAQUE  // The content is 100% opaque in the middle.
-      right := x2 + w2
-      bottom := y2 + h2
-      if right <= 0 or bottom <= 0 or x2 >= canvas.width_ or y2 >= canvas.height_:
-        return WindowElement.ALL_TRANSPARENT  // The content is 100% transparent outside the window.
-    // We need to create a bitmap to describe the content's extent.
-    transparency_map := canvas.make_alpha_map
-    // Declare the whole area inside the content's extent opaque.  The window content will
-    // draw on top of this as needed.
-    transparency_map.rectangle 0 0
-      --w=w_
-      --h=h_
-      --color=0xffffff
-    return transparency_map
+  content_map canvas/Canvas:
+    return (border_ or NO_BORDER_).content_map canvas w h
 
   draw_frame canvas/Canvas:
-    if border_width_ != 0: canvas.set_all_pixels border_color_
-
-  draw_background canvas/Canvas:
-    if background_color_: canvas.set_all_pixels background_color_
+    if border_: border_.draw canvas 0 0 w h
 
   type -> string: return "simple-window"
+
+NO_BORDER_ ::= SolidBorder --color=0 --width=0
 
 class RoundedCornerOpacity_:
   byte_opacity/ByteArray
@@ -829,15 +735,13 @@ class RoundedCornerOpacity_:
 /** A rectangular window with rounded corners. */
 class RoundedCornerWindowElement extends WindowElement:
   corner_radius_/int := ?
-  background_color_/int? := ?
   opacities_/RoundedCornerOpacity_? := null
   shadow_palette_/ByteArray := #[]
 
-  constructor --x/int?=null --y/int?=null --w/int?=null --h/int?=null --corner_radius/int=5 --background_color/int=0:
+  constructor --x/int?=null --y/int?=null --w/int?=null --h/int?=null --corner_radius/int=5 --background=null:
     if not 0 <= corner_radius <= RoundedCornerOpacity_.TABLE_SIZE_: throw "OUT_OF_RANGE"
     corner_radius_ = corner_radius
-    background_color_ = background_color
-    super --x=x --y=y --w=w --h=h
+    super --x=x --y=y --w=w --h=h --background=background
 
   corner_radius -> int: return corner_radius_
 
@@ -865,7 +769,7 @@ class RoundedCornerWindowElement extends WindowElement:
     return WindowElement.ALL_TRANSPARENT  // No frame on these windows.
 
   // Draws 100% opacity for the window content, a filled rounded-corner rectangle.
-  painting_map canvas/Canvas:
+  content_map canvas/Canvas:
     canvas.transform.xywh 0 0 w_ h_: | x2 y2 w2 h2 |
       right := x2 + w2
       bottom := y2 + h2
@@ -917,9 +821,6 @@ class RoundedCornerWindowElement extends WindowElement:
 
   draw_frame canvas/Canvas:
     unreachable  // There's no frame.
-
-  draw_background canvas/Canvas:
-    if background_color_: canvas.set_all_pixels background_color_
 
   type -> string: return "rounded-corner-window"
 
