@@ -618,13 +618,14 @@ You can provide a background to draw when the slider is above a certain level,
 The thumb control should be placed in a position that corresponds to the
   initial value, and it will be drawn on top of the backgrounds.
 */
-class VerticalSlider extends CustomElement:
+class Slider extends CustomElement:
   value_/num? := ?
   min_/num? := ?
   max_/num? := ?
   background_lo_ := ?
   background_hi_ := ?
   thumb_/PngElement? := ?
+  horizontal_ := ?
 
   thumb_min_/int
   thumb_max_/int?
@@ -632,7 +633,7 @@ class VerticalSlider extends CustomElement:
 
   type -> string: return "vertical-slider"
 
-  constructor --x/int?=null --y/int?=null --w/int?=null --h/int?=null --background-hi=null --background-lo=null --thumb/PngElement?=null --value/num?=null --min/num?=0 --max/num?=100 --thumb_min/int=0 --thumb_max/int?=null:
+  constructor --x/int?=null --y/int?=null --w/int?=null --h/int?=null --background-hi=null --background-lo=null --thumb/PngElement?=null --value/num?=null --min/num?=0 --max/num?=100 --thumb_min/int=0 --thumb_max/int?=null --horizontal/bool=false:
     value_ = value
     min_ = min
     max_ = max
@@ -641,8 +642,11 @@ class VerticalSlider extends CustomElement:
     thumb_ = thumb
     thumb_min_ = thumb_min
     thumb_max_ = thumb_max
+    horizontal_ = horizontal
     super --x=x --y=y --w=w --h=h
     recalculate_
+
+  thumb_max: return thumb_max_ or (horizontal_ ? w : h)
 
   recalculate_ -> none:
     if not (min_ and max_ and value_ and h): return
@@ -650,14 +654,18 @@ class VerticalSlider extends CustomElement:
     value_ = max value_ min_
     value_ = min value_ max_
     old_boundary := boundary_
-    thumb_max := thumb_max_ or h
     boundary_ = ((value_ - min_).to_float / (max_ - min_) * (thumb_max - thumb_min_) + 0.1).to_int + thumb_min_
     if boundary_ != old_boundary:
       top := max old_boundary boundary_
       bottom := min old_boundary boundary_
-      invalidate
-          --y = y + h - top
-          --h = top - bottom
+      if horizontal_:
+        invalidate
+            --x = x + w - top
+            --w = top - bottom
+      else:
+        invalidate
+            --y = y + h - top
+            --h = top - bottom
 
   h= value/int -> none:
     if value != h:
@@ -666,17 +674,32 @@ class VerticalSlider extends CustomElement:
       recalculate_
       invalidate
 
+  w= value/int -> none:
+    if value != w:
+      invalidate
+      w_ = value
+      recalculate_
+      invalidate
+
   custom_draw canvas/Canvas -> none:
     blend := false
     if background_lo_ and boundary_ > thumb_min_:
-      analysis := canvas.bounds_analysis 0 0 w (h - boundary_)
+      analysis := ?
+      if horizontal_:
+        analysis = canvas.bounds_analysis 0 0 (w - boundary_) h
+      else:
+        analysis = canvas.bounds_analysis 0 0 w (h - boundary_)
       if analysis != Canvas.ALL_OUTSIDE:
         if analysis == Canvas.ALL_INSIDE:
           background_lo_.draw canvas 0 0 w h
         else:
           blend = true
-    if background_hi_ and boundary_ < (thumb_max_ or h):
-      analysis := canvas.bounds_analysis 0 (h - boundary_) w h
+    if background_hi_ and boundary_ < thumb_max:
+      analysis := ?
+      if horizontal_:
+        analysis = canvas.bounds_analysis (w - boundary_) 0 w h
+      else:
+        analysis = canvas.bounds_analysis 0 (h - boundary_) w h
       if analysis != Canvas.ALL_OUTSIDE:
         if analysis == Canvas.ALL_INSIDE:
           background_hi_.draw canvas 0 0 w h
@@ -690,10 +713,16 @@ class VerticalSlider extends CustomElement:
     hi := canvas.create_similar
 
     if background_lo_:
-      lo_alpha.rectangle 0 0 --w=w --h=(h - boundary_) --color=0xff
+      if horizontal_:
+        lo_alpha.rectangle 0 0 --w=(w - boundary_) --h=h --color=0xff
+      else:
+        lo_alpha.rectangle 0 0 --w=w --h=(h - boundary_) --color=0xff
       background_lo_.draw lo 0 0 w h
     if background_hi_:
-      hi_alpha.rectangle 0 (h - boundary_) --w=w --h=boundary_ --color=0xff
+      if horizontal_:
+        hi_alpha.rectangle (w - boundary_) 0 --w=boundary_ --h=h --color=0xff
+      else:
+        hi_alpha.rectangle 0 (h - boundary_) --w=w --h=boundary_ --color=0xff
       background_hi_.draw hi 0 0 w h
 
     canvas.composit hi_alpha hi lo_alpha lo
@@ -716,6 +745,11 @@ class VerticalSlider extends CustomElement:
       invalidate
     else if key == "thumb":
       thumb_ = value
+      invalidate
+    else if key == "horizontal":
+      invalidate
+      horizontal_ = value
+      recalculate_
       invalidate
     else:
       super key value

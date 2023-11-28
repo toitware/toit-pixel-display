@@ -37,7 +37,7 @@ main args:
       ]
 
   sliders := List 5:
-      VerticalSlider --x=(20 + 40 * it) --y=10 --value=(10 + it * 20)
+      Slider --x=(20 + 40 * it) --y=10 --value=(10 + it * 20)
   labels := List 5:
       Label --x=(30 + 40 * it) --y=125 --label="$(%c 'A' + it)" --alignment=ALIGN_CENTER
 
