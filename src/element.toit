@@ -226,17 +226,15 @@ class Div extends Element:
       super key value
 
   draw canvas/Canvas -> none:
-    if children:
-      old_transform := canvas.transform
-      canvas.transform = old_transform.translate x_ y_
-      Background.draw background_ canvas 0 0 w h
-      if children: children.do: it.draw canvas
-      if border_: border_.draw canvas 0 0 w h
-      canvas.transform = old_transform
-    else:
-      // In the simple case, don't mess about with transforms.
-      Background.draw background_ canvas x y w h
-      if border_: border_.draw canvas x y w h
+    old_transform := canvas.transform
+    canvas.transform = old_transform.translate x_ y_
+    Background.draw background_ canvas 0 0 w h
+    custom_draw canvas
+    if border_: border_.draw canvas 0 0 w h
+    canvas.transform = old_transform
+
+  custom_draw canvas/Canvas -> none:
+    if children: children.do: it.draw canvas
 
 class Label extends Element implements ColoredElement:
   color_/int := ?
@@ -349,7 +347,7 @@ class Label extends Element implements ColoredElement:
     return height_
 
   invalidate:
-    if change_tracker and x and y:
+    if change_tracker and x and y and font_ and label_:
       xywh_: | x y w h |
         change_tracker.child_invalidated_element x y w h
 
@@ -423,6 +421,24 @@ abstract class CustomElement extends ClippingDiv:
     if change_tracker and x and y and w and h:
       change_tracker.child_invalidated_element x y w h
 
+  draw canvas/Canvas -> none:
+    if not (x and y): return
+    if (canvas.bounds_analysis x y w h) == Canvas.ALL_OUTSIDE: return
+    old_transform := canvas.transform
+    canvas.transform = old_transform.translate x_ y_
+    Background.draw background_ canvas 0 0 w h
+    custom_draw canvas
+    if border_: border_.draw canvas 0 0 w h
+    canvas.transform = old_transform
+
+  /**
+  Override this to draw your custom element.  The coordinate system is
+    the coordinate system of your element, ie the top left is 0, 0.
+  The background has already been drawn when this is called, and the
+    frame will be drawn afterwards.
+  */
+  abstract custom_draw canvas/Canvas -> none
+
 /**
 A ClippingDiv is like a div, but it clips any draws inside of it.  It can
   have a shadow or other drawing outside its raw x y w h area, called the
@@ -435,18 +451,18 @@ class ClippingDiv extends Div:
   /**
   Calls the block with x, y, w, h, which includes the decoration.
   */
-  extent [block] -> none:
+  extent --x=x_ --y=y_ --w=w_ --h=h_ [block] -> none:
     if border_:
-      border_.invalidation_area x_ y_ w_ h_ block
+      border_.invalidation_area x y w h block
     else:
-      block.call x_ y_ w_ h_
+      block.call x y w h
 
   /**
   Invalidates the whole window including the decoration.
   */
-  invalidate:
+  invalidate --x=x_ --y=y_ --w=w_ --h=h_ -> none:
     if change_tracker:
-      extent: | outer_x outer_y outer_w outer_h |
+      extent --x=x --y=y --w=w --h=h: | outer_x outer_y outer_w outer_h |
         change_tracker.child_invalidated_element outer_x outer_y outer_w outer_h
 
   static ALL_TRANSPARENT ::= ByteArray 1: 0
@@ -506,7 +522,7 @@ class ClippingDiv extends Div:
 
     painting_canvas := canvas.create_similar
     Background.draw background_ painting_canvas 0 0 w h
-    if children: children.do: it.draw painting_canvas
+    custom_draw painting_canvas
 
     canvas.composit frame_opacity border_canvas content_opacity painting_canvas
 
@@ -566,10 +582,9 @@ class PngElement extends CustomElement:
     super --x=x --y=y
 
   // Redraw routine.
-  draw canvas/Canvas:
-    if not (x and y): return
+  custom_draw canvas/Canvas:
     y2 := 0
-    while y2 < h and (canvas.bounds_analysis x (y + y2) w (h - y2)) != Canvas.ALL_OUTSIDE:
+    while y2 < h and (canvas.bounds_analysis 0 y2 w (h - y2)) != Canvas.ALL_OUTSIDE:
       png_.get_indexed_image_data y2 h
           --accept_8_bit=canvas.supports_8_bit
           --need_gray_palette=canvas.gray_scale: | y_from/int y_to/int bits_per_pixel/int pixels/ByteArray line_stride/int palette/ByteArray alpha_palette/ByteArray |
@@ -577,7 +592,7 @@ class PngElement extends CustomElement:
           // Last line a little shorter because it has no stride padding.
           adjust := line_stride - ((round_up w 8) >> 3)
           pixels = pixels[0 .. (y_to - y_from) * line_stride - adjust]
-          canvas.bitmap x (y + y_from)
+          canvas.bitmap 0 y_from
               --pixels=pixels
               --alpha=alpha_palette
               --palette=palette
@@ -586,7 +601,7 @@ class PngElement extends CustomElement:
         else:
           adjust := line_stride - w
           pixels = pixels[0 .. (y_to - y_from) * line_stride - adjust]
-          canvas.pixmap x (y + y_from) --pixels=pixels
+          canvas.pixmap 0 y_from --pixels=pixels
               --alpha=alpha_palette
               --palette=palette
               --source_width=w
@@ -595,4 +610,117 @@ class PngElement extends CustomElement:
 
   type -> string: return "png"
 
+/**
+A vertical slider that can indicate a value between a minimum and a maxiumum.
+You can provide a background to draw when the slider is above a certain level,
+  and a different one for when the slider is below that level.  If either
+  background is omitted the slider is transparent in that section.
+The thumb control should be placed in a position that corresponds to the
+  initial value, and it will be drawn on top of the backgrounds.
+*/
+class VerticalSlider extends CustomElement:
+  value_/num? := ?
+  min_/num? := ?
+  max_/num? := ?
+  background_lo_ := ?
+  background_hi_ := ?
+  thumb_/PngElement? := ?
+
+  thumb_min_/int
+  thumb_max_/int?
+  boundary_/int := 0
+
+  type -> string: return "vertical-slider"
+
+  constructor --x/int?=null --y/int?=null --w/int?=null --h/int?=null --background-hi=null --background-lo=null --thumb/PngElement?=null --value/num?=null --min/num?=0 --max/num?=100 --thumb_min/int=0 --thumb_max/int?=null:
+    value_ = value
+    min_ = min
+    max_ = max
+    background_lo_ = background_lo
+    background_hi_ = background_hi
+    thumb_ = thumb
+    thumb_min_ = thumb_min
+    thumb_max_ = thumb_max
+    super --x=x --y=y --w=w --h=h
+    recalculate_
+
+  recalculate_ -> none:
+    if not (min_ and max_ and value_ and h): return
+    if (min_ == max_): return
+    value_ = max value_ min_
+    value_ = min value_ max_
+    old_boundary := boundary_
+    thumb_max := thumb_max_ or h
+    boundary_ = ((value_ - min_).to_float / (max_ - min_) * (thumb_max - thumb_min_) + 0.1).to_int + thumb_min_
+    if boundary_ != old_boundary:
+      top := max old_boundary boundary_
+      bottom := min old_boundary boundary_
+      invalidate
+          --y = y + h - top
+          --h = top - bottom
+
+  h= value/int -> none:
+    if value != h:
+      invalidate
+      h_ = value
+      recalculate_
+      invalidate
+
+  custom_draw canvas/Canvas -> none:
+    blend := false
+    if background_lo_ and boundary_ > thumb_min_:
+      analysis := canvas.bounds_analysis 0 0 w (h - boundary_)
+      if analysis != Canvas.ALL_OUTSIDE:
+        if analysis == Canvas.ALL_INSIDE:
+          background_lo_.draw canvas 0 0 w h
+        else:
+          blend = true
+    if background_hi_ and boundary_ < (thumb_max_ or h):
+      analysis := canvas.bounds_analysis 0 (h - boundary_) w h
+      if analysis != Canvas.ALL_OUTSIDE:
+        if analysis == Canvas.ALL_INSIDE:
+          background_hi_.draw canvas 0 0 w h
+        else:
+          blend = true
+    if not blend: return
+
+    lo_alpha := background_lo_ ? canvas.make_alpha_map : ClippingDiv.ALL_TRANSPARENT
+    hi_alpha := background_hi_ ? canvas.make_alpha_map : ClippingDiv.ALL_TRANSPARENT
+    lo := canvas.create_similar
+    hi := canvas.create_similar
+
+    if background_lo_:
+      lo_alpha.rectangle 0 0 --w=w --h=(h - boundary_) --color=0xff
+      background_lo_.draw lo 0 0 w h
+    if background_hi_:
+      hi_alpha.rectangle 0 (h - boundary_) --w=w --h=boundary_ --color=0xff
+      background_hi_.draw hi 0 0 w h
+
+    canvas.composit hi_alpha hi lo_alpha lo
+
   set_attribute key/string value -> none:
+    if key == "value":
+      value_ = value
+      recalculate_
+    else if key == "min":
+      min_ = value
+      recalculate_
+    else if key == "max":
+      max_ = value
+      recalculate_
+    else if key == "background-lo":
+      background_lo_ = value
+      invalidate
+    else if key == "background-hi":
+      background_hi_ = value
+      invalidate
+    else if key == "thumb":
+      thumb_ = value
+      invalidate
+    else:
+      super key value
+
+  value= value/num -> none:
+    if value != value_:
+      value_ = value
+      recalculate_
