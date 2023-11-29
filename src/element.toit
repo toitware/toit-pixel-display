@@ -228,7 +228,7 @@ class Div extends Element:
   draw canvas/Canvas -> none:
     old_transform := canvas.transform
     canvas.transform = old_transform.translate x_ y_
-    Background.draw background_ canvas 0 0 w h
+    Background.draw background_ canvas 0 0 w h --no-autocropped
     custom_draw canvas
     if border_: border_.draw canvas 0 0 w h
     canvas.transform = old_transform
@@ -423,10 +423,12 @@ abstract class CustomElement extends ClippingDiv:
 
   draw canvas/Canvas -> none:
     if not (x and y): return
-    if (canvas.bounds_analysis x y w h) == Canvas.ALL_OUTSIDE: return
+    analysis := canvas.bounds_analysis x y w h
+    if analysis == Canvas.DISJOINT: return
+    autocropped := analysis == Canvas.CANVAS_IN_AREA or analysis == Canvas.COINCIDENT
     old_transform := canvas.transform
     canvas.transform = old_transform.translate x_ y_
-    Background.draw background_ canvas 0 0 w h
+    Background.draw background_ canvas 0 0 w h --autocropped=autocropped
     custom_draw canvas
     if border_: border_.draw canvas 0 0 w h
     canvas.transform = old_transform
@@ -494,7 +496,7 @@ class ClippingDiv extends Div:
   draw canvas/Canvas -> none:
     // If we are outside the window and the decorations, there is nothing to do.
     extent: | x2 y2 w2 h2 |
-      if (canvas.bounds_analysis x2 y2 w2 h2) == Canvas.ALL_OUTSIDE: return
+      if (canvas.bounds_analysis x2 y2 w2 h2) == Canvas.DISJOINT: return
 
     old_transform := canvas.transform
     canvas.transform = old_transform.translate x_ y_
@@ -521,7 +523,7 @@ class ClippingDiv extends Div:
       if border_: border_.draw border_canvas 0 0 w h
 
     painting_canvas := canvas.create_similar
-    Background.draw background_ painting_canvas 0 0 w h
+    Background.draw background_ painting_canvas 0 0 w h --autocropped
     custom_draw painting_canvas
 
     canvas.composit frame_opacity border_canvas content_opacity painting_canvas
@@ -584,7 +586,7 @@ class PngElement extends CustomElement:
   // Redraw routine.
   custom_draw canvas/Canvas:
     y2 := 0
-    while y2 < h and (canvas.bounds_analysis 0 y2 w (h - y2)) != Canvas.ALL_OUTSIDE:
+    while y2 < h and (canvas.bounds_analysis 0 y2 w (h - y2)) != Canvas.DISJOINT:
       png_.get_indexed_image_data y2 h
           --accept_8_bit=canvas.supports_8_bit
           --need_gray_palette=canvas.gray_scale: | y_from/int y_to/int bits_per_pixel/int pixels/ByteArray line_stride/int palette/ByteArray alpha_palette/ByteArray |
@@ -689,9 +691,9 @@ class Slider extends CustomElement:
         analysis = canvas.bounds_analysis 0 0 (w - boundary_) h
       else:
         analysis = canvas.bounds_analysis 0 0 w (h - boundary_)
-      if analysis != Canvas.ALL_OUTSIDE:
-        if analysis == Canvas.ALL_INSIDE:
-          background_lo_.draw canvas 0 0 w h
+      if analysis != Canvas.DISJOINT:
+        if analysis == Canvas.CANVAS_IN_AREA or analysis == Canvas.COINCIDENT:
+          background_lo_.draw canvas 0 0 w h --autocropped
         else:
           blend = true
     if background_hi_ and boundary_ < thumb_max:
@@ -700,9 +702,9 @@ class Slider extends CustomElement:
         analysis = canvas.bounds_analysis (w - boundary_) 0 w h
       else:
         analysis = canvas.bounds_analysis 0 (h - boundary_) w h
-      if analysis != Canvas.ALL_OUTSIDE:
-        if analysis == Canvas.ALL_INSIDE:
-          background_hi_.draw canvas 0 0 w h
+      if analysis != Canvas.DISJOINT:
+        if analysis == Canvas.CANVAS_IN_AREA or analysis == Canvas.COINCIDENT:
+          background_hi_.draw canvas 0 0 w h --autocropped
         else:
           blend = true
     if not blend: return
@@ -717,13 +719,13 @@ class Slider extends CustomElement:
         lo_alpha.rectangle 0 0 --w=(w - boundary_) --h=h --color=0xff
       else:
         lo_alpha.rectangle 0 0 --w=w --h=(h - boundary_) --color=0xff
-      background_lo_.draw lo 0 0 w h
+      Background.draw background_lo_ lo 0 0 w h --autocropped
     if background_hi_:
       if horizontal_:
         hi_alpha.rectangle (w - boundary_) 0 --w=boundary_ --h=h --color=0xff
       else:
         hi_alpha.rectangle 0 (h - boundary_) --w=w --h=boundary_ --color=0xff
-      background_hi_.draw hi 0 0 w h
+      Background.draw background_hi_ hi 0 0 w h --autocropped
 
     canvas.composit hi_alpha hi lo_alpha lo
 

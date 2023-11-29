@@ -28,11 +28,11 @@ main args:
     w := ?
     h := ?
     if it < 8:
-      w = 20
-      h = 30
+      w = 23
+      h = 31
     else:
-      w = 30
-      h = 20
+      w = 31
+      h = 23
     x := 20 + (it % 4) * 50
     y := 20 + (it / 4) * 50
     gradient := GradientBackground --angle=angle --specifiers=[

@@ -61,9 +61,9 @@ class GradientBackground implements Background:
         hash_ = hash
     return hash_
 
-  draw canvas/Canvas x/int y/int w/int h/int -> none:
+  draw canvas/Canvas x/int y/int w/int h/int --autocropped/bool -> none:
     if not rendering_: rendering_ = GradientRendering_.get w h this
-    rendering_.draw canvas x y
+    rendering_.draw canvas x y --autocropped=autocropped
 
   static normalize_angle_ angle/int -> int:
     if 0 <= angle < 360:
@@ -104,6 +104,8 @@ class GradientRendering_:
   red_pixels_/ByteArray? := null
   green_pixels_/ByteArray? := null
   blue_pixels_/ByteArray? := null
+  texture_length_ /int := 0
+  texture_length_repeats_ /int := 1
   draw_vertical_/bool? := null
   angle_ /int
   h_ /int := 0
@@ -121,6 +123,13 @@ class GradientRendering_:
 
   constructor w/int? h/int? gradient/GradientBackground:
     angle := gradient.angle
+    specifiers/List := gradient.specifiers
+    if 180 <= angle < 360:
+      angle -= 180
+      specifiers = List specifiers.size:
+        i := specifiers.size - 1 - it
+        GradientSpecifier (100 - specifiers[i].percent)
+            --color = specifiers[i].color
     angle_ = angle
     if h != 0 and h != null and w != 0 and w != null:
       h_ = h
@@ -143,37 +152,51 @@ class GradientRendering_:
       rangle *= 180.0 / math.PI            // From 0 to 90.
       draw_vertical_ = angle < rangle
       texture_length/int := ?
+      texture_length_repeats_ = 1
       if draw_vertical_:
         // The gradient is more vertical than the rectangle, so we will draw
         // vertical lines on the rectangle.
         texture_length = (h + w * (math.tan (angle * math.PI / 180.0)) + 0.01).round
+        if angle == 0:
+          // For efficiency, repeat the gradient a few times in the buffer.
+          texture_length = h
+          texture_length_repeats_ = max 1 (512 / texture_length)
       else:
         // The gradient is more horizontal than the rectangle, so we will draw
         // horizontal lines on the rectangle.
         texture_length = (w + h * (math.tan ((90 - angle) * math.PI / 180.0)) + 0.01).round
+        if angle == 90:
+          // For efficiency, repeat the gradient a few times in the buffer.
+          texture_length = w
+          texture_length_repeats_ = max 1 (512 / texture_length)
+      texture_length_ = texture_length
 
-      red_pixels_ = ByteArray texture_length
-      green_pixels_ = ByteArray texture_length
-      blue_pixels_ = ByteArray texture_length
-      ranges/List := extract_ranges_ gradient.specifiers
+      red_pixels_ = ByteArray texture_length * texture_length_repeats_
+      green_pixels_ = ByteArray texture_length * texture_length_repeats_
+      blue_pixels_ = ByteArray texture_length * texture_length_repeats_
+      ranges/List := extract_ranges_ specifiers
       ranges.do: | range |
         get_colors range texture_length: | index red green blue |
           red_pixels_[index] = red
           green_pixels_[index] = green
           blue_pixels_[index] = blue
+        (texture_length_repeats_ - 1).repeat:
+          red_pixels_.replace ((it + 1) * texture_length) red_pixels_[0..texture_length]
+          green_pixels_.replace ((it + 1) * texture_length) green_pixels_[0..texture_length]
+          blue_pixels_.replace ((it + 1) * texture_length) blue_pixels_[0..texture_length]
 
-  draw canvas/Canvas x/int y/int -> none:
+  draw canvas/Canvas x/int y/int --autocropped/bool -> none:
     if not canvas.supports_8_bit: throw "UNSUPPORTED"
     angle := angle_
     w := w_
     h := h_
     analysis := canvas.bounds_analysis x y w h
-    if analysis == Canvas.ALL_OUTSIDE: return
+    if analysis == Canvas.DISJOINT: return
     // Determine whether the draw operations will be automatically cropped for
     // us, or whether we need to do it ourselves by using slices for drawing
     // operations.  We could also check whether we are inside a window that will
     // use compositing to crop everything.
-    auto_crop := analysis == Canvas.ALL_INSIDE
+    if analysis == Canvas.CANVAS_IN_AREA or analysis == Canvas.COINCIDENT: autocropped = true
 
     // CSS gradient angles are:
     //    0 bottom to top.
@@ -181,88 +204,81 @@ class GradientRendering_:
     //  180 top to bottom
     //  270 right to left
 
+    repeats := texture_length_repeats_
     if draw_vertical_:
       // The gradient goes broadly vertically, and we draw in vertical strips.
-      up/bool := angle < 90
       orientation/int := ORIENTATION_90
       x2/int := x
       y2/int := y + h
-      if 90 < angle < 270:  // Top to bottom.
-        up = angle <= 180
+      if angle >= 90:  // Top to bottom.
         orientation = ORIENTATION_270
         x2++
         y2 = y
-      start/int := w - 1
-      stop/int := -1
-      i_step/int := -1
-      if up:
-        start = 0
-        stop = w
-        i_step = 1
       offset := 0
-      step := ((red_pixels_.size - h) << 16) / w  // n.16 fixed point.
-      for i := start; i != stop; i += i_step:
+      step := ((texture_length_ - h) << 16) / w  // n.16 fixed point.
+      for i := 0; i < w; i += repeats:
+        lines := min repeats (w - i)
         o := offset >> 16
         y3 := ?
         r := red_pixels_
         g := green_pixels_
         b := blue_pixels_
-        if auto_crop:
+        source_width := ?
+        if autocropped or repeats != 1:
           if orientation == ORIENTATION_90:
             y3 = y2 + o
           else:
             y3 = y2 - o
+          source_width = texture_length_
+          r = r[0 .. texture_length_ * lines]
+          g = g[0 .. texture_length_ * lines]
+          b = b[0 .. texture_length_ * lines]
         else:
           y3 = y2
           r = r[o .. o + h]
           g = g[o .. o + h]
           b = b[o .. o + h]
+          source_width = h
         if canvas.gray_scale:
-          canvas.pixmap     (i + x2) y3 --pixels=b        --source_width=h --orientation=orientation
+          canvas.pixmap     (i + x2) y3 --pixels=b        --source_width=source_width --orientation=orientation
         else:
-          canvas.rgb_pixmap (i + x2) y3 --r=r --g=g --b=b --source_width=h --orientation=orientation
+          canvas.rgb_pixmap (i + x2) y3 --r=r --g=g --b=b --source_width=source_width --orientation=orientation
         offset += step
     else:
       // The gradient goes broadly horizontally, and we draw in horizontal strips.
-      up/bool := angle > 90
-      orientation/int := ORIENTATION_0
+      up/bool := angle >= 90
       x2/int := x
       y2/int := y
-      if angle >= 180:  // Right to left.
-        up = angle < 270
-        orientation = ORIENTATION_180
-        x2 += w
-        y2++
-      start := h - 1
-      stop := -1
-      i_step := -1
-      if up:
-        start = 0
-        stop = h
-        i_step = 1
       offset := 0
-      step := ((red_pixels_.size - w) << 16) / h  // n.16 fixed point.
-      for i := start; i != stop; i += i_step:
+      step := ((texture_length_ - w) << 16) / h  // n.16 fixed point.
+      loop_body := : | i lines |
         o := offset >> 16
         x3 := ?
         r := red_pixels_
         g := green_pixels_
         b := blue_pixels_
-        if auto_crop:
-          if orientation == ORIENTATION_0:
-            x3 = x2 - o
-          else:
-            x3 = x2 + o
+        source_width := ?
+        if autocropped or repeats != 1:
+          x3 = x2 - o
+          source_width = texture_length_
+          r = r[0 .. texture_length_ * lines]
+          g = g[0 .. texture_length_ * lines]
+          b = b[0 .. texture_length_ * lines]
         else:
           x3 = x2
           r = r[o .. o + w]
           g = g[o .. o + w]
           b = b[o .. o + w]
+          source_width = w
         if canvas.gray_scale:
-          canvas.pixmap     x3 (i + y2) --pixels=b        --source_width=w --orientation=orientation
+          canvas.pixmap     x3 (i + y2) --pixels=b        --source_width=source_width
         else:
-          canvas.rgb_pixmap x3 (i + y2) --r=r --g=g --b=b --source_width=w --orientation=orientation
+          canvas.rgb_pixmap x3 (i + y2) --r=r --g=g --b=b --source_width=source_width
         offset += step
+      if up:
+        for i := 0; i < h; i += repeats: loop_body.call i (min repeats (h - i))
+      else:
+        for i := h - 1; i >= 0; i--: loop_body.call i 1
 
   /// Returns a list of quadruples of the form starting-percent ending-percent start-color end-color.
   static extract_ranges_ specifiers/List -> List:

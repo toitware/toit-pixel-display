@@ -396,10 +396,17 @@ abstract class PixelDisplay implements Window:
 
   // Clean determines if we should clean or draw the dirty area.
   update_frame_buffer clean/bool refresh_dimensions -> none:
-    width := min driver_.width 120
-    max_height := max
-        round_down (max_canvas_height_ width) y_rounding_
-        y_rounding_
+    width_target := 64
+    width := ?
+    max_height := ?
+    while true:
+      width = min driver_.width (width_target - 8)
+      max_height = max
+          round_down (max_canvas_height_ width) y_rounding_
+          y_rounding_
+      if max_height < driver_.height: break
+      if width >= driver_.width: break
+      width_target += width_target
 
     // Perhaps we can do it all with one canvas.
     l := round_down (max 0 dirty_left_) x_rounding_
@@ -466,7 +473,7 @@ abstract class PixelDisplay implements Window:
         idx := (top >> 6) * dirty_bytes_per_line_ + (left >> 3)
         end_idx := ((round_up bottom 64) >> 6) * dirty_bytes_per_line_
         dirty_accumulator_[0] = CLEAN_
-        blit dirty_[idx..end_idx] dirty_accumulator_ (right - left) >> 3 --source_line_stride=dirty_bytes_per_line_ --destination_pixel_stride=0 --destination_line_stride=0 --operation=OR
+        blit dirty_[idx..end_idx] dirty_accumulator_ (right - left + 7) >> 3 --source_line_stride=dirty_bytes_per_line_ --destination_pixel_stride=0 --destination_line_stride=0 --operation=OR
         if dirty_accumulator_[0] & mask == CLEAN_:
           continue
 

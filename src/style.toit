@@ -20,18 +20,21 @@ EMPTY_STYLE_ ::= Style
 A background is anything that can draw itself on an element as a background.
 */
 interface Background:
-  draw canvas/Canvas x/int y/int w/int h/int -> none
+  draw canvas/Canvas x/int y/int w/int h/int --autocropped/bool -> none
 
   /**
   We also use colors (ints) as backgrounds, so this helper method will
     either just draw the plain color background, or call the draw method
     on a real Background object.
   */
-  static draw background canvas/Canvas x/int y/int w/int h/int -> none:
+  static draw background canvas/Canvas x/int y/int w/int h/int --autocropped/bool -> none:
     if background is int:
-      canvas.rectangle x y --w=w --h=h --color=background
+      if autocropped:
+        canvas.set_all_pixels background
+      else:
+        canvas.rectangle x y --w=w --h=h --color=background
     else if background != null:
-      (background as Background).draw canvas x y w h
+      (background as Background).draw canvas x y w h --autocropped=autocropped
 
   static check_valid background -> none:
     if background != null and background is not int and background is not Background:
@@ -43,9 +46,9 @@ class MultipleBackgrounds implements Background:
   constructor .list_:
     list_.do: if list_ is not Background: throw "INVALID_ARGUMENT"
 
-  draw canvas/Canvas x/int y/int w/int h/int -> none:
+  draw canvas/Canvas x/int y/int w/int h/int --autocropped/bool -> none:
     list_.do:
-      Background.draw it canvas x y w h
+      Background.draw it canvas x y w h --autocropped=autocropped
 
 interface Border:
   /// Draws the border within the given rectangle.

@@ -64,18 +64,30 @@ abstract class Canvas:
   abstract make_alpha_map -> Canvas
   abstract make_alpha_map --padding/int -> Canvas
 
-  static ALL_OUTSIDE ::= 0
-  static ALL_INSIDE ::= 1
-  static MIXED_BOUNDS ::= 2
+  /*
+  A, C disjoint or one of them is empty 0
+  A subset of C, A not empty            1
+  C subset of A, C not empty            2
+  A identical to C and non-empty        3
+  */
+
+  static DISJOINT           ::= 0  // The area and the canvas are disjoint.
+  static AREA_IN_CANVAS     ::= 1  // The area is a subset of the canvas.
+  static CANVAS_IN_AREA     ::= 2  // The canvas is a subset of the area.
+  static COINCIDENT         ::= 3  // The area and the canvas are identical.
+  static OVERLAP            ::= 4  // The areas overlap, but neither is a subset of the other.
 
   bounds_analysis x/int y/int w/int h/int -> int:
-    if h == 0 or w == 0: return ALL_OUTSIDE
+    if h == 0 or w == 0 or width_ == 0 or height_ == 0: return DISJOINT
     transform.xywh x y w h: | x2 y2 w2 h2 |
       right := x2 + w2
       bottom := y2 + h2
-      if right < 0 or bottom < 0 or x2 >= width_ or y2 >= height_: return ALL_OUTSIDE
-      if x2 >= 0 and y2 >= 0 and right <= width_ and bottom <= height_: return ALL_INSIDE
-    return MIXED_BOUNDS
+      if right < 0 or bottom < 0 or x2 >= width_ or y2 >= height_: return DISJOINT
+      if x2 >= 0 and y2 >= 0 and right <= width_ and bottom <= height_:
+        if x2 == 0 and y2 == 0 and right == width_ and bottom == height_: return COINCIDENT
+        return AREA_IN_CANVAS
+      if x2 <= 0 and y2 <= 0 and right >= width_ and bottom >= height_: return CANVAS_IN_AREA
+    return OVERLAP
 
   abstract composit frame_opacity frame_canvas/Canvas painting_opacity painting_canvas/Canvas
 
