@@ -4,6 +4,8 @@
 
 cmake_minimum_required(VERSION 3.22)
 
+PROJECT(MakeTags NONE)
+
 project(cli)
 
 enable_testing()
