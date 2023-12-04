@@ -140,10 +140,10 @@ class GradientRendering_:
       //   90 left to right
       //  180 top to bottom
       //  270 right to left
+      // But we normalize them to be 0-179 and reverse the colors if needed.
 
       // Create an angle that is between 0 and 90 degrees and has the same amount of
       // verticalness as the gradient.
-      if angle >= 180: angle = 360 - angle
       if angle >= 90: angle = 180 - angle
       // Create an angle from the center of the rectangle to the top right corner.
       // This is the angle that we will use to calculate the verticalness of the
@@ -205,6 +205,33 @@ class GradientRendering_:
     //  270 right to left
 
     repeats := texture_length_repeats_
+    offset := 0
+    source_width := 0
+    r := null
+    g := null
+    b := null
+
+    draw_block := : | y2 hw lines orientation |
+      o := offset >> 16
+      // Repeats != 1 implies the gradient is vertical or horizontal, which
+      // means we don't need clipping.
+      if autocropped or repeats != 1:
+        source_width = texture_length_
+        buf_size := texture_length_ * lines
+        r = red_pixels_[..buf_size]
+        g = green_pixels_[..buf_size]
+        b = blue_pixels_[..buf_size]
+        if orientation == ORIENTATION_90:
+          y2 + o  // Return value.
+        else:
+          y2 - o  // Return value.
+      else:
+        r = red_pixels_[o .. o + hw]
+        g = green_pixels_[o .. o + hw]
+        b = blue_pixels_[o .. o + hw]
+        source_width = hw
+        y2  // Return value.
+
     if draw_vertical_:
       // The gradient goes broadly vertically, and we draw in vertical strips.
       orientation/int := ORIENTATION_90
@@ -214,31 +241,10 @@ class GradientRendering_:
         orientation = ORIENTATION_270
         x2++
         y2 = y
-      offset := 0
       step := ((texture_length_ - h) << 16) / w  // n.16 fixed point.
       for i := 0; i < w; i += repeats:
         lines := min repeats (w - i)
-        o := offset >> 16
-        y3 := ?
-        r := red_pixels_
-        g := green_pixels_
-        b := blue_pixels_
-        source_width := ?
-        if autocropped or repeats != 1:
-          if orientation == ORIENTATION_90:
-            y3 = y2 + o
-          else:
-            y3 = y2 - o
-          source_width = texture_length_
-          r = r[0 .. texture_length_ * lines]
-          g = g[0 .. texture_length_ * lines]
-          b = b[0 .. texture_length_ * lines]
-        else:
-          y3 = y2
-          r = r[o .. o + h]
-          g = g[o .. o + h]
-          b = b[o .. o + h]
-          source_width = h
+        y3 := draw_block.call y2 h lines orientation
         if canvas.gray_scale:
           canvas.pixmap     (i + x2) y3 --pixels=b        --source_width=source_width --orientation=orientation
         else:
@@ -247,37 +253,18 @@ class GradientRendering_:
     else:
       // The gradient goes broadly horizontally, and we draw in horizontal strips.
       up/bool := angle >= 90
-      x2/int := x
-      y2/int := y
-      offset := 0
       step := ((texture_length_ - w) << 16) / h  // n.16 fixed point.
       loop_body := : | i lines |
-        o := offset >> 16
-        x3 := ?
-        r := red_pixels_
-        g := green_pixels_
-        b := blue_pixels_
-        source_width := ?
-        if autocropped or repeats != 1:
-          x3 = x2 - o
-          source_width = texture_length_
-          r = r[0 .. texture_length_ * lines]
-          g = g[0 .. texture_length_ * lines]
-          b = b[0 .. texture_length_ * lines]
-        else:
-          x3 = x2
-          r = r[o .. o + w]
-          g = g[o .. o + w]
-          b = b[o .. o + w]
-          source_width = w
+        x3 := draw_block.call x w lines ORIENTATION_0
         if canvas.gray_scale:
-          canvas.pixmap     x3 (i + y2) --pixels=b        --source_width=source_width
+          canvas.pixmap     x3 (i + y) --pixels=b        --source_width=source_width
         else:
-          canvas.rgb_pixmap x3 (i + y2) --r=r --g=g --b=b --source_width=source_width
+          canvas.rgb_pixmap x3 (i + y) --r=r --g=g --b=b --source_width=source_width
         offset += step
       if up:
         for i := 0; i < h; i += repeats: loop_body.call i (min repeats (h - i))
       else:
+        assert: repeats == 1
         for i := h - 1; i >= 0; i--: loop_body.call i 1
 
   /// Returns a list of quadruples of the form starting-percent ending-percent start-color end-color.
