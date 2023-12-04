@@ -6,6 +6,7 @@
 Classes useful for RGB $TrueColorPixelDisplay.
 */
 
+import binary show BIG_ENDIAN
 import bitmap show *
 import font show Font
 import icons show Icon
@@ -94,6 +95,41 @@ class Canvas_ extends Canvas:
       bytemap_draw_text x2 y2 r o2 text font red_ width_
       bytemap_draw_text x2 y2 g o2 text font green_ width_
       bytemap_draw_text x2 y2 b o2 text font blue_ width_
+
+  bitmap x/int y/int -> none
+      --pixels/ByteArray
+      --alpha/ByteArray         // 2-element byte array.
+      --palette/ByteArray       // 6-element byte array.
+      --source_width/int        // In pixels.
+      --source_line_stride/int  // In bytes.
+      --orientation/int=ORIENTATION_0:
+    source_byte_width := (source_width + 7) >> 3
+    zero_alpha := alpha[0]
+    // Fast case if the alpha is either 0 or 0xff, because we can use the
+    // primitives that paint 1's with a particular color and leave the zeros
+    // transparent.  We don't check for the case where 0 is opaque and 1 is
+    // transparent, because pngunzip fixes that for us.
+    if alpha[1] == 0xff and (zero_alpha == 0xff or zero_alpha == 0):
+      if zero_alpha == 0xff:
+        h := (pixels.size + source_line_stride - source_byte_width) / source_line_stride
+        // Draw the zeros.
+        rectangle x y --w=source_width --h=h --color=(BIG_ENDIAN.uint24 palette 0)
+      // Draw the ones.
+      transform.xyo x y 0: | x2 y2 o2 |
+        bitmap_draw_bitmap x2 y2 --color=palette[3] --orientation=o2 --source=pixels --source_width=source_width --source_line_stride=source_line_stride --destination=red_ --destination_width=width_ --bytewise
+        bitmap_draw_bitmap x2 y2 --color=palette[4] --orientation=o2 --source=pixels --source_width=source_width --source_line_stride=source_line_stride --destination=green_ --destination_width=width_ --bytewise
+        bitmap_draw_bitmap x2 y2 --color=palette[5] --orientation=o2 --source=pixels --source_width=source_width --source_line_stride=source_line_stride --destination=blue_ --destination_width=width_ --bytewise
+      return
+    // Unfortunately one of the alpha values is not 0 or 0xff, so we can't use
+    // the bitmap draw primitive.  We can blow it up to bytes, then use the
+    // bitmap_draw_bytemap.
+    h := (pixels.size + source_line_stride - source_byte_width) / source_line_stride
+    bytemap := ByteArray source_width * h
+    bitmap_draw_bitmap 0 0 --color=1 --source=pixels --source_width=source_width --source_line_stride=source_line_stride --destination=bytemap --destination_width=source_width --bytewise
+    transform.xyo x y 0: | x2 y2 o2 |
+      bitmap_draw_bytemap x2 y2 --alpha=alpha --orientation=o2 --source=bytemap --source_width=source_width --palette=palette --destination=red_ --destination_width=width_
+      bitmap_draw_bytemap x2 y2 --alpha=alpha --orientation=o2 --source=bytemap --source_width=source_width --palette=palette[1..] --destination=green_ --destination_width=width_
+      bitmap_draw_bytemap x2 y2 --alpha=alpha --orientation=o2 --source=bytemap --source_width=source_width --palette=palette[2..] --destination=blue_ --destination_width=width_
 
   pixmap x/int y/int
       --pixels/ByteArray
