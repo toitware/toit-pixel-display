@@ -413,26 +413,25 @@ abstract class PixelDisplay implements Window:
 
     if l >= r or t >= b: return
 
-    if r - l <= width:
-      if (max_canvas_height_ (r - l)) >= b - t:
-        redraw.call l t r b
-        return
+    if (max_canvas_height_ (r - l)) >= b - t:
+      redraw.call l t r b
+      return
 
-      // Perhaps we can do it in two canvases, split to be as square as
-      // possible.
-      if r - l > b - t and r - l >= x_rounding_ * 2:
-        w := round_up ((r - l) >> 1) x_rounding_
-        if (max_canvas_height_ w) >= b - t:
-          redraw.call l t (l + w) b
-          redraw.call (l + w) t r b
-          return
-      // Perhaps we can do it in two canvases, split vertically.
-      else if b - t >= y_rounding_ * 2:
-        h := round_up ((b - t) >> 1) y_rounding_
-        if (max_canvas_height_ (r - l)) >= h:
-          redraw.call l t r (t + h)
-          redraw.call l (t + h) r b
-          return
+    // Perhaps we can do it in two canvases, split to be as square as
+    // possible.
+    if r - l > b - t and r - l >= x_rounding_ * 2:
+      w := round_up ((r - l) >> 1) x_rounding_
+      if (max_canvas_height_ w) >= b - t:
+        redraw.call l t (l + w) b
+        redraw.call (l + w) t r b
+        return
+    // Perhaps we can do it in two canvases, split vertically.
+    else if b - t >= y_rounding_ * 2:
+      h := round_up ((b - t) >> 1) y_rounding_
+      if (max_canvas_height_ (r - l)) >= h:
+        redraw.call l t r (t + h)
+        redraw.call l (t + h) r b
+        return
 
     // The algorithm below requires that x aligns with 8 pixels, the resolution
     // of the dirty map.
