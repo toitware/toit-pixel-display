@@ -35,8 +35,17 @@ abstract class OneByteCanvas_ extends Canvas:
     return result
 
   composit frame_opacity frame_canvas/OneByteCanvas_? painting_opacity painting_canvas/OneByteCanvas_:
-    composit_bytes pixels_ frame_opacity (frame_canvas ? frame_canvas.pixels_ : null) painting_opacity painting_canvas.pixels_ false
+    fo := frame_opacity is ByteArray ? frame_opacity : frame_opacity.pixels_
+    po := painting_opacity is ByteArray ? painting_opacity : painting_opacity.pixels_
+    composit_bytes pixels_ fo (frame_canvas ? frame_canvas.pixels_ : null) po painting_canvas.pixels_ false
 
+  rectangle x/int y/int --w/int --h/int --color/int:
+    transform.xywh x y w h: | x2 y2 w2 h2 |
+      bytemap_rectangle x2 y2 color w2 h2 pixels_ width_
+
+  text x/int y/int --text/string --color/int --font/Font --orientation/int=ORIENTATION_0:
+    transform.xyo x y orientation: | x2 y2 o2 |
+      bytemap_draw_text x2 y2 color o2 text font pixels_ width_
 
 class OneByteFilledRectangle_ extends FilledRectangle_:
   color_ := ?

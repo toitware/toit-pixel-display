@@ -92,6 +92,11 @@ abstract class Canvas:
 
   abstract composit frame_opacity frame_canvas/Canvas painting_opacity painting_canvas/Canvas
 
+  abstract rectangle x/int y/int --w/int --h/int --color/int -> none
+
+  abstract text x/int y/int --text/string --color/int --font/Font --orientation/int
+  abstract text x/int y/int --text/string --color/int --font/Font
+
 TRANSFORM_IDENTITY_ ::= Transform.with_ [1, 0, 0, 1, 0, 0]
 TRANSFORM_90_ ::= Transform.with_ [0, -1, 1, 0, 0, 0]
 TRANSFORM_180_ ::= Transform.with_ [-1, 0, 0, -1, 0, 0]

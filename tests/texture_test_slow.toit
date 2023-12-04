@@ -175,7 +175,7 @@ test_simple_three_color:
 
 test_simple_four_gray:
   // A little 8x8 canvas to draw on.
-  canvas := three_color.Canvas_ 8 8
+  canvas := four_gray.Canvas_ 8 8
 
   // Fill the canvas with light gray.
   canvas.set_all_pixels four_gray.LIGHT_GRAY
