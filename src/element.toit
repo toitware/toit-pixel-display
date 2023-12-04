@@ -68,9 +68,6 @@ abstract class Element extends ElementOrTexture_ implements Window:
       element.invalidate
       element.change_tracker = null
 
-  child_invalidated x/int y/int w/int h/int -> none:
-    unreachable  // This is only for textures, but we don't allow those.
-
   remove_all -> none:
     children.do:
       it.invalidate
