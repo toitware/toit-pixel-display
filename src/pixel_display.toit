@@ -189,39 +189,44 @@ abstract class PixelDisplay implements Window:
 
   abstract background= color/int -> none
 
-  /**
-  Adds a texture to a display.  The next time the display is refreshed, this
-    texture will be drawn.  Textures added to this display are drawn in the
-    order they were added, so the first-added textures are at the back and the
-    last-added are at the front.  However you can add textures via a
-    TextureGroup.  This enables you to later add textures that are not at the
-    front, by adding them to a TextureGroup that is not at the front.
-  */
-  add texture/ElementOrTexture_ -> none:
-    elements_.add texture
-    texture.change_tracker = this
-    texture.invalidate
+  set_styles styles/List -> none:
+    elements_.do:
+      if it is Element:
+        element := it as Element
+        element.set_styles styles
 
   /**
-  Removes a texture that was previously added.  You cannot remove a background
-    texture.  Instead you should set a new background with @background=.
+  Adds an element to a display.  The next time the display is refreshed, this
+    element will be drawn.  Elements added to this display are drawn in the
+    order they were added, so the first-added elements are at the back and the
+    last-added are at the front.  However elements can have children.
+    This enables you to later add elements that are not at the
+    front, by adding them as children of an Element that is not at the front.
   */
-  remove texture/ElementOrTexture_ -> none:
-    elements_.remove texture
-    texture.invalidate
-    texture.change_tracker = null
+  add element/Element -> none:
+    elements_.add element
+    element.change_tracker = this
+    element.invalidate
 
-  /** Removes all textures.  */
+  /**
+  Removes an element that was previously added.
+  */
+  remove element/Element -> none:
+    elements_.remove element
+    element.invalidate
+    element.change_tracker = null
+
+  /** Removes all elements.  */
   remove_all:
     elements_.do: it.change_tracker = null
-    if elements_.size != 0: child_invalidated 0 0 driver_.width driver_.height
+    if elements_.size != 0: child_invalidated_element 0 0 driver_.width driver_.height
     elements_ = {}
 
   child_invalidated_element x/int y/int w/int h/int -> none:
     transform_.xywh x y w h: | x2 y2 w2 h2 |
-      child_invalidated x2 y2 w2 h2
+      child_invalidated_ x2 y2 w2 h2
 
-  child_invalidated x/int y/int w/int h/int -> none:
+  child_invalidated_ x/int y/int w/int h/int -> none:
     if not dirty_: return  // Some devices don't use the dirty array to track changes.
     dirty_left_ = min dirty_left_ x
     dirty_right_ = max dirty_right_ (x + w)
@@ -261,9 +266,6 @@ abstract class PixelDisplay implements Window:
         y_rounding_
     canvas := create_canvas_ w step
     List.chunk_up 0 (round_up driver_.height y_rounding_) step: | top bottom |
-      // For the Textures.
-      canvas.x_offset_ = 0
-      canvas.y_offset_ = top
       // For the Elements.
       // To get the translation for this tile in the driver coordinates instead
       // of the display coordinates, we invert the 2d transform, then translate
@@ -276,10 +278,10 @@ abstract class PixelDisplay implements Window:
     driver_.commit 0 0 driver_.width driver_.height
 
   /**
-  Draws the elements and textures.
+  Draws the elements.
 
   After changing the display, for example by adding, removing or moving
-    textures, call this to refresh the screen.  Optionally give a $speed
+    elements, call this to refresh the screen.  Optionally give a $speed
     between 0 and 100 to indicate the speed-image quality tradeoff.
   */
   draw --speed/int=50 -> none:
@@ -424,9 +426,6 @@ abstract class PixelDisplay implements Window:
 
   redraw_rect_ left/int top/int right/int bottom/int -> none:
     canvas := create_canvas_ (right - left) (bottom - top)
-    // For the Textures:
-    canvas.x_offset_ = left
-    canvas.y_offset_ = top
     // For the Elements:
     // To get the translation for this tile in the driver coordinates instead
     // of the display coordinates, we invert the 2d transform, then translate
@@ -478,7 +477,7 @@ class TwoColorPixelDisplay extends PixelDisplay:
   background= color/int -> none:
     if background_ != color:
       background_ = color
-      child_invalidated 0 0 driver_.width driver_.height
+      child_invalidated_ 0 0 driver_.width driver_.height
 
   max_canvas_height_ width/int -> int:
     height := 0
@@ -515,7 +514,7 @@ class FourGrayPixelDisplay extends TwoBitPixelDisplay_:
   background= color/int -> none:
     if background_ != color:
       background_ = color
-      child_invalidated 0 0 driver_.width driver_.height
+      child_invalidated_ 0 0 driver_.width driver_.height
 
   default_draw_color_ -> int:
     return four_gray.BLACK
@@ -542,7 +541,7 @@ class ThreeColorPixelDisplay extends TwoBitPixelDisplay_:
   background= color/int -> none:
     if background_ != color:
       background_ = color
-      child_invalidated 0 0 driver_.width driver_.height
+      child_invalidated_ 0 0 driver_.width driver_.height
 
   default_draw_color_ -> int:
     return three_color.BLACK
@@ -591,7 +590,7 @@ class GrayScalePixelDisplay extends PixelDisplay:
   background= color/int -> none:
     if background_ != color:
       background_ = color
-      child_invalidated 0 0 driver_.width driver_.height
+      child_invalidated_ 0 0 driver_.width driver_.height
 
   default_draw_color_ -> int:
     return gray_scale.BLACK
@@ -628,7 +627,7 @@ class SeveralColorPixelDisplay extends PixelDisplay:
   background= color/int -> none:
     if background_ != color:
       background_ = color
-      child_invalidated 0 0 driver_.width driver_.height
+      child_invalidated_ 0 0 driver_.width driver_.height
 
   default_draw_color_ -> int:
     return 1
@@ -665,7 +664,7 @@ class TrueColorPixelDisplay extends PixelDisplay:
   background= color/int -> none:
     if background_ != color:
       background_ = color
-      child_invalidated 0 0 driver_.width driver_.height
+      child_invalidated_ 0 0 driver_.width driver_.height
 
   default_draw_color_ -> int:
     return true_color.BLACK
