@@ -6,6 +6,8 @@ prefixes:
 packages:
   ..:
     path: ..
+    prefixes:
+      png-tools: toitware/toit-png-tools
   pkg-host:
     url: github.com/toitlang/pkg-host
     name: host
@@ -13,3 +15,8 @@ packages:
     hash: e1c11a0e0bf65fe810520e8d893e554a8fe33b78
   toit-png-tools:
     path: toit-png-tools
+  toitware/toit-png-tools:
+    url: github.com/toitware/toit-png-tools
+    name: png-tools
+    version: 1.0.0
+    hash: ee472ac9d4333a138206f9d3a817d3c5432d6f87
