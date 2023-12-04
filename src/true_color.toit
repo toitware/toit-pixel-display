@@ -9,6 +9,8 @@ Classes useful for RGB $TrueColorPixelDisplay.
 import bitmap show *
 import font show Font
 import icons show Icon
+import .common
+import .gray_scale as gray_scale_
 import .pixel_display show TrueColorPixelDisplay  // For the doc comment.
 import .texture
 
@@ -29,20 +31,23 @@ blue_component pixel/int -> int:
 
 // The canvas contains three ByteArrays, red, green, and blue.
 // 0 is black, 255 is max intensity.  Initially all pixels are black.
-class Canvas extends AbstractCanvas:
+class Canvas_ extends Canvas:
   red_ := ?
   green_ := ?
   blue_ := ?
 
-  constructor width/int height/int x_offset/int y_offset/int:
+  supports_8_bit -> bool: return true
+  gray_scale -> bool: return false
+
+  constructor width/int height/int:
     size := width * height
     red_ = ByteArray size
     green_ = ByteArray size
     blue_ = ByteArray size
-    super width height x_offset y_offset
+    super width height
 
   stringify:
-    return "true_color.Canvas $(width_)x$height_"
+    return "true_color.Canvas_ $(width_)x$height_"
 
   set_all_pixels color/int -> none:
     bytemap_zap red_ (red_component color)
@@ -57,13 +62,21 @@ class Canvas extends AbstractCanvas:
   Creates a blank texture with the same dimensions as this one.
   */
   create_similar:
-    return Canvas width_ height_ x_offset_ y_offset_
+    result := Canvas_ width_ height_
+    result.transform = transform
+    return result
 
-  composit frame_opacity frame_canvas/Canvas? painting_opacity painting_canvas/Canvas:
-    composit_bytes red_ frame_opacity (frame_canvas ? frame_canvas.red_ : null) painting_opacity painting_canvas.red_ false
-    composit_bytes green_ frame_opacity (frame_canvas ? frame_canvas.green_ : null) painting_opacity painting_canvas.green_ false
-    composit_bytes blue_ frame_opacity (frame_canvas ? frame_canvas.blue_ : null) painting_opacity painting_canvas.blue_ false
+  make_alpha_map --padding/int=0 -> Canvas:
+    result := gray_scale_.Canvas_ (width_ + padding) (height_ + padding)
+    result.transform = transform
+    return result
 
+  composit frame_opacity frame_canvas/Canvas_? painting_opacity painting_canvas/Canvas_:
+    fo := frame_opacity is ByteArray ? frame_opacity : frame_opacity.pixels_
+    po := painting_opacity is ByteArray ? painting_opacity : painting_opacity.pixels_
+    composit_bytes red_ fo (frame_canvas ? frame_canvas.red_ : null) po painting_canvas.red_ false
+    composit_bytes green_ fo (frame_canvas ? frame_canvas.green_ : null) po painting_canvas.green_ false
+    composit_bytes blue_ fo (frame_canvas ? frame_canvas.blue_ : null) po painting_canvas.blue_ false
 
 class FilledRectangle extends FilledRectangle_:
   color_ := ?
@@ -77,7 +90,7 @@ class FilledRectangle extends FilledRectangle_:
     return FilledRectangle_.line_ x1 y1 x2 y2: | x y w h |
       FilledRectangle color x y w h transform
 
-  translated_write_ x y w h canvas/Canvas:
+  translated_write_ x y w h canvas/Canvas_:
     if bytemap_rectangle x y (red_component color_)   w h canvas.red_   canvas.width_:
        bytemap_rectangle x y (green_component color_) w h canvas.green_ canvas.width_
        bytemap_rectangle x y (blue_component color_)  w h canvas.blue_  canvas.width_
@@ -104,7 +117,7 @@ class TextTexture extends TextTexture_:
     color_ = new_color
     invalidate
 
-  draw_ bx by orientation canvas/Canvas:
+  draw_ bx by orientation canvas/Canvas_:
     bytemap_draw_text bx by (red_component color_) orientation string_ font_ canvas.red_ canvas.width_
     bytemap_draw_text bx by (green_component color_) orientation string_ font_ canvas.green_ canvas.width_
     bytemap_draw_text bx by (blue_component color_) orientation string_ font_ canvas.blue_ canvas.width_
@@ -127,7 +140,7 @@ class BitmapTexture extends BitmapTexture_:
   constructor x/int y/int w/int h/int transform/Transform .color_/int:
     super x y w h transform
 
-  draw_ bx by orientation canvas/Canvas:
+  draw_ bx by orientation canvas/Canvas_:
     bitmap_draw_bitmap bx by (red_component color_) orientation bytes_ 0 w canvas.red_ canvas.width_ true
     bitmap_draw_bitmap bx by (green_component color_) orientation bytes_ 0 w canvas.green_ canvas.width_ true
     bitmap_draw_bitmap bx by (blue_component color_) orientation bytes_ 0 w canvas.blue_ canvas.width_ true
@@ -145,7 +158,7 @@ class OpaqueBitmapTexture extends BitmapTexture:
   constructor x/int y/int w/int h/int transform/Transform foreground_color/int .background_color_:
     super x y w h transform foreground_color
 
-  write2_ canvas/Canvas:
+  write2_ canvas/Canvas_:
     transform_.xywh x_ y_ w_ h_: | x2 y2 w2 h2 |
       x := x2 - canvas.x_offset_
       y := y2 - canvas.y_offset_
@@ -174,7 +187,7 @@ class PbmTexture extends BitmapTexture_:
     bytes_ = bytes[parser.image_data_offset..]
     super.no_allocate_ x y parser.width parser.height transform
 
-  draw_ bx by orientation canvas/Canvas:
+  draw_ bx by orientation canvas/Canvas_:
     bitmap_draw_bitmap bx by (red_component color_)   orientation bytes_ 0 w canvas.red_   canvas.width_ true
     bitmap_draw_bitmap bx by (green_component color_) orientation bytes_ 0 w canvas.green_ canvas.width_ true
     bitmap_draw_bitmap bx by (blue_component color_)  orientation bytes_ 0 w canvas.blue_  canvas.width_ true
@@ -274,7 +287,7 @@ class IndexedPixmapTexture extends PixmapTexture_:
   clear_all_pixels -> none:
     bitmap_zap bytes_ 0
 
-  draw_ bx by orientation canvas/Canvas:
+  draw_ bx by orientation canvas/Canvas_:
     if not green_palette_: green_palette_ = palette_[1..]
     if not blue_palette_: blue_palette_ = palette_[2..]
     bitmap_draw_bytemap bx by 0 orientation bytes_ w palette_       canvas.red_   canvas.width_
@@ -285,7 +298,7 @@ class BarCodeEan13 extends BarCodeEan13_:
   constructor code/string x/int y/int transform/Transform:
     super code x y transform
 
-  white_square_ x y w h canvas/Canvas:
+  white_square_ x y w h canvas/Canvas_:
     white ::= 0xff
     if bytemap_rectangle x y white w h canvas.red_   canvas.width_:
        bytemap_rectangle x y white w h canvas.green_ canvas.width_
@@ -298,7 +311,7 @@ class BarCodeEan13 extends BarCodeEan13_:
     bytemap_draw_text x y black orientation digit sans10_ canvas.green_ canvas.width_
     bytemap_draw_text x y black orientation digit sans10_ canvas.blue_  canvas.width_
 
-  block_ x y width height canvas/Canvas:
+  block_ x y width height canvas/Canvas_:
     black ::= 0
     if bytemap_rectangle x y black width height canvas.red_   canvas.width_:
        bytemap_rectangle x y black width height canvas.green_ canvas.width_
@@ -315,17 +328,17 @@ class SimpleWindow extends SimpleWindow_:
   constructor x y w h transform border_width .border_color .background_color:
     super x y w h transform border_width
 
-  draw_frame canvas/Canvas:
+  draw_frame canvas/Canvas_:
     bytemap_zap canvas.red_ (red_component border_color)
     bytemap_zap canvas.green_ (green_component border_color)
     bytemap_zap canvas.blue_ (blue_component border_color)
 
-  draw_background canvas/Canvas:
+  draw_background canvas/Canvas_:
     bytemap_zap canvas.red_ (red_component background_color)
     bytemap_zap canvas.green_ (green_component background_color)
     bytemap_zap canvas.blue_ (blue_component background_color)
 
-  make_alpha_map_ canvas/Canvas:
+  make_alpha_map_ canvas/Canvas_:
     return ByteArray canvas.width_ * canvas.height_
 
   make_opaque_ x y w h map map_width:
@@ -351,12 +364,12 @@ class RoundedCornerWindow extends RoundedCornerWindow_:
       if 0 <= y_offset < map.size:
         map[x + y_offset] = opacity
 
-  draw_background canvas/Canvas:
+  draw_background canvas/Canvas_:
     bytemap_zap canvas.red_ (red_component background_color)
     bytemap_zap canvas.green_ (green_component background_color)
     bytemap_zap canvas.blue_ (blue_component background_color)
 
-  draw_frame canvas/Canvas:
+  draw_frame canvas/Canvas_:
     throw "UNREACHABLE"
 
 class DropShadowWindow extends DropShadowWindow_:
@@ -384,12 +397,12 @@ class DropShadowWindow extends DropShadowWindow_:
         else:
           map[x + y_offset] = opacity
 
-  draw_background canvas/Canvas:
+  draw_background canvas/Canvas_:
     bytemap_zap canvas.red_ (red_component background_color)
     bytemap_zap canvas.green_ (green_component background_color)
     bytemap_zap canvas.blue_ (blue_component background_color)
 
-  draw_frame canvas/Canvas:
+  draw_frame canvas/Canvas_:
     bytemap_zap canvas.red_ 0
     bytemap_zap canvas.green_ 0
     bytemap_zap canvas.blue_ 0
