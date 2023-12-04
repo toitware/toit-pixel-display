@@ -9,7 +9,6 @@
 import expect show *
 import pixel_display show *
 import pixel_display.element show *
-import pixel_display.texture show *
 import .png_visualizer
 
 main args:
@@ -20,23 +19,16 @@ main args:
   display := SeveralColorPixelDisplay driver --inverted --portrait
   display.background = SEVERAL_DARK_GRAY
 
-  ctx := display.context --inverted --landscape=false --color=SEVERAL_ORANGE
-
-  // Texture-based rectangle.
-  texture_rect := display.filled_rectangle (ctx.with --color=SEVERAL_BLUE) 10 20 30 20
-  texture_rect_2 := display.filled_rectangle (ctx.with --color=SEVERAL_BLUE) 10 65 30 20
-  // Slightly smaller element-based rectangle.
+  // Element-based rectangle.
   element_rect := Div --x=11 --y=21 --w=28 --h=18 --background=SEVERAL_BLACK
   element_rect_2 := Div --x=10 --y=110 --w=30 --h=20 --background=SEVERAL_GREEN
   display.add element_rect
   display.add element_rect_2
   display.draw
 
-  texture_rect.move_to 20 20
   element_rect.move_to 21 21
   display.draw
 
-  texture_rect_2.move_to 20 65
   display.draw
 
   element_rect_2.move_to 20 110

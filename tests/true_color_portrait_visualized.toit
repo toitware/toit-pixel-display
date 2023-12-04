@@ -5,6 +5,7 @@
 import expect show *
 import font show Font
 import pixel_display show *
+import pixel_display.element show *
 import pixel_display.true_color show *
 import .png_visualizer
 
@@ -13,26 +14,32 @@ main args:
     print "Usage: script.toit png-basename"
     exit 1
   driver := TrueColorPngVisualizer 129 89 args[0] --outline=0xffff00
-  display := TrueColorPixelDisplay driver
+  display := TrueColorPixelDisplay driver --portrait
   display.background = get_rgb 0 1 2
 
   sans10 := Font.get "sans10"
 
-  ctx := display.context --landscape=false --color=(get_rgb 255 120 0) --font=sans10
+  foreground := get_rgb 255 120 0
 
-  display.filled_rectangle (ctx.with --color=0x4040ff) 10 20 30 40
-  display.filled_rectangle (ctx.with --color=0x4040ff) 20 70 30 40
-  display.text ctx 5 80 "Testing"
-  middle_line := display.text ctx 5 100 "the display"
+  display.add
+      Div --x=10 --y=20 --w=30 --h=40 --background=0x4040ff
+  display.add
+      Div --x=20 --y=70 --w=30 --h=40 --background=0x4040ff
+  display.add
+      Label --x=5 --y=80 --label="Testing" --font=sans10 --color=foreground
+  middle_line := Label --x=5 --y=100 --label="the display" --font=sans10 --color=foreground
+  display.add middle_line
   display.draw
-  display.text ctx 5 120 "for the win"
+
+  display.add
+      Label --x=5 --y=120 --label="for the win" --font=sans10 --color=foreground
 
   display.draw
 
   middle_line.move_to 10 100
   display.draw
 
-  middle_line.text = "the DisplaY"
+  middle_line.label = "the DisplaY"
   display.draw
 
   driver.write_png
