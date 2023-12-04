@@ -2,26 +2,24 @@
 // Use of this source code is governed by an MIT-style license that can be
 // found in the LICENSE file.
 
-// Common things between textures and elements.
+// TODO: Absorb this into pixel_display.toit now that textures are gone.
 
 import font show Font
 import bitmap show ORIENTATION_0 ORIENTATION_90 ORIENTATION_180 ORIENTATION_270
 
+import .element show Element
 import .style
 
 /**
 A display or a window within a display.
-You can add and remove texture objects to a Window.  They will be drawn
-  in the order they were added, where the first textures are at the back
-  and are overwritten by textures added later.
+You can add and remove element objects to a Window.  They will be drawn
+  in the order they were added, where the first elements are at the back
+  and are overwritten by elements added later.
 */
 interface Window:
-  add element /ElementOrTexture_ -> none
-  remove element /ElementOrTexture_ -> none
+  add element /Element -> none
+  remove element /Element -> none
   remove_all -> none
-
-  // Called by elements that have been added to this.
-  child_invalidated x/int y/int w/int h/int ->none
 
   // Called by elements that have been added to this.
   child_invalidated_element x/int y/int w/int h/int ->none
@@ -47,11 +45,9 @@ abstract class ElementOrTexture_:
   abstract invalidate -> none
 
 abstract class Canvas:
-  width_ / int                    // Used by both Textures and Elements.
-  height_ / int                   // Only used by Textures.
-  x_offset_ / int := 0            // Only used by Textures.
-  y_offset_ / int := 0            // Only used by Textures.
-  transform / Transform? := null  // Only used by Elements.
+  width_ / int
+  height_ / int
+  transform / Transform? := null
 
   constructor .width_ .height_:
 
@@ -230,8 +226,7 @@ class Transform:
     a horizontal line (if you specify the $y coordinate) or a vertical line
     (if you specify the $x coordinate).
 
-  You cannot specify both $x and $y.  Not all textures support
-    reflected transforms.  In particular, text and icons cannot be reflected.
+  You cannot specify both $x and $y.  We do not support reflected transforms.
 
   Most of this library is integer-only, but for this operation you may need
     to use a half-pixel line depending on whether the thing you want to reflect
@@ -290,7 +285,7 @@ class TextExtent_:
   // Gets the graphical extent of a string nominally positioned at (0, 0),
   // Where the nominal position of the text is relative to the letters depends
   // on the alignment, but it is always somewhere on the textual baseline.
-  // Some confusion is caused here by the fact that the y-axis of textures
+  // Some confusion is caused here by the fact that the y-axis of elements
   // grows towards the bottom, whereas the y-axis of fonts grows towards the
   // top.
   constructor text font alignment:
