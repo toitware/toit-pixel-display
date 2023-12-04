@@ -287,6 +287,10 @@ abstract class PixelDisplay implements Window:
 
   child_invalidated x/int y/int w/int h/int -> none:
     if not dirty_: return  // Some devices don't use the dirty array to track changes.
+    dirty_left_ = min dirty_left_ x
+    dirty_right_ = max dirty_right_ (x + w)
+    dirty_top_ = min dirty_top_ y
+    dirty_bottom_ = max dirty_bottom_ (y + h)
 
     // Round up the invalidated area.
     rx := x & 7
@@ -369,18 +373,70 @@ abstract class PixelDisplay implements Window:
 
   all_is_clean_ -> none:
     bitmap_zap dirty_ CLEAN_
+    dirty_left_ = driver_.width
+    dirty_right_ = 0
+    dirty_top_ = driver_.height
+    dirty_bottom_ = 0
 
   all_is_dirty_ -> none:
     bitmap_zap dirty_ DIRTY_
+    dirty_left_ = 0
+    dirty_right_ = driver_.width
+    dirty_top_ = 0
+    dirty_bottom_ = driver_.height
 
   // Clean determines if we should clean or draw the dirty area.
   update_frame_buffer clean/bool refresh_dimensions -> none:
-    width := min driver_.width 120
-    max_height := max
-        round_down (max_canvas_height_ width) 8
-        y_rounding_
+    width_target := 64
+    width := ?
+    max_height := ?
+    while true:
+      width = min driver_.width (width_target - 8)
+      max_height = max
+          round_down (max_canvas_height_ width) y_rounding_
+          y_rounding_
+      if max_height < driver_.height: break
+      if width >= driver_.width: break
+      width_target += width_target
 
-    start_x := 0
+    redraw := : | l t r b |
+      if clean:
+        clean_rect_ l t r b
+      else:
+        redraw_rect_ l t r b
+
+    // Perhaps we can do it all with one canvas.
+    l := round_down (max 0 dirty_left_) x_rounding_
+    r := round_up (min driver_.width dirty_right_) x_rounding_
+    t := round_down (max 0 dirty_top_) y_rounding_
+    b := round_up (min driver_.height dirty_bottom_) y_rounding_
+
+    if l >= r or t >= b: return
+
+    if r - l <= width:
+      if (max_canvas_height_ (r - l)) >= b - t:
+        redraw.call l t r b
+        return
+
+      // Perhaps we can do it in two canvases, split to be as square as
+      // possible.
+      if r - l > b - t and r - l >= x_rounding_ * 2:
+        w := round_up ((r - l) >> 1) x_rounding_
+        if (max_canvas_height_ w) >= b - t:
+          redraw.call l t (l + w) b
+          redraw.call (l + w) t r b
+          return
+      // Perhaps we can do it in two canvases, split vertically.
+      else if b - t >= y_rounding_ * 2:
+        h := round_up ((b - t) >> 1) y_rounding_
+        if (max_canvas_height_ (r - l)) >= h:
+          redraw.call l t r (t + h)
+          redraw.call l (t + h) r b
+          return
+
+    // The algorithm below requires that x aligns with 8 pixels, the resolution
+    // of the dirty map.
+    start_x := round_down (max 0 dirty_left_) 8
 
     // Outer loop - the coarse rectangles that are the max size of
     // update patches.
@@ -423,15 +479,16 @@ abstract class PixelDisplay implements Window:
               dirty_right = max dirty_right (ix + 8)
               dirty_top = min dirty_top iy
               dirty_bottom = max dirty_bottom (iy + 8)
+        dirty_left = max dirty_left (round_down (max 0 dirty_left_) x_rounding_)
+        dirty_right = min dirty_right (round_up (min driver_.width dirty_right_) x_rounding_)
+        dirty_top = max dirty_top (round_down (max 0 dirty_top_) y_rounding_)
+        dirty_bottom = min dirty_bottom (round_up (min driver_.height dirty_bottom_) y_rounding_)
         if dirty_left <= dirty_right and dirty_top <= dirty_bottom:
           if dirty_top < refresh_dimensions[2]: refresh_dimensions[2] = dirty_top
           if dirty_bottom > refresh_dimensions[3]: refresh_dimensions[3] = dirty_bottom
           if dirty_left < refresh_dimensions[0]: refresh_dimensions[0] = dirty_left
           if dirty_right > refresh_dimensions[1]: refresh_dimensions[1] = dirty_right
-          if clean:
-            clean_rect_ dirty_left dirty_top dirty_right dirty_bottom
-          else:
-            redraw_rect_ dirty_left dirty_top dirty_right dirty_bottom
+          redraw.call dirty_left dirty_top dirty_right dirty_bottom
 
   redraw_rect_ left/int top/int right/int bottom/int -> none:
     canvas := create_canvas_ (right - left) (bottom - top)
