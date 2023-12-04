@@ -6,3 +6,5 @@ dependencies:
     version: ^1.10.0
   pixel_display:
     path: ..
+  png-tools:
+    path: toit-png-tools/

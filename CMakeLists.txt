@@ -4,6 +4,9 @@
 
 cmake_minimum_required(VERSION 3.22)
 
+# Avoid testing the C compiler.
+PROJECT(MakeTags NONE)
+
 project(cli)
 
 enable_testing()

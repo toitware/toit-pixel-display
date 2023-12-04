@@ -10,6 +10,9 @@ build/CMakeCache.txt:
 
 install-pkgs: rebuild-cmake
 	(cd build && ninja install-pkgs)
+	(cd tests/toit-png-tools && $(MAKE) rebuild-cmake)
+	(cd tests/toit-png-tools && cmake -DTOITRUN="$(TOITRUN)" -DTOITPKG="$(TOITPKG)" build)
+	(cd tests/toit-png-tools && $(MAKE) install-pkgs)
 
 test: install-pkgs rebuild-cmake
 	(cd build && ninja check)

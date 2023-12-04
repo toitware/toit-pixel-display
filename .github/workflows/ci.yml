@@ -26,21 +26,23 @@ jobs:
           echo "TOIT_VERSION=$TOIT_VERSION" >> $GITHUB_ENV
           export DOWNLOAD_DIR="${{ github.workspace }}/downloads"
           echo "DOWNLOAD_DIR=$DOWNLOAD_DIR" >> $GITHUB_ENV
-          if [[ "$RUNNER_OS" = "Linux" ]]; then
-            TOIT_FILE=toit-linux.tar.gz
-            echo "TOIT_EXEC=$DOWNLOAD_DIR/toit/bin/toit.run" >> $GITHUB_ENV
-            echo "TPKG_EXEC=$DOWNLOAD_DIR/toit/bin/toit.pkg" >> $GITHUB_ENV
-          elif [[ "$RUNNER_OS" = "macOS" ]]; then
-            TOIT_FILE=toit-macos.tar.gz
-            echo "TOIT_EXEC=$DOWNLOAD_DIR/toit/bin/toit.run" >> $GITHUB_ENV
-            echo "TPKG_EXEC=$DOWNLOAD_DIR/toit/bin/toit.pkg" >> $GITHUB_ENV
-          elif [[ "$RUNNER_OS" = "Windows" ]]; then
+          if [[ "$RUNNER_OS" = "Windows" ]]; then
             TOIT_FILE=toit-windows.tar.gz
-            echo "TOIT_EXEC=$DOWNLOAD_DIR/toit/bin/toit.run.exe" >> $GITHUB_ENV
-            echo "TPKG_EXEC=$DOWNLOAD_DIR/toit/bin/toit.pkg.exe" >> $GITHUB_ENV
+            echo "TOITRUN=$DOWNLOAD_DIR/toit/bin/toit.run.exe" >> $GITHUB_ENV
+            echo "TOITPKG=$DOWNLOAD_DIR/toit/bin/toit.pkg.exe" >> $GITHUB_ENV
+            echo "TOITC=$DOWNLOAD_DIR/toit/bin/toit.compile.exe" >> $GITHUB_ENV
           else
-            echo "UNSUPPORTED RUNNER: $RUNNER_OS"
-            exit 1
+            echo "TOITRUN=$DOWNLOAD_DIR/toit/bin/toit.run" >> $GITHUB_ENV
+            echo "TOITPKG=$DOWNLOAD_DIR/toit/bin/toit.pkg" >> $GITHUB_ENV
+            echo "TOITC=$DOWNLOAD_DIR/toit/bin/toit.compile" >> $GITHUB_ENV
+            if [[ "$RUNNER_OS" = "Linux" ]]; then
+              TOIT_FILE=toit-linux.tar.gz
+            elif [[ "$RUNNER_OS" = "macOS" ]]; then
+              TOIT_FILE=toit-macos.tar.gz
+            else
+              echo "UNSUPPORTED RUNNER: $RUNNER_OS"
+              exit 1
+            fi
           fi
 
           if [[ $TOIT_VERSION = latest ]]; then
@@ -86,7 +88,7 @@ jobs:
         shell: bash
         run: |
           make rebuild-cmake
-          cmake "-DTOIT_EXEC=$TOIT_EXEC" "-DTPKG_EXEC=$TPKG_EXEC" build
+          cmake "-DTOITRUN=$TOITRUN" "-DTOITPKG=$TOITPKG" build
 
       - name: Install packages
         run: |

@@ -36,3 +36,5 @@ main args:
   text.move_to 15 37
 
   display.draw
+
+  driver.write_png

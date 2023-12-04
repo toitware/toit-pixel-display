@@ -33,3 +33,5 @@ main args:
 
   middle_line.text = "the DISPLAY"
   display.draw
+
+  driver.write_png

@@ -34,3 +34,5 @@ main args:
 
   middle_line.text = "the DisplaY"
   display.draw
+
+  driver.write_png
