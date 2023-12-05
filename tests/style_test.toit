@@ -141,12 +141,6 @@ abstract class TestElement extends Element:
   draw canvas/Canvas -> none:
     unreachable
 
-  min_w -> int:
-    unreachable
-
-  min_h -> int:
-    unreachable
-
 class Square extends TestElement:
   type -> string: return "square"
   color/int := 0
