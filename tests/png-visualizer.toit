@@ -58,8 +58,8 @@ class SeveralColorPngVisualizer extends PngVisualizingDriver_:
 abstract class PngVisualizingDriver_ extends AbstractDriver:
   width /int ::= ?
   height /int ::= ?
-  width_ /int := 0  // Rounded up to a multiple of 8.
-  height_ /int := 0  // Rounded up to a multiple of 8.
+  width_ := 0  // Rounded up depending on the bit depth.
+  height_ := 0  // Rounded up depending on the bit depth.
   outline_buffer_ /ByteArray? := null
   buffer_ /ByteArray := #[]
   temp_buffer_/ByteArray := #[]
@@ -73,7 +73,6 @@ abstract class PngVisualizingDriver_ extends AbstractDriver:
 
   constructor .width .height basename/string --.outline/int?=null:
     png_basename_ = basename
-    ///
     width_ = round_up width x_rounding
     height_ = round_up height y_rounding
     buffer_ = ByteArray
@@ -200,11 +199,13 @@ abstract class PngVisualizingDriver_ extends AbstractDriver:
   draw_byte_outline_ outline/int pixels/ByteArray patch_width/int --dotted=false -> none:
     bottom_left := pixels.size - patch_width
     // Dotted line along top and bottom.
-    for x := 0; x < patch_width; x += dotted ? 2 : 1:
+    x_step := dotted ? 2 : 1
+    for x := 0; x < patch_width; x += x_step:
       pixels[x] = outline
       pixels[bottom_left + x] = outline
     // Dotted line along left and right.
-    for y := 0; y < pixels.size; y += patch_width * (dotted ? 2 : 1):
+    y_step := patch_width * (dotted ? 2 : 1)
+    for y := 0; y < pixels.size; y += y_step:
       pixels[y] = outline
       pixels[y + patch_width - 1] = outline
 
