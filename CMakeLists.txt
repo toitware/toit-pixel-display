@@ -4,10 +4,8 @@
 
 cmake_minimum_required(VERSION 3.22)
 
-# Avoid testing the C compiler.
-PROJECT(MakeTags NONE)
-
-project(cli)
+# NONE means skip testing the C compiler.
+project(pixel_display NONE)
 
 enable_testing()
 add_subdirectory(tests)
