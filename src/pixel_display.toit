@@ -371,7 +371,7 @@ abstract class PixelDisplay implements Window:
           round_down (max_canvas_height_ width) y_rounding_
           y_rounding_
       // Don't widen any more if the patches are already too flat to fill the full height.
-      if max_height <= driver_.height: break
+      if max_height < driver_.height: break
       // Don't widen any more if the patches already cover the whole width.
       if width >= driver_.width: break
       width_target += width_target
