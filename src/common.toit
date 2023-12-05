@@ -120,59 +120,79 @@ abstract class Canvas:
   rgb_pixmap x/int y/int --r/ByteArray --g/ByteArray --b/ByteArray --source_width/int --orientation/int=ORIENTATION_0:
     throw "UNSUPPORTED"  // Only on true color canvas.
 
-TRANSFORM_IDENTITY_ ::= Transform.with_ [1, 0, 0, 1, 0, 0]
-TRANSFORM_90_ ::= Transform.with_ [0, -1, 1, 0, 0, 0]
-TRANSFORM_180_ ::= Transform.with_ [-1, 0, 0, -1, 0, 0]
-TRANSFORM_270_ ::= Transform.with_ [0, 1, -1, 0, 0, 0]
+TRANSFORM_IDENTITY_ ::= Transform.with_ --x1=1 --x2=0 --y1=0 --y2=1 --tx=0 --ty=0
+TRANSFORM_90_ ::= Transform.with_ --x1=0 --x2=-1 --y1=1 --y2=0 --tx=0 --ty=0
+TRANSFORM_180_ ::= Transform.with_ --x1=-1 --x2=0 --y1=0 --y2=-1 --tx=0 --ty=0
+TRANSFORM_270_ ::= Transform.with_ --x1=0 --x2=1 --y1=-1 --y2=0 --tx=0 --ty=0
 
-// Classic 3x3 matrix for 2D transformations.  Right column is always 0 0 1, so
-// we don't need to store it.  We don't support scaling so the top left 2x2
-// block is always 0s, 1s, and -1s.
+/**
+Classic 3x3 matrix for 2D transformations.
+Right column is always 0 0 1, so we don't need to store it.
+We don't support scaling so the top left 2x2 block is always 0s, 1s, and -1s.
+*/
 class Transform:
-  array_ ::= ?  // 6-element integer array.
+  // [ x1   y1    0  ]
+  // [ x2   y2    0  ]
+  // [ tx   ty    1  ]
+  x1_/int ::= ?
+  y1_/int ::= ?
+  x2_/int ::= ?
+  y2_/int ::= ?
+  tx_/int ::= ?
+  ty_/int ::= ?
 
   constructor.identity:
     return TRANSFORM_IDENTITY_
 
-  constructor.with_ .array_:
-
-  stringify -> string:
-    line1 := "$(%3d array_[0]) $(%3d array_[1])"
-    line2 := "$(%3d array_[2]) $(%3d array_[3])"
-    line3 := "$(%3d array_[4]) $(%3d array_[5])"
-    return "$line1\n$line2\n$line3"
+  constructor.with_ --x1/int --y1/int --x2/int --y2/int --tx/int --ty/int:
+    x1_ = x1
+    x2_ = x2
+    tx_ = tx
+    y1_ = y1
+    y2_ = y2
+    ty_ = ty
 
   apply other/Transform -> Transform:
-    a0 := array_[0]
-    a1 := array_[1]
-    a2 := array_[2]
-    a3 := array_[3]
-    o0 := other.array_[0]
-    o1 := other.array_[1]
-    o2 := other.array_[2]
-    o3 := other.array_[3]
-    o4 := other.array_[4]
-    o5 := other.array_[5]
-    array := [a0 * o0 + a2 * o1,
-              a1 * o0 + a3 * o1,
-              a0 * o2 + a2 * o3,
-              a1 * o2 + a3 * o3,
-              a0 * o4 + a2 * o5 + array_[4],
-              a1 * o4 + a3 * o5 + array_[5]]
-    return Transform.with_ array
+    a0 := x1_
+    a1 := y1_
+    a2 := x2_
+    a3 := y2_
+    o0 := other.x1_
+    o1 := other.y1_
+    o2 := other.x2_
+    o3 := other.y2_
+    o4 := other.tx_
+    o5 := other.ty_
+    return Transform.with_
+        --x1 = a0 * o0 + a2 * o1
+        --y1 = a1 * o0 + a3 * o1
+        --x2 = a0 * o2 + a2 * o3
+        --y2 = a1 * o2 + a3 * o3
+        --tx = a0 * o4 + a2 * o5 + tx_
+        --ty = a1 * o4 + a3 * o5 + ty_
 
   invert -> Transform:
-    a0 := array_[0]
-    a1 := array_[1]
-    a2 := array_[2]
-    a3 := array_[3]
+    a0 := x1_
+    a1 := y1_
+    a2 := x2_
+    a3 := y2_
     // The scaling of the transform is always 1, so we don't need to do anything about that.
     assert: a0 * a3 - a1 * a2 == 1
-    return Transform.with_ [a3, -a1, -a2, a0, -a3 * array_[4] + a2 * array_[5], a1 * array_[4] - a0 * array_[5]]
+    return Transform.with_
+        --x1 = a3
+        --y1 = -a1
+        --x2 = -a2
+        --y2 = a0
+        --tx = -a3 * tx_ + a2 * ty_
+        --ty = a1 * tx_ - a0 * ty_
 
   operator == other/Transform -> bool:
-    6.repeat: | i |
-      if array_[i] != other.array_[i]: return false
+    if x1_ != other.x1_: return false
+    if y1_ != other.y1_: return false
+    if x2_ != other.x2_: return false
+    if y2_ != other.y2_: return false
+    if tx_ != other.tx_: return false
+    if ty_ != other.ty_: return false
     return true
 
   /**
@@ -209,9 +229,9 @@ class Transform:
     x_transformed := x x_in y_in
     y_transformed := y x_in y_in
     o_transformed/int := ?
-    if      array_[0] > 0: o_transformed = o_in + ORIENTATION_0
-    else if array_[1] < 0: o_transformed = o_in + ORIENTATION_90
-    else if array_[0] < 0: o_transformed = o_in + ORIENTATION_180
+    if      x1_ > 0: o_transformed = o_in + ORIENTATION_0
+    else if y1_ < 0: o_transformed = o_in + ORIENTATION_90
+    else if x1_ < 0: o_transformed = o_in + ORIENTATION_180
     else:                  o_transformed = o_in + ORIENTATION_270
     block.call x_transformed y_transformed (o_transformed & 3)
 
@@ -220,75 +240,72 @@ class Transform:
    around the origin in the space of this transform
   */
   rotate_left -> Transform:
-    return Transform.with_ [-array_[2], -array_[3], array_[0], array_[1], array_[4], array_[5]]
+    return Transform.with_
+        --x1 = -x2_
+        --y1 = -y2_
+        --x2 = x1_
+        --y2 = y1_
+        --tx = tx_
+        --ty = ty_
 
   /**
   Returns a new transform which represents this transform rotated right
     around the origin in the space of this transform
   */
   rotate_right -> Transform:
-    return Transform.with_ [array_[2], array_[3], -array_[0], -array_[1], array_[4], array_[5]]
+    return Transform.with_
+        --x1 = x2_
+        --y1 = y2_
+        --x2 = -x1_
+        --y2 = -y1_
+        --tx = tx_
+        --ty = ty_
 
   /**
   Returns a new transform.  The origin of the new transform is at the point
     $x, $y in the space of this transform.
   */
   translate x/int y/int -> Transform:
-    return Transform.with_ [array_[0], array_[1], array_[2], array_[3], array_[4] + (width x y), array_[5] + (height x y)]
+    return Transform.with_
+      --x1 = x1_
+      --y1 = y1_
+      --x2 = x2_
+      --y2 = y2_
+      --tx = tx_ + (width x y)
+      --ty = ty_ + (height x y)
 
-  /**
-  Returns a new transform.  The new transform is reflected around either
-    a horizontal line (if you specify the $y coordinate) or a vertical line
-    (if you specify the $x coordinate).
-
-  You cannot specify both $x and $y.  We do not support reflected transforms.
-
-  Most of this library is integer-only, but for this operation you may need
-    to use a half-pixel line depending on whether the thing you want to reflect
-    is an even or odd number of pixels high/wide.
-  */
-  reflect_around --x/num?=null --y/num?=null:
-    if x:
-      if y: throw "INVALID_ARGUMENT"
-      return apply (Transform.with_ [-1, 0, 0, 1, (x * 2).to_int, 0])
-    else if y:
-      return apply (Transform.with_ [1, 0, 0, -1, 0, (y * 2).to_int])
-    else:
-      return this
-
-  // Does not handle reflections or scaling.  Used for font rendering which
-  // currently has no support for scaled or reflected text.
+  // Used for font rendering.
   orientation_:
-    if array_[0] > 0: return ORIENTATION_0
-    if array_[1] < 0: return ORIENTATION_90
-    if array_[0] < 0: return ORIENTATION_180
+    if x1_ > 0: return ORIENTATION_0
+    if y1_ < 0: return ORIENTATION_90
+    if x1_ < 0: return ORIENTATION_180
     else: return ORIENTATION_270
 
   /**
   Returns the transformed x coordinate of the given point ($x, $y).
   */
   x x/int y/int -> int:
-    return x * array_[0] + y * array_[2] + array_[4]
+    return x * x1_ + y * x2_ + tx_
 
   /**
   Returns the transformed y coordinate of the given point ($x, $y).
   */
   y x/int y/int -> int:
-    return x * array_[1] + y * array_[3] + array_[5]
+    return x * y1_ + y * y2_ + ty_
 
   /**
   Returns the transformed width given an unrotated $width and $height.
   A negative result indicates the shape extends to the left of the origin.
   */
   width width/int height/int -> int:
-    return width * array_[0] + height * array_[2]
+    return width * x1_ + height * x2_
 
   /**
   Returns the transformed height given an unrotated $width and $height.
   A negative result indicates the shape extends upwards from the origin.
   */
   height width/int height/int -> int:
-    return width * array_[1] + height * array_[3]
+    return width * y1_ + height * y2_
 
 class TextExtent_:
   x := 0
