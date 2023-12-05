@@ -137,11 +137,13 @@ abstract class PixelDisplay implements Window:
 
   transform_ /Transform
 
-  // By default the orientation is the natural orientation of the display driver.
-  // If $portrait is false, then a landscape orientation is used.
-  // If $portrait is true, then a portrait orientation is used, or in the case
-  //   that the display driver is exactly square, a rotated orientation is used.
-  // The orientation is rotated by 180 degrees if $inverted is true.
+  /**
+  By default the orientation is the natural orientation of the display driver.
+  If $portrait is false, then a landscape orientation is used.
+  If $portrait is true, then a portrait orientation is used, or in the case
+     that the display driver is exactly square, a rotated orientation is used.
+  The orientation is rotated by 180 degrees if $inverted is true.
+  */
   constructor .driver_ --transform/Transform?=null --portrait/bool?=null --inverted/bool=false:
     x_rounding_ = driver_.x_rounding
     y_rounding_ = driver_.y_rounding
@@ -403,7 +405,7 @@ abstract class PixelDisplay implements Window:
         idx := (top >> 6) * dirty_bytes_per_line_ + (left >> 3)
         end_idx := ((round_up bottom 64) >> 6) * dirty_bytes_per_line_
         dirty_accumulator_[0] = CLEAN_
-        blit dirty_[idx..end_idx] dirty_accumulator_ (right - left + 7) >> 3 --source_line_stride=dirty_bytes_per_line_ --destination_pixel_stride=0 --destination_line_stride=0 --operation=OR
+        blit dirty_[idx..end_idx] dirty_accumulator_ ((right - left + 7) >> 3) --source_line_stride=dirty_bytes_per_line_ --destination_pixel_stride=0 --destination_line_stride=0 --operation=OR
         if dirty_accumulator_[0] & mask == CLEAN_:
           continue
 
