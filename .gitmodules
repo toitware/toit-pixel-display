@@ -1,0 +1,3 @@
+[submodule "tests/toit-png-tools"]
+	path = tests/toit-png-tools
+	url = https://github.com/toitware/toit-png-tools.git

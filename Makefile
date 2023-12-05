@@ -8,8 +8,12 @@ all: test
 build/CMakeCache.txt:
 	$(MAKE) rebuild-cmake
 
+.PHONY: install-pkgs
 install-pkgs: rebuild-cmake
 	(cd build && ninja install-pkgs)
+	(cd tests/toit-png-tools && $(MAKE) rebuild-cmake)
+	(cd tests/toit-png-tools && cmake -DTOITRUN:FILEPATH="$${TOITRUN:-toit.run}" -DTOITPKG:FILEPATH="$${TOITPKG:-toit.pkg}" build)
+	(cd tests/toit-png-tools && $(MAKE) install-pkgs)
 
 test: install-pkgs rebuild-cmake
 	(cd build && ninja check)

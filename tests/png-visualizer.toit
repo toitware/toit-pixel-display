@@ -9,43 +9,57 @@ import crypto.crc show *
 import host.file
 import monitor show Latch
 import pixel_display show *
+import png_tools.png_writer
+import png_tools.png_reader show *
 import zlib
 
 class TwoColorPngVisualizer extends PngVisualizingDriver_:
   flags ::= FLAG_2_COLOR | FLAG_PARTIAL_UPDATES
   constructor width height basename --outline/int?=null: super width height basename --outline=outline
   width_to_byte_width w: return (round_up w 8) >> 3
+  x_rounding := 8  // 8 pixels per byte in PNG.
+  y_rounding := 8  // 8 pixels per byte in canvas.
 
 class ThreeColorPngVisualizer extends PngVisualizingDriver_:
   flags ::= FLAG_3_COLOR | FLAG_PARTIAL_UPDATES
   constructor width height basename --outline/int?=null: super width height basename --outline=outline
   width_to_byte_width w: return (round_up w 4) >> 2
+  x_rounding := 4  // 4 pixels per byte.
+  y_rounding := 8  // 8 pixels per byte in canvas.
 
 class FourGrayPngVisualizer extends PngVisualizingDriver_:
   flags ::= FLAG_4_COLOR | FLAG_PARTIAL_UPDATES
   constructor width height basename --outline/int?=null: super width height basename --outline=outline
   width_to_byte_width w: return (round_up w 4) >> 2
+  x_rounding := 4  // 4 pixels per byte.
+  y_rounding := 8  // 8 pixels per byte in canvas.
 
 class TrueColorPngVisualizer extends PngVisualizingDriver_:
   flags ::= FLAG_TRUE_COLOR | FLAG_PARTIAL_UPDATES
   constructor width height basename --outline/int?=null: super width height basename --outline=outline
   width_to_byte_width w: return w * 3
+  x_rounding := 1
+  y_rounding := 1
 
 class GrayScalePngVisualizer extends PngVisualizingDriver_:
   flags ::= FLAG_GRAY_SCALE | FLAG_PARTIAL_UPDATES
   constructor width height basename --outline/int?=null: super width height basename --outline=outline
   width_to_byte_width w: return w
+  x_rounding := 1
+  y_rounding := 1
 
 class SeveralColorPngVisualizer extends PngVisualizingDriver_:
   flags ::= FLAG_SEVERAL_COLOR | FLAG_PARTIAL_UPDATES
   constructor width height basename --outline/int?=null: super width height basename --outline=outline
   width_to_byte_width w: return w
+  x_rounding := 1
+  y_rounding := 1
 
 abstract class PngVisualizingDriver_ extends AbstractDriver:
   width /int ::= ?
   height /int ::= ?
-  width_ /int ::= ?  // Rounded up to a multiple of 8.
-  height_ /int ::= ?  // Rounded up to a multiple of 8.
+  width_ := 0  // Rounded up depending on the bit depth.
+  height_ := 0  // Rounded up depending on the bit depth.
   outline_buffer_ /ByteArray? := null
   buffer_ /ByteArray := #[]
   temp_buffer_/ByteArray := #[]
@@ -58,13 +72,15 @@ abstract class PngVisualizingDriver_ extends AbstractDriver:
   static INVERT_ := ByteArray 0x100: 0xff - it
 
   constructor .width .height basename/string --.outline/int?=null:
-    width_ = round_up width 8
-    height_ = round_up height 8
     png_basename_ = basename
+    width_ = round_up width x_rounding
+    height_ = round_up height y_rounding
     buffer_ = ByteArray
         (width_to_byte_width width_) * height_
     if outline:
       outline_buffer_ = buffer_.copy
+
+  snapshots_ := []
 
   draw_true_color left/int top/int right/int bottom/int red/ByteArray green/ByteArray blue/ByteArray -> none:
     patch_width := right - left
@@ -95,7 +111,7 @@ abstract class PngVisualizingDriver_ extends AbstractDriver:
     top_left := min buffer_.size (left + width_ * top)
     if outline:
       pixels2 := pixels.copy
-      draw_byte_outline_ outline pixels2 patch_width
+      draw_byte_outline_ outline pixels2 patch_width --dotted
 
       blit pixels2 outline_buffer_[top_left..] patch_width --destination_line_stride=width_
 
@@ -180,14 +196,16 @@ abstract class PngVisualizingDriver_ extends AbstractDriver:
         pixels[y] |= 0b01010101
         pixels[y + patch_width - 1] |= 0b01010101
 
-  draw_byte_outline_ outline/int pixels/ByteArray patch_width/int -> none:
+  draw_byte_outline_ outline/int pixels/ByteArray patch_width/int --dotted=false -> none:
     bottom_left := pixels.size - patch_width
     // Dotted line along top and bottom.
-    for x := 0; x < patch_width; x += 2:
+    x_step := dotted ? 2 : 1
+    for x := 0; x < patch_width; x += x_step:
       pixels[x] = outline
       pixels[bottom_left + x] = outline
     // Dotted line along left and right.
-    for y := 0; y < pixels.size; y += patch_width * 2:
+    y_step := patch_width * (dotted ? 2 : 1)
+    for y := 0; y < pixels.size; y += y_step:
       pixels[y] = outline
       pixels[y + patch_width - 1] = outline
 
@@ -203,7 +221,7 @@ abstract class PngVisualizingDriver_ extends AbstractDriver:
 
   write_png_two_bit buffer/ByteArray left/int top/int right/int bottom/int plane_0/ByteArray plane_1/ByteArray -> none:
     patch_width := right - left
-    assert: patch_width == (round_up patch_width 8)
+    assert: patch_width == (round_up patch_width 4)
     patch_height := bottom - top
     assert: patch_height == (round_up patch_height 8)
 
@@ -229,7 +247,6 @@ abstract class PngVisualizingDriver_ extends AbstractDriver:
           buffer[out_index + (width_to_byte_width x)] = out
       row += patch_width
 
-  png_counter := 0
   png_basename_/string
 
   static HEADER ::= #[0x89, 'P', 'N', 'G', '\r', '\n', 0x1a, '\n']
@@ -255,62 +272,92 @@ abstract class PngVisualizingDriver_ extends AbstractDriver:
 
   commit left/int top/int right/int bottom/int -> none:
     if outline:
-      write_png outline_buffer_
+      write_snapshot outline_buffer_
       outline_buffer_.replace 0 buffer_
-    write_png buffer_
+    write_snapshot buffer_
 
-  write_png buffer/ByteArray -> none:
+  write_snapshot buffer/ByteArray -> none:
+    snapshots_.add buffer.copy
+
+  write_png -> none:
     true_color := flags & FLAG_TRUE_COLOR != 0
     gray := flags & FLAG_4_COLOR != 0
     three_color := flags & FLAG_3_COLOR != 0
     gray_scale := flags & FLAG_GRAY_SCALE != 0
     several_color := flags & FLAG_SEVERAL_COLOR != 0
 
-    writeable := file.Stream.for_write "$png_basename_-$(%06d png_counter++).png"
+    writeable := file.Stream.for_write "$(png_basename_).png"
 
-    write_ writeable HEADER
+    frames_across := 2
+    frames_down := snapshots_.size / frames_across
 
-    bits_per_pixel := ?
+    padding := 32
+
+    mega_width := frames_across * width_ + (frames_across + 1) * padding
+    mega_height := frames_down * height_ + (frames_down + 1) * padding
+
+    mega_buffer := ByteArray
+        (width_to_byte_width mega_width) * mega_height
+
+    bit_depth := ?
     color_type := ?
     if true_color:
-      bits_per_pixel = 8
-      color_type = 2  // True color.
+      bit_depth = 8
+      color_type = COLOR-TYPE-TRUECOLOR
     else if gray_scale:
-      bits_per_pixel = 8
-      color_type = 0  // Gray scale.
+      bit_depth = 8
+      color_type = COLOR-TYPE-GRAYSCALE
     else if three_color:
-      bits_per_pixel = 2
-      color_type = 3  // Palette.
+      bit_depth = 2
+      color_type = COLOR-TYPE-INDEXED
     else if several_color:
-      bits_per_pixel = 8
-      color_type = 3  // Palette.
+      bit_depth = 8
+      color_type = COLOR-TYPE-INDEXED
     else if gray:
-      bits_per_pixel = 2
-      color_type = 0  // Grayscale.
+      bit_depth = 2
+      color_type = COLOR-TYPE-GRAYSCALE
     else:
-      bits_per_pixel = 1
-      color_type = 0  // Grayscale
+      bit_depth = 1
+      color_type = COLOR-TYPE-GRAYSCALE
 
-    ihdr := #[
-      0, 0, 0, 0,          // Width.
-      0, 0, 0, 0,          // Height.
-      bits_per_pixel,
-      color_type,
-      0, 0, 0,
-    ]
-    BIG_ENDIAN.put_uint32 ihdr 0 width
-    BIG_ENDIAN.put_uint32 ihdr 4 height
-    write_chunk writeable "IHDR" ihdr
+    for y := 0; y < frames_down; y++:
+      for x := 0; x < frames_across; x++:
+        snapshot_index := y * frames_across + x
+        if snapshot_index >= snapshots_.size: continue
+        snapshot/ByteArray := snapshots_[snapshot_index]
+        bits_per_line_raw := bit_depth * width_
+        bits_per_line_rounded := round_up bits_per_line_raw 8
+        if bits_per_line_rounded != bits_per_line_raw:
+          // Zap the bits at the end of each line.
+          for y2 := 0; y2 < height_; y2++:
+            // Index of last byte of the line.
+            index := (y2 + 1) * (width_to_byte_width width_) - 1
+            // Mask out the bits that are beyond the last real pixel.
+            snapshot[index] &= 0xff << (bits_per_line_rounded - bits_per_line_raw)
+        pixel_index := (y * (height_ + padding) + padding) * (width_to_byte_width mega_width) + (width_to_byte_width (x * (width_ + padding) + padding))
+        blit
+            snapshot                          // Source.
+            mega_buffer[pixel_index..]        // Destination.
+            width_to_byte_width width_        // Bytes per line
+            --destination_line_stride=(width_to_byte_width mega_width)
+            --source_line_stride=(width_to_byte_width width_)
+
+    png_writer := png_writer.PngWriter
+        writeable
+        mega_width
+        mega_height
+        --bit_depth=bit_depth
+        --color_type=color_type
 
     if three_color:
-      write_chunk writeable "PLTE" #[  // Palette.
+      png_writer.write_chunk "PLTE" #[  // Palette.
           0xff, 0xff, 0xff,         // 0 is white.
           0, 0, 0,                  // 1 is black.
           0xff, 0, 0,               // 2 is red.
         ]
     else if several_color:
       // Use color palette of 7-color epaper display.
-      write_chunk writeable "PLTE" #[  // Palette.
+      png_writer.write_chunk "PLTE" #[  // Palette.
           0xff, 0xff, 0xff,         // 0 is white.
           0, 0, 0,                  // 1 is black.
           0xff, 0, 0,               // 2 is red.
@@ -324,38 +371,20 @@ abstract class PngVisualizingDriver_ extends AbstractDriver:
           0xc0, 0xc0, 0xc0,         // 9 is light gray.
         ]
 
-    compressor := zlib.RunLengthZlibEncoder
-    done := Latch
-    compressed := Buffer
-
-    task::
-      while data := compressor.reader.read:
-        compressed.write data
-      done.set null
-
     zero_byte := #[0]
-    line_size := width_to_byte_width width
-    line_step := width_to_byte_width width_
-    height.repeat: | y |
-      compressor.write zero_byte  // Adaptive scheme.
+    line_size := width_to_byte_width mega_width
+    line_step := width_to_byte_width mega_width
+    mega_height.repeat: | y |
+      png_writer.write_uncompressed zero_byte  // Adaptive scheme.
       index := y * line_step
-      line := buffer[index..index + line_size]
+      line := mega_buffer[index..index + line_size]
       if gray:
         line = ByteArray line.size: line[it] ^ 0xff
       else if several_color:
         line = ByteArray line.size: min SEVERAL_MAX_COLOR_ line[it]
-      compressor.write line
+      png_writer.write_uncompressed line
 
-    compressor.close
-
-    // Wait for the reader task to finish.
-    done.get
-
-    if compressed.size != 0:
-      write_chunk writeable "IDAT" compressed.bytes  // Compressed pixel data.
-
-    write_chunk writeable "IEND" #[]  // End chunk.
-
+    png_writer.close
     writeable.close
 
 SEVERAL_WHITE ::= 0
