@@ -197,11 +197,11 @@ class Transform:
 
   /**
   Finds the extent of a rectangle after it has been transformed with the transform.
-    $x_in: The left edge before the transformation is applied.
-    $y_in: The top edge before the transformation is applied.
-    $w_in: The width before the transformation is applied.
-    $h_in: The height before the transformation is applied.
-    $block: A block that is called with arguments left top width height in the transformed coordinate space.
+  - $x_in: The left edge before the transformation is applied.
+  - $y_in: The top edge before the transformation is applied.
+  - $w_in: The width before the transformation is applied.
+  - $h_in: The height before the transformation is applied.
+  - $block: A block that is called with arguments left top width height in the transformed coordinate space.
   */
   xywh x_in/int y_in/int w_in/int h_in/int [block]:
     x_transformed := x x_in y_in
@@ -220,10 +220,10 @@ class Transform:
 
   /**
   Finds a point and an orientation after it has been transformed with the transform.
-    $x_in: The x coordinate before the transformation is applied.
-    $y_in: The y coordinate before the transformation is applied.
-    $o_in: The orientation before the transformation is applied.
-    $block: A block that is called with arguments x y orientation in the transformed coordinate space.
+  - $x_in: The x coordinate before the transformation is applied.
+  - $y_in: The y coordinate before the transformation is applied.
+  - $o_in: The orientation before the transformation is applied.
+  - $block: A block that is called with arguments x y orientation in the transformed coordinate space.
   */
   xyo x_in/int y_in/int o_in/int [block]:
     x_transformed := x x_in y_in
@@ -237,7 +237,7 @@ class Transform:
 
   /**
   Returns a new transform which represents this transform rotated left
-   around the origin in the space of this transform
+    around the origin in the space of this transform
   */
   rotate_left -> Transform:
     return Transform.with_
