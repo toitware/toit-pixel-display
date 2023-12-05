@@ -21,15 +21,20 @@ BLACK ::= 0
 
 // The canvas contains a ByteArray.
 // Initially all pixels have the 0 color.
-class Canvas extends OneByteCanvas_:
-  constructor width/int height/int x_offset/int y_offset/int:
-    super width height x_offset y_offset
+class Canvas_ extends OneByteCanvas_:
+  constructor width/int height/int:
+    super width height
+
+  supports_8_bit -> bool: return true
+  gray_scale -> bool: return true
 
   /**
   Creates a blank texture with the same dimensions as this one.
   */
   create_similar:
-    return Canvas width_ height_ x_offset_ y_offset_
+    result := Canvas_ width_ height_
+    result.transform=transform
+    return result
 
 class FilledRectangle extends OneByteFilledRectangle_:
   constructor color/int x/int y/int w/int h/int transform/Transform:
@@ -182,7 +187,7 @@ class PixmapTexture extends PixmapTexture_:
     if not transparency_: throw "No transparency"
     bitmap_zap bytes_ 42
 
-  draw_ bx by orientation canvas/Canvas:
+  draw_ bx by orientation canvas/Canvas_:
     if transparency_:
       bitmap_draw_bytemap bx by 42 orientation bytes_ w palette_ canvas.pixels_ canvas.width_
     else:
@@ -222,7 +227,7 @@ class DropShadowWindow extends DropShadowWindow_:
     max_shadow_opacity_ = (shadow_opacity_percent * 2.5500001).to_int
     super x y w h transform corner_radius blur_radius drop_distance_x drop_distance_y
 
-  make_alpha_map_ canvas/Canvas padding:
+  make_alpha_map_ canvas/Canvas_ padding:
     return ByteArray (canvas.width_ + padding) * (canvas.height_ + padding)
 
   make_opaque_ x y w h map map_width --frame/bool:
@@ -237,8 +242,8 @@ class DropShadowWindow extends DropShadowWindow_:
         else:
           map[x + y_offset] = opacity
 
-  draw_background canvas/Canvas:
+  draw_background canvas/Canvas_:
     bytemap_zap canvas.pixels_ background_color
 
-  draw_frame canvas/Canvas:
+  draw_frame canvas/Canvas_:
     bytemap_zap canvas.pixels_ 0

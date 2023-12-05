@@ -16,15 +16,20 @@ import .one_byte
 
 // The canvas contains a ByteArray.
 // Initially all pixels have the 0 color.
-class Canvas extends OneByteCanvas_:
-  constructor width/int height/int x_offset/int y_offset/int:
-    super width height x_offset y_offset
+class Canvas_ extends OneByteCanvas_:
+  constructor width/int height/int:
+    super width height
+
+  supports_8_bit -> bool: return true
+  gray_scale -> bool: return false
 
   /**
   Creates a blank texture with the same dimensions as this one.
   */
   create_similar:
-    return Canvas width_ height_ x_offset_ y_offset_
+    result := Canvas_ width_ height_
+    result.transform=transform
+    return result
 
 class FilledRectangle extends OneByteFilledRectangle_:
   constructor color/int x/int y/int w/int h/int transform/Transform:
@@ -107,10 +112,10 @@ class SimpleWindow extends OneByteSimpleWindow_:
   constructor x y w h transform border_width border_color/int background_color/int:
     super x y w h transform border_width border_color background_color
 
-  draw_frame canvas/Canvas:
+  draw_frame canvas/Canvas_:
     bytemap_zap canvas.pixels_ border_color
 
-  draw_background canvas/Canvas:
+  draw_background canvas/Canvas_:
     bytemap_zap canvas.pixels_ background_color
 
 class RoundedCornerWindow extends OneByteRoundedCornerWindow_:

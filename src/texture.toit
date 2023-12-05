@@ -5,15 +5,22 @@
 import binary show LITTLE_ENDIAN
 import bitmap show *
 import font show Font
+import math
+
+import .bar_code
+import .common
+import .one_byte as one_byte
+import .style
+import .true_color as true_color
 
 TRANSFORM_IDENTITY_ ::= Transform.with_ [1, 0, 0, 1, 0, 0]
 TRANSFORM_90_ ::= Transform.with_ [0, -1, 1, 0, 0, 0]
 TRANSFORM_180_ ::= Transform.with_ [-1, 0, 0, -1, 0, 0]
 TRANSFORM_270_ ::= Transform.with_ [0, 1, -1, 0, 0, 0]
 
-// Classic 3x3 matrix for 2D transformations.  Right column is always 0 0 1, so we
-// don't need to store it.  We don't support scaling so the top left 2x2 block is
-// always 0s, 1s, and -1s.
+// Classic 3x3 matrix for 2D transformations.  Right column is always 0 0 1, so
+// we don't need to store it.  We don't support scaling so the top left 2x2
+// block is always 0s, 1s, and -1s.
 class Transform:
   array_ ::= ?  // 6-element integer array.
 
@@ -21,6 +28,12 @@ class Transform:
     return TRANSFORM_IDENTITY_
 
   constructor.with_ .array_:
+
+  stringify -> string:
+    line1 := "$(%3d array_[0]) $(%3d array_[1])"
+    line2 := "$(%3d array_[2]) $(%3d array_[3])"
+    line3 := "$(%3d array_[4]) $(%3d array_[5])"
+    return "$line1\n$line2\n$line3"
 
   apply other/Transform -> Transform:
     a0 := array_[0]
@@ -77,6 +90,23 @@ class Transform:
     w2 := w_transformed.abs
     h2 := h_transformed.abs
     block.call x2 y2 w2 h2
+
+  /**
+  Finds a point and an orientation after it has been transformed with the transform.
+    $x_in: The x coordinate before the transformation is applied.
+    $y_in: The y coordinate before the transformation is applied.
+    $o_in: The orientation before the transformation is applied.
+    $block: A block that is called with arguments x y orientation in the transformed coordinate space.
+  */
+  xyo x_in/int y_in/int o_in/int [block]:
+    x_transformed := x x_in y_in
+    y_transformed := y x_in y_in
+    o_transformed/int := ?
+    if      array_[0] > 0: o_transformed = o_in + ORIENTATION_0
+    else if array_[1] < 0: o_transformed = o_in + ORIENTATION_90
+    else if array_[0] < 0: o_transformed = o_in + ORIENTATION_180
+    else:                  o_transformed = o_in + ORIENTATION_270
+    block.call x_transformed y_transformed (o_transformed & 3)
 
   /**
   Returns a new transform which represents this transform rotated left
@@ -154,39 +184,12 @@ class Transform:
   height width/int height/int -> int:
     return width * array_[1] + height * array_[3]
 
-abstract class AbstractCanvas:
-  width_ / int
-  height_ / int
-  x_offset_ / int := ?
-  y_offset_ / int := ?
-
-  constructor .width_ .height_ .x_offset_ .y_offset_:
-
-  abstract create_similar -> AbstractCanvas
-
-  abstract set_all_pixels color/int -> none
-
-  abstract composit frame_opacity frame_canvas/AbstractCanvas painting_opacity painting_canvas/AbstractCanvas
-
 /**
 Something you can draw on a canvas.  It could be a text string, a pixmap or
   a geometric figure. They can be stacked up and will be drawn from back to
   front, with transparency.
 */
-abstract class Texture:
-  hash_code /int ::= random 0 0x10000000
-  change_tracker /Window? := null
-
-  /**
-  Writes the image data to a canvas window.
-  $canvas: Some sort of canvas.  The precise type depends on the depth of the display.
-  */
-  write canvas/AbstractCanvas -> none:
-    write_ canvas
-
-  abstract write_ canvas
-
-  abstract invalidate -> none
+abstract class Texture extends ElementOrTexture_:
 
 /**
 Most $Texture s have a size and know their own position in the scene, and are
@@ -301,7 +304,7 @@ abstract class SizedTexture extends Texture:
       invalidate
 
   // Redraws in a tile that will be copied to a part of the display.
-  write_ canvas/AbstractCanvas -> none:
+  write_ canvas/Canvas -> none:
     win_w := canvas.width_
     win_h := canvas.height_
     win_x := canvas.x_offset_
@@ -337,20 +340,6 @@ abstract class ResizableTexture extends SizedTexture:
       h_ = new_height
       invalidate
 
-EAN_13_QUIET_ZONE_WIDTH ::= 9
-EAN_13_START_WIDTH ::= 3
-EAN_13_MIDDLE_WIDTH ::= 5
-EAN_13_DIGIT_WIDTH ::= 7
-EAN_13_BOTTOM_SPACE ::= 5
-EAN_13_WIDTH ::= 2 * EAN_13_QUIET_ZONE_WIDTH + 2 * EAN_13_START_WIDTH + EAN_13_MIDDLE_WIDTH + 12 * EAN_13_DIGIT_WIDTH
-EAN_13_HEIGHT ::= 83
-// Encoding of L digits.  R digits are the bitwise-not of this and G digits are
-// the R digits in reverse order.
-EAN_13_L_CODES_ ::= [0x0d, 0x19, 0x13, 0x3d, 0x23, 0x31, 0x2f, 0x3b, 0x37, 0x0b]
-EAN_13_G_CODES_ ::= [0x27, 0x33, 0x1b, 0x21, 0x1d, 0x39, 0x05, 0x11, 0x09, 0x17]
-// Encoding of the first (invisible) digit.
-EAN_13_FIRST_CODES_ ::= [0x00, 0x0b, 0x0d, 0x0e, 0x13, 0x19, 0x1c, 0x15, 0x16, 0x1a]
-
 // Texture that draws a standard EAN-13 bar code.  TODO: Other scales.
 abstract class BarCodeEan13_ extends SizedTexture:
   sans10_ ::= Font.get "sans10"
@@ -384,7 +373,7 @@ abstract class BarCodeEan13_ extends SizedTexture:
     return (l_ digit) ^ 0x7f
 
   // Make a white background behind the bar code and draw the digits along the bottom.
-  draw_background_ canvas/AbstractCanvas:
+  draw_background_ canvas/Canvas:
     // Background of a bar code is always white (0 color).
     transform_.xywh x y w_ h_: | x2 y2 w2 h2 |
       white_square_
@@ -437,13 +426,13 @@ abstract class BarCodeEan13_ extends SizedTexture:
   abstract digit_ digit x y canvas orientation
 
   // Line in transform coordinates.
-  line_ x top bottom canvas/AbstractCanvas transform:
+  line_ x top bottom canvas/Canvas transform:
     height := bottom - top
     transform.xywh x top 1 height: | x y w h |
       block_ x - canvas.x_offset_ y - canvas.y_offset_ w h canvas
 
   // Redraw routine.
-  write2_ canvas/AbstractCanvas:
+  write2_ canvas/Canvas:
     win_x := canvas.x_offset_
     win_y := canvas.y_offset_
     draw_background_ canvas
@@ -501,13 +490,64 @@ class TextExtent_:
   // top.
   constructor text font alignment:
     box := font.text_extent text
-    if alignment != TEXT_TEXTURE_ALIGN_LEFT:
+    if alignment != ALIGN_LEFT:
       displacement = -(font.pixel_width text)
-      if alignment == TEXT_TEXTURE_ALIGN_CENTER: displacement >>= 1
+      if alignment == ALIGN_CENTER: displacement >>= 1
     w = box[0]
     h = box[1]
     x = box[2] + displacement
     y = -box[1] - box[3]
+
+text_get_bounding_boxes_ old/string new/string alignment/int font/Font [block]:
+  left_doesnt_move  := alignment == ALIGN_LEFT
+  right_doesnt_move := alignment == ALIGN_RIGHT
+  // If the rendered length does not change then both ends don't move.
+  pixel_width_old := font.pixel_width old
+  if pixel_width_old == (font.pixel_width new):
+    left_doesnt_move = true
+    right_doesnt_move = true
+  length := min old.size new.size
+  unchanged_left := 0
+  unchanged_right := 0
+  if left_doesnt_move:
+    // Find out how many bytes are unchanged at the start of the string.
+    unchanged_left = length
+    for i := 0; i < length; i++:
+      if old[i] != new[i]:
+        unchanged_left = i
+        break
+  if right_doesnt_move:
+    // Find out how many bytes are unchanged at the end of the string.
+    unchanged_right = length
+    last_character_start := 0  // Location (counting from end) of the start of the last UTF-8 sequence.
+    for i := 0; i < length; i++:
+      if old[old.size - 1 - i] != new[new.size - 1 - i]:
+        unchanged_right = last_character_start
+        break
+      else if old[old.size - 1 - i]:
+        last_character_start = i + 1
+  if unchanged_right != 0 or unchanged_left != 0:
+    changed_old := old.copy unchanged_left (old.size - unchanged_right)
+    changed_new := new.copy unchanged_left (new.size - unchanged_right)
+    changed_extent_old := TextExtent_ changed_old font alignment
+    changed_extent_new := TextExtent_ changed_new font alignment
+    if alignment == ALIGN_LEFT:
+      unchanged_width := font.pixel_width old[..unchanged_left]
+      changed_extent_old.x += unchanged_width
+      changed_extent_new.x += unchanged_width
+    else if alignment == ALIGN_RIGHT:
+      unchanged_width := font.pixel_width old[old.size - unchanged_right..]
+      // Make x relative to the text origin, which is the right edge.
+      changed_extent_old.x -= unchanged_width
+      changed_extent_new.x -= unchanged_width
+    else:
+      assert: alignment == ALIGN_CENTER
+      assert: pixel_width_old == (font.pixel_width new)
+      // Make x relative to the text origin, which is the middle.
+      unchanged_width := ((pixel_width_old + 1) >> 1) - (font.pixel_width old[..unchanged_left])
+      changed_extent_old.x -= unchanged_width + changed_extent_old.displacement
+      changed_extent_new.x -= unchanged_width + changed_extent_new.displacement
+    block.call changed_extent_old changed_extent_new
 
 /**
 A texture that represents the graphical display of a string.
@@ -569,7 +609,7 @@ abstract class TextTexture_ extends SizedTexture:
       fix_bounding_box_
       return
 
-    get_bounding_boxes_ string_ new_string alignment_ font_: | changed_extent_old/TextExtent_ changed_extent_new/TextExtent_ |
+    text_get_bounding_boxes_ string_ new_string alignment_ font_: | changed_extent_old/TextExtent_ changed_extent_new/TextExtent_ |
       invalidate_extent_ changed_extent_old
       invalidate_extent_ changed_extent_new
       string_ = new_string
@@ -577,57 +617,6 @@ abstract class TextTexture_ extends SizedTexture:
       return
     string_ = new_string
     update_
-
-  static get_bounding_boxes_ old/string new/string alignment/int font/Font [block]:
-    left_doesnt_move  := alignment == TEXT_TEXTURE_ALIGN_LEFT
-    right_doesnt_move := alignment == TEXT_TEXTURE_ALIGN_RIGHT
-    // If the rendered length does not change then both ends don't move.
-    pixel_width_old := font.pixel_width old
-    if pixel_width_old == (font.pixel_width new):
-      left_doesnt_move = true
-      right_doesnt_move = true
-    length := min old.size new.size
-    unchanged_left := 0
-    unchanged_right := 0
-    if left_doesnt_move:
-      // Find out how many bytes are unchanged at the start of the string.
-      unchanged_left = length
-      for i := 0; i < length; i++:
-        if old[i] != new[i]:
-          unchanged_left = i
-          break
-    if right_doesnt_move:
-      // Find out how many bytes are unchanged at the end of the string.
-      unchanged_right = length
-      last_character_start := 0  // Location (counting from end) of the start of the last UTF-8 sequence.
-      for i := 0; i < length; i++:
-        if old[old.size - 1 - i] != new[new.size - 1 - i]:
-          unchanged_right = last_character_start
-          break
-        else if old[old.size - 1 - i]:
-          last_character_start = i + 1
-    if unchanged_right != 0 or unchanged_left != 0:
-      changed_old := old.copy unchanged_left (old.size - unchanged_right)
-      changed_new := new.copy unchanged_left (new.size - unchanged_right)
-      changed_extent_old := TextExtent_ changed_old font alignment
-      changed_extent_new := TextExtent_ changed_new font alignment
-      if alignment == TEXT_TEXTURE_ALIGN_LEFT:
-        unchanged_width := font.pixel_width old[..unchanged_left]
-        changed_extent_old.x += unchanged_width
-        changed_extent_new.x += unchanged_width
-      else if alignment == TEXT_TEXTURE_ALIGN_RIGHT:
-        unchanged_width := font.pixel_width old[old.size - unchanged_right..]
-        // Make x relative to the text origin, which is the right edge.
-        changed_extent_old.x -= unchanged_width
-        changed_extent_new.x -= unchanged_width
-      else:
-        assert: alignment == TEXT_TEXTURE_ALIGN_CENTER
-        assert: pixel_width_old == (font.pixel_width new)
-        // Make x relative to the text origin, which is the middle.
-        unchanged_width := ((pixel_width_old + 1) >> 1) - (font.pixel_width old[..unchanged_left])
-        changed_extent_old.x -= unchanged_width + changed_extent_old.displacement
-        changed_extent_new.x -= unchanged_width + changed_extent_new.displacement
-      block.call changed_extent_old changed_extent_new
 
   invalidate_extent_ ex:
     invalidate
@@ -693,7 +682,7 @@ abstract class TextTexture_ extends SizedTexture:
     invalidate
 
   // After the textures under us have drawn themselves, we draw on top.
-  write2_ canvas/AbstractCanvas:
+  write2_ canvas/Canvas:
     x2 := transform_.x text_x_ + displacement text_y_
     y2 := transform_.y text_x_ + displacement text_y_
     draw_
@@ -712,7 +701,7 @@ abstract class FilledRectangle_ extends ResizableTexture:
     super x y w h transform
 
   // Draw a colored rectangle at x,y on the canvas.
-  write2_ canvas/AbstractCanvas:
+  write2_ canvas/Canvas:
     transform_.xywh x_ y_ w_ h_: | x2 y2 w2 h2 |
       start_x := x2 - canvas.x_offset_
       start_y := y2 - canvas.y_offset_
@@ -746,6 +735,8 @@ A collections of textures which can be added to a display as a single texture.
 */
 class TextureGroup extends Texture implements Window:
   elements_ := []
+  inner_width -> int?: unreachable  // Not used by textures, only elements.
+  inner_height -> int?: unreachable
 
   add element -> none:
     elements_.add element
@@ -763,8 +754,11 @@ class TextureGroup extends Texture implements Window:
       it.change_tracker = null
     elements_ = []
 
+  draw canvas/Canvas -> none:
+    write_ canvas
+
   // After the textures under us have drawn themselves, we draw on top.
-  write_ canvas/AbstractCanvas -> none:
+  write_ canvas/Canvas -> none:
     elements_.do: it.write canvas
 
   // We don't crop anything, just pass on the invalidation to the next higher Window.
@@ -772,24 +766,17 @@ class TextureGroup extends Texture implements Window:
     if change_tracker:
       change_tracker.child_invalidated x y w h
 
+  child_invalidated_element x/int y/int w/int h/int -> none:
+    throw "NOT_IMPLEMENTED"
+
   invalidate -> none:
     elements_.do: it.invalidate
 
-/**
-A display or a window within a display.
-You can add and remove texture objects to a Window.  They will be drawn
-  in the order they were added, where the first textures are at the back
-  and are overwritten by textures added later.
-*/
-interface Window:
-  add element /Texture -> none
-  remove element /Texture -> none
-  remove_all -> none
-
-  // Called by elements that have been added to this.
-  child_invalidated x/int y/int w/int h/int ->none
-
 abstract class BorderlessWindow_ extends ResizableTexture implements Window:
+  elements_ := {}
+  inner_width -> int?: unreachable  // Not used by textures, only elements.
+  inner_height -> int?: unreachable
+
   constructor x/int y/int w/int h/int transform:
     this.transform = transform.translate x y
     super x y w h transform
@@ -811,7 +798,9 @@ abstract class BorderlessWindow_ extends ResizableTexture implements Window:
     elements_.remove_all
 
   transform /Transform := ?
-  elements_ := {}
+
+  child_invalidated_element x/int y/int w/int h/int -> none:
+    throw "NOT_IMPLEMENTED"
 
   child_invalidated x/int y/int w/int h/int -> none:
     right := x + w
@@ -891,7 +880,7 @@ abstract class WindowTexture_ extends BorderlessWindow_ implements Window:
     opaque.  As a special case it may return a single-entry byte array, which
     means all pixels have the same transparency.
   */
-  abstract frame_map canvas/AbstractCanvas -> ByteArray
+  abstract frame_map canvas/Canvas -> ByteArray
 
   /**
   Returns a canvas that is an alpha map for the given area that describes where
@@ -902,7 +891,7 @@ abstract class WindowTexture_ extends BorderlessWindow_ implements Window:
     may return a single-entry byte array, which means all pixels have the same
     transparency.
   */
-  abstract painting_map canvas/AbstractCanvas -> ByteArray
+  abstract painting_map canvas/Canvas -> ByteArray
 
   /**
   Draws the background on the canvas.  This represents the interior wall color
@@ -910,7 +899,7 @@ abstract class WindowTexture_ extends BorderlessWindow_ implements Window:
     take the frame_map or painting_map into account: The canvas this function
     draws on will be composited using them afterwards.
   */
-  abstract draw_background canvas/AbstractCanvas -> none
+  abstract draw_background canvas/Canvas -> none
 
   /**
   Expected to draw the frame on the canvas.  This represents the window frame
@@ -923,7 +912,7 @@ abstract class WindowTexture_ extends BorderlessWindow_ implements Window:
     super x y w h transform
 
   // After the textures under us have drawn themselves, we draw on top.
-  write2_ canvas/AbstractCanvas:
+  write2_ canvas/Canvas:
     win_w := canvas.width_
     win_h := canvas.height_
 
@@ -944,9 +933,13 @@ abstract class WindowTexture_ extends BorderlessWindow_ implements Window:
     frame_canvas := null
     if not is_all_transparent frame_opacity:
       frame_canvas = canvas.create_similar
+      frame_canvas.x_offset_ = canvas.x_offset_
+      frame_canvas.y_offset_ = canvas.y_offset_
       draw_frame frame_canvas
 
     painting_canvas := canvas.create_similar
+    painting_canvas.x_offset_ = canvas.x_offset_
+    painting_canvas.y_offset_ = canvas.y_offset_
     draw_background painting_canvas
     elements_.do: it.write_ painting_canvas
 
@@ -987,7 +980,7 @@ abstract class SimpleWindow_ extends WindowTexture_:
   // Draws 100% opacity for the frame shape, a filled rectangle.
   // (The frame is behind the painting, so this doesn't mean we only
   // see the frame.)
-  frame_map canvas/AbstractCanvas:
+  frame_map canvas/Canvas:
     if border_width_ == 0: return WindowTexture_.ALL_TRANSPARENT  // The frame is not visible anywhere.
     // Transform inner dimensions not including border
     transform_.xywh inner_x_ inner_y_ inner_w_ inner_h_: | x y w2 h2 |
@@ -1011,7 +1004,7 @@ abstract class SimpleWindow_ extends WindowTexture_:
     unreachable
 
   // Draws 100% opacity for the window content, a filled rectangle.
-  painting_map canvas/AbstractCanvas:
+  painting_map canvas/Canvas:
     transform_.xywh inner_x_ inner_y_ inner_w_ inner_h_: | x y w2 h2 |
       x2 := x - canvas.x_offset_
       y2 := y - canvas.y_offset_
@@ -1027,7 +1020,7 @@ abstract class SimpleWindow_ extends WindowTexture_:
 abstract class RoundedCornerWindow_ extends WindowTexture_:
   corner_radius_ := 0
   opacities_ := null
-  abstract make_alpha_map_ canvas/AbstractCanvas padding
+  abstract make_alpha_map_ canvas/Canvas padding
   abstract make_opaque_ x y w h map map_width --frame/bool
   abstract set_opacity_ x y opacity map map_width --frame/bool
 
@@ -1089,7 +1082,7 @@ abstract class RoundedCornerWindow_ extends WindowTexture_:
               total += extent - a
           opacities_[idx] = (0xff * total) / (downsample * downsample)
 
-  frame_map canvas/AbstractCanvas:
+  frame_map canvas/Canvas:
     return WindowTexture_.ALL_TRANSPARENT  // No frame on these windows.
 
   static TABLE_SIZE_ ::= 256
@@ -1104,7 +1097,7 @@ abstract class RoundedCornerWindow_ extends WindowTexture_:
     return array
 
   // Draws 100% opacity for the window content, a filled rounded-corner rectangle.
-  painting_map canvas/AbstractCanvas:
+  painting_map canvas/Canvas:
     transform_.xywh inner_x_ inner_y_ inner_w_ inner_h_: | x y w2 h2 |
       x2 := x - canvas.x_offset_
       y2 := y - canvas.y_offset_
@@ -1160,7 +1153,7 @@ abstract class DropShadowWindow_ extends RoundedCornerWindow_:
       transform
       corner_radius
 
-  frame_map canvas/AbstractCanvas:
+  frame_map canvas/Canvas:
     win_x := canvas.x_offset_
     win_y := canvas.y_offset_
 
@@ -1207,7 +1200,6 @@ abstract class DropShadowWindow_ extends RoundedCornerWindow_:
       source_index := (it + blur_radius) * map_width + blur_radius
       transparency_map_unpadded.replace (it*canvas.width_) transparency_map source_index source_index + canvas.width_
     return transparency_map_unpadded
-
 abstract class BitmapTextureBase_ extends SizedTexture:
   w := 0
   h := 0
@@ -1225,7 +1217,7 @@ abstract class BitmapTextureBase_ extends SizedTexture:
     block.call index bit
 
   // After the textures under us have drawn themselves, we draw on top.
-  write2_ canvas/AbstractCanvas:
+  write2_ canvas/Canvas:
     if w == 0 or h == 0: return
     x2 := transform_.x x_ y_
     y2 := transform_.y x_ y_
@@ -1275,7 +1267,7 @@ abstract class PixmapTexture_ extends SizedTexture:
     super x y w h transform
 
   // After the textures under us have drawn themselves, we draw on top.
-  write2_ canvas/AbstractCanvas:
+  write2_ canvas/Canvas:
     if w == 0 or h == 0: return
     x2 := transform_.x x_ y_
     y2 := transform_.y x_ y_

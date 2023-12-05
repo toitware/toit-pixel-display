@@ -1,2 +1,4 @@
 name: pixel_display
 description: Common code to drive all pixel-based displays.
+environment:
+  sdk: ^2.0.0-alpha.121

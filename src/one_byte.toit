@@ -9,23 +9,30 @@
 import bitmap show *
 import font show Font
 import icons show Icon
+import .common
+import .gray_scale as gray_scale_
 import .texture
 
 // The canvas contains a ByteArray.
 // Initially all pixels are 0.
-abstract class OneByteCanvas_ extends AbstractCanvas:
+abstract class OneByteCanvas_ extends Canvas:
   pixels_ := ?
 
-  constructor width/int height/int x_offset/int y_offset/int:
+  constructor width/int height/int:
     size := width * height
     pixels_ = ByteArray size
-    super width height x_offset y_offset
+    super width height
 
   set_all_pixels color/int -> none:
     bytemap_zap pixels_ color
 
   get_pixel_ x y:
     return pixels_[x + width_ * y]
+
+  make_alpha_map --padding/int=0 -> Canvas:
+    result := gray_scale_.Canvas_ (width_ + padding) (height_ + padding)
+    result.transform=transform
+    return result
 
   composit frame_opacity frame_canvas/OneByteCanvas_? painting_opacity painting_canvas/OneByteCanvas_:
     composit_bytes pixels_ frame_opacity (frame_canvas ? frame_canvas.pixels_ : null) painting_opacity painting_canvas.pixels_ false

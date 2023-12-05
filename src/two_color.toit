@@ -11,6 +11,7 @@ For use with e-paper displays and the SSD1306 128x64 display
 import bitmap show *
 import font show Font
 import icons show Icon
+import .common
 import .pixel_display show TwoColorPixelDisplay  // For the doc comment.
 import .texture
 
@@ -20,15 +21,18 @@ TRANSPARENT ::= 3
 
 // The canvas contains a bitmapped ByteArray.
 // Starts off with/ all pixels white.
-class Canvas extends AbstractCanvas:
+class Canvas_ extends Canvas:
   pixels_ := ?
 
-  constructor width/int height/int x_offset/int y_offset/int:
+  supports_8_bit -> bool: return false
+  gray_scale -> bool: return true
+
+  constructor width/int height/int:
     assert: height & 7 == 0
     size := (width * height) >> 3
     assert: size <= 4000
     pixels_ = ByteArray size
-    super width height x_offset y_offset
+    super width height
 
   set_all_pixels color/int -> none:
     bitmap_zap pixels_ (color & 1)
@@ -41,11 +45,20 @@ class Canvas extends AbstractCanvas:
   /**
   Creates a blank texture with the same dimensions as this one.
   */
-  create_similar -> Canvas:
-    return Canvas width_ height_ x_offset_ y_offset_
+  create_similar -> Canvas_:
+    result := Canvas_ width_ height_
+    result.transform = transform
+    return result
 
-  composit frame_opacity frame_canvas/Canvas? painting_opacity painting_canvas/Canvas:
-    composit_bytes pixels_ frame_opacity (frame_canvas ? frame_canvas.pixels_ : null) painting_opacity painting_canvas.pixels_ true
+  make_alpha_map --padding/int=0 -> Canvas:
+    result := Canvas_ (width_ + padding) (height_ + padding)
+    result.transform = transform
+    return result
+
+  composit frame_opacity frame_canvas/Canvas_? painting_opacity painting_canvas/Canvas_:
+    fo := frame_opacity is ByteArray ? frame_opacity : frame_opacity.pixels_
+    po := painting_opacity is ByteArray ? painting_opacity : painting_opacity.pixels_
+    composit_bytes pixels_ fo (frame_canvas ? frame_canvas.pixels_ : null) po painting_canvas.pixels_ true
 
 
 class FilledRectangle extends FilledRectangle_:
@@ -60,7 +73,7 @@ class FilledRectangle extends FilledRectangle_:
     return FilledRectangle_.line_ x1 y1 x2 y2: | x y w h |
       FilledRectangle color x y w h transform
 
-  translated_write_ x/int y/int w/int h/int canvas/Canvas:
+  translated_write_ x/int y/int w/int h/int canvas/Canvas_:
     bitmap_rectangle x y color_ w h canvas.pixels_ canvas.width_
 
 class TextTexture extends TextTexture_:
@@ -85,7 +98,7 @@ class TextTexture extends TextTexture_:
     color_ = new_color
     invalidate
 
-  draw_ bx by orientation canvas/Canvas:
+  draw_ bx by orientation canvas/Canvas_:
     bitmap_draw_text bx by color_ orientation string_ font_ canvas.pixels_ canvas.width_
 
 class IconTexture extends TextTexture:
@@ -106,7 +119,7 @@ class BitmapTexture extends BitmapTexture_:
   constructor x/int y/int w/int h/int transform/Transform .color_/int:
     super x y w h transform
 
-  draw_ bx by orientation canvas/Canvas:
+  draw_ bx by orientation canvas/Canvas_:
     bitmap_draw_bitmap bx by color_ orientation bytes_ 0 w canvas.pixels_ canvas.width_ false
 
 /**
@@ -123,7 +136,7 @@ class OpaqueBitmapTexture extends BitmapTexture:
   constructor x/int y/int w/int h/int transform/Transform .foreground_color_/int=BLACK .background_color_/int=WHITE:
     super x y w h transform foreground_color_
 
-  write2_ canvas/Canvas:
+  write2_ canvas/Canvas_:
     transform_.xywh x_ y_ w_ h_: | x2 y2 w2 h2 |
       x := x2 - canvas.x_offset_
       y := y2 - canvas.y_offset_
@@ -134,7 +147,7 @@ class BarCodeEan13 extends BarCodeEan13_:
   constructor code/string x/int y/int transform/Transform:
     super code x y transform
 
-  white_square_ x y w h canvas/Canvas:
+  white_square_ x y w h canvas/Canvas_:
     white ::= 0
     bitmap_rectangle x y white w h canvas.pixels_ canvas.width_
 
@@ -143,7 +156,7 @@ class BarCodeEan13 extends BarCodeEan13_:
     black ::= 1
     bitmap_draw_text x y black orientation digit sans10_ canvas.pixels_ canvas.width_
 
-  block_ x y width height canvas/Canvas:
+  block_ x y width height canvas/Canvas_:
     black ::= 1
     bitmap_rectangle x y black width height canvas.pixels_ canvas.width_
 
@@ -158,13 +171,13 @@ class SimpleWindow extends SimpleWindow_:
   constructor x/int y/int w/int h/int transform/Transform border_width/int .border_color .background_color:
     super x y w h transform border_width
 
-  draw_frame canvas/Canvas:
+  draw_frame canvas/Canvas_:
     bitmap_zap canvas.pixels_ border_color
 
-  draw_background canvas/Canvas:
+  draw_background canvas/Canvas_:
     bitmap_zap canvas.pixels_ background_color
 
-  make_alpha_map_ canvas/Canvas:
+  make_alpha_map_ canvas/Canvas_:
     return ByteArray (canvas.width_ * canvas.height_) >> 3
 
   make_opaque_ x y w h map map_width:
@@ -194,10 +207,10 @@ class RoundedCornerWindow extends RoundedCornerWindow_:
         else:
           map[x + y_offset] |= 1 << (y & 7)
 
-  draw_background canvas/Canvas:
+  draw_background canvas/Canvas_:
     bitmap_zap canvas.pixels_ background_color
 
-  draw_frame canvas/Canvas:
+  draw_frame canvas/Canvas_:
     throw "UNREACHABLE"
 
 // Pbm documentation: http://netpbm.sourceforge.net/doc/pbm.html
@@ -269,7 +282,7 @@ class PbmTexture extends BitmapTexture_:
     bytes_ = bytes[parser.image_data_offset..]
     super.no_allocate_ x y parser.width parser.height transform
 
-  draw_ bx by orientation canvas/Canvas:
+  draw_ bx by orientation canvas/Canvas_:
     bitmap_draw_bitmap bx by color_ orientation bytes_ 0 w canvas.pixels_ canvas.width_ false
 
 // A texture backed by a P4 (binary two-level) PBM file.  This is normally more
@@ -284,7 +297,7 @@ class OpaquePbmTexture extends PbmTexture:
     foreground ::= 1
     super x y transform foreground bytes
 
-  write2_ canvas/Canvas:
+  write2_ canvas/Canvas_:
     transform_.xywh x_ y_ w_ h_: | x2 y2 w2 h2 |
       x := x2 - canvas.x_offset_
       y := y2 - canvas.y_offset_
