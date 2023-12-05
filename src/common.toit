@@ -16,15 +16,15 @@ You can add and remove texture objects to a Window.  They will be drawn
   and are overwritten by textures added later.
 */
 interface Window:
-  add element /ElementOrTexture_ -> none
-  remove element /ElementOrTexture_ -> none
+  add element/ElementOrTexture_ -> none
+  remove element/ElementOrTexture_ -> none
   remove_all -> none
 
   // Called by elements that have been added to this.
-  child_invalidated x/int y/int w/int h/int ->none
+  child_invalidated x/int y/int w/int h/int -> none
 
   // Called by elements that have been added to this.
-  child_invalidated_element x/int y/int w/int h/int ->none
+  child_invalidated_element x/int y/int w/int h/int -> none
 
 /**
 Something you can draw on a canvas.  It could be a text string, a pixmap or
@@ -32,8 +32,8 @@ Something you can draw on a canvas.  It could be a text string, a pixmap or
   front, with transparency.
 */
 abstract class ElementOrTexture_:
-  hash_code /int ::= random 0 0x10000000
-  change_tracker /Window? := null
+  hash_code/int ::= random 0 0x10000000
+  change_tracker/Window? := null
 
   /**
   Writes the image data to a canvas window.
@@ -64,13 +64,6 @@ abstract class Canvas:
 
   abstract make_alpha_map -> Canvas
   abstract make_alpha_map --padding/int -> Canvas
-
-  /*
-  A, C disjoint or one of them is empty 0
-  A subset of C, A not empty            1
-  C subset of A, C not empty            2
-  A identical to C and non-empty        3
-  */
 
   static DISJOINT           ::= 0  // The area and the canvas are disjoint.
   static AREA_IN_CANVAS     ::= 1  // The area is a subset of the canvas.
