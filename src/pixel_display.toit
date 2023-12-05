@@ -387,18 +387,6 @@ abstract class PixelDisplay implements Window:
 
   // Clean determines if we should clean or draw the dirty area.
   update_frame_buffer clean/bool refresh_dimensions -> none:
-    width_target := 64
-    width := ?
-    max_height := ?
-    while true:
-      width = min driver_.width (width_target - 8)
-      max_height = max
-          round_down (max_canvas_height_ width) y_rounding_
-          y_rounding_
-      if max_height < driver_.height: break
-      if width >= driver_.width: break
-      width_target += width_target
-
     redraw := : | l t r b |
       if clean:
         clean_rect_ l t r b
@@ -432,6 +420,26 @@ abstract class PixelDisplay implements Window:
         redraw.call l t r (t + h)
         redraw.call l (t + h) r b
         return
+
+    // Start with a width target of (slightly less than) 64 pixels, but ask
+    // the canvas how tall the patches can be. It will normally try pick a
+    // height that keeps things inside a 4k page.
+    width_target := 64
+    width := ?
+    max_height := ?
+    while true:
+      // Canvas sizes must often be slightly less than 4k in order to fit into
+      // a 4k page with object header overhead. By subtracting 8 here we get nice
+      // heights like 8, 16, 24, 32 that almost fill the max canvas size.
+      width = min driver_.width (width_target - 8)
+      max_height = max
+          round_down (max_canvas_height_ width) y_rounding_
+          y_rounding_
+      // Don't widen any more if the patches are already too flat to fill the full height.
+      if max_height <= driver_.height: break
+      // Don't widen any more if the patches already cover the whole width.
+      if width >= driver_.width: break
+      width_target += width_target
 
     // The algorithm below requires that x aligns with 8 pixels, the resolution
     // of the dirty map.
