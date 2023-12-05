@@ -13,9 +13,6 @@ class PngElement extends CustomElement:
   h/int
   png_/AbstractPng
 
-  min_w: return w
-  min_h: return h
-
   constructor --x/int?=null --y/int?=null png_file/ByteArray:
     info := PngInfo png_file
     if info.uncompressed_random_access:
