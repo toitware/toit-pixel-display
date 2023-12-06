@@ -94,3 +94,32 @@ class Canvas_ extends Canvas:
       bytemap_draw_text x2 y2 r o2 text font red_ width_
       bytemap_draw_text x2 y2 g o2 text font green_ width_
       bytemap_draw_text x2 y2 b o2 text font blue_ width_
+
+  pixmap x/int y/int
+      --pixels/ByteArray
+      --alpha/ByteArray=#[]
+      --palette/ByteArray=#[]
+      --source_width/int
+      --orientation/int=ORIENTATION_0
+      --source_line_stride/int=source_width:
+    palette_r := palette
+    palette_g := palette.size > 0 ? palette[1..] : #[]
+    palette_b := palette.size > 1 ? palette[2..] : #[]
+    transform.xyo x y orientation: | x2 y2 o2 |
+      bitmap_draw_bytemap x2 y2 --alpha=alpha --orientation=o2 --source=pixels --source_width=source_width --source_line_stride=source_line_stride --palette=palette_r --destination=red_ --destination_width=width_
+      bitmap_draw_bytemap x2 y2 --alpha=alpha --orientation=o2 --source=pixels --source_width=source_width --source_line_stride=source_line_stride --palette=palette_g --destination=green_ --destination_width=width_
+      bitmap_draw_bytemap x2 y2 --alpha=alpha --orientation=o2 --source=pixels --source_width=source_width --source_line_stride=source_line_stride --palette=palette_b --destination=blue_ --destination_width=width_
+
+  rgb_pixmap x/int y/int --r/ByteArray --g/ByteArray --b/ByteArray
+      --alpha/ByteArray=#[]
+      --palette/ByteArray?=null
+      --source_width/int
+      --orientation/int=ORIENTATION_0
+      --source_line_stride/int=source_width:
+    palette_r := palette ? palette : #[]
+    palette_g := palette ? palette[1..] : #[]
+    palette_b := palette ? palette[2..] : #[]
+    transform.xyo x y orientation: | x2 y2 o2 |
+      bitmap_draw_bytemap x2 y2 --alpha=alpha --orientation=o2 --source=r --source_width=source_width --source_line_stride=source_line_stride --palette=palette_r --destination=red_ --destination_width=width_
+      bitmap_draw_bytemap x2 y2 --alpha=alpha --orientation=o2 --source=g --source_width=source_width --source_line_stride=source_line_stride --palette=palette_g --destination=green_ --destination_width=width_
+      bitmap_draw_bytemap x2 y2 --alpha=alpha --orientation=o2 --source=b --source_width=source_width --source_line_stride=source_line_stride --palette=palette_b --destination=blue_ --destination_width=width_

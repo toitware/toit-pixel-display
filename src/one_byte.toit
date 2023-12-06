@@ -45,3 +45,13 @@ abstract class OneByteCanvas_ extends Canvas:
   text x/int y/int --text/string --color/int --font/Font --orientation/int=ORIENTATION_0:
     transform.xyo x y orientation: | x2 y2 o2 |
       bytemap_draw_text x2 y2 color o2 text font pixels_ width_
+
+  pixmap x/int y/int
+      --pixels/ByteArray
+      --alpha/ByteArray=#[]
+      --palette/ByteArray=#[]
+      --source_width/int
+      --orientation/int=ORIENTATION_0
+      --source_line_stride/int=source_width:
+    transform.xyo x y orientation: | x2 y2 o2 |
+      bitmap_draw_bytemap x2 y2 --alpha=alpha --orientation=o2 --source=pixels --source_width=source_width --source_line_stride=source_line_stride --palette=palette --destination=pixels_ --destination_width=width_

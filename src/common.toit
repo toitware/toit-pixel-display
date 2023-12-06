@@ -87,6 +87,18 @@ abstract class Canvas:
   abstract text x/int y/int --text/string --color/int --font/Font --orientation/int
   abstract text x/int y/int --text/string --color/int --font/Font
 
+  pixmap x/int y/int
+      --pixels/ByteArray
+      --alpha/ByteArray=#[]
+      --palette/ByteArray=#[]
+      --source_width/int
+      --orientation/int=ORIENTATION_0
+      --source_line_stride/int=source_width:
+   throw "Unimplemented"
+
+  rgb_pixmap x/int y/int --r/ByteArray --g/ByteArray --b/ByteArray --source_width/int --orientation/int=ORIENTATION_0:
+    throw "UNSUPPORTED"  // Only on true color canvas.
+
 TRANSFORM_IDENTITY_ ::= Transform.with_ [1, 0, 0, 1, 0, 0]
 TRANSFORM_90_ ::= Transform.with_ [0, -1, 1, 0, 0, 0]
 TRANSFORM_180_ ::= Transform.with_ [-1, 0, 0, -1, 0, 0]
