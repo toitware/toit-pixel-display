@@ -62,7 +62,7 @@ abstract class Element implements Window:
 
   abstract invalidate -> none
 
-  get_element_by_id id/string:
+  get_element_by_id id/string -> Element?:
     if id == this.id: return this
     if children:
       children.do: | child/Element |
@@ -379,10 +379,11 @@ class Label extends Element implements ColoredElement:
 
 /**
 A superclass for elements that can draw themselves.  Override the
-  $draw method in your subclass to draw on the canvas.  The $w
+  $custom_draw method in your subclass to draw on the canvas.  The $w
   and $h methods/fields are used to determine the size of the element
   for redrawing purposes.
-
+The background is drawn before $custom_draw is called, and the border
+  is drawn after.
 Drawing operations are automatically clipped to w and h.
 */
 abstract class CustomElement extends ClippingDiv:
@@ -410,7 +411,7 @@ abstract class CustomElement extends ClippingDiv:
 
   /**
   Override this to draw your custom element.  The coordinate system is
-    the coordinate system of your element, ie the top left is 0, 0.
+    the coordinate system of your element.  That is, the top left is 0, 0.
   The background has already been drawn when this is called, and the
     frame will be drawn afterwards.
   */
@@ -442,8 +443,8 @@ class ClippingDiv extends Div:
       extent --x=x --y=y --w=w --h=h: | outer_x outer_y outer_w outer_h |
         change_tracker.child_invalidated outer_x outer_y outer_w outer_h
 
-  static ALL_TRANSPARENT ::= ByteArray 1: 0
-  static ALL_OPAQUE ::= ByteArray 1: 0xff
+  static ALL_TRANSPARENT ::= #[0]
+  static ALL_OPAQUE ::= #[0xff]
 
   static is_all_transparent opacity -> bool:
     if opacity is not ByteArray: return false
