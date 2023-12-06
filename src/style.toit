@@ -251,7 +251,7 @@ style := Style
 ```
 
 Descendant combinators in CSS are used to restict a style to the
-  descendents of a particular element.  In toit we use nesting and
+  descendants of a particular element.  In Toit we use nesting and
   indentation:
 
 ```css
@@ -293,7 +293,7 @@ style := Style
     }
 ```
 
-Since an element can have more than one element class, it's often better to make
+Since an element can have more than one element class, it may be better to make
   a new element class for the combination, and use that instead.
 
 ```toit
