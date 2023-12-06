@@ -60,6 +60,13 @@ class Canvas_ extends Canvas:
     po := painting_opacity is ByteArray ? painting_opacity : painting_opacity.pixels_
     composit_bytes pixels_ fo (frame_canvas ? frame_canvas.pixels_ : null) po painting_canvas.pixels_ true
 
+  rectangle x/int y/int --w/int --h/int --color/int:
+    transform.xywh x y w h: | x2 y2 w2 h2 |
+      bitmap_rectangle x2 y2 color w2 h2 pixels_ width_
+
+  text x/int y/int --text/string --color/int --font/Font --orientation/int=ORIENTATION_0:
+    transform.xyo x y orientation: | x2 y2 o2 |
+      bitmap_draw_text x2 y2 color o2 text font pixels_ width_
 
 class FilledRectangle extends FilledRectangle_:
   color_ := ?

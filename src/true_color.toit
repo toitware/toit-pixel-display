@@ -78,6 +78,24 @@ class Canvas_ extends Canvas:
     composit_bytes green_ fo (frame_canvas ? frame_canvas.green_ : null) po painting_canvas.green_ false
     composit_bytes blue_ fo (frame_canvas ? frame_canvas.blue_ : null) po painting_canvas.blue_ false
 
+  rectangle x/int y/int --w/int --h/int --color/int:
+    transform.xywh x y w h: | x2 y2 w2 h2 |
+      r := color >> 16
+      g := (color >> 8) & 0xff
+      b := color & 0xff
+      bytemap_rectangle x2 y2 r w2 h2 red_   width_
+      bytemap_rectangle x2 y2 g w2 h2 green_ width_
+      bytemap_rectangle x2 y2 b w2 h2 blue_  width_
+
+  text x/int y/int --text/string --color/int --font/Font --orientation/int=ORIENTATION_0:
+    transform.xyo x y orientation: | x2 y2 o2 |
+      r := color >> 16
+      g := (color >> 8) & 0xff
+      b := color & 0xff
+      bytemap_draw_text x2 y2 r o2 text font red_ width_
+      bytemap_draw_text x2 y2 g o2 text font green_ width_
+      bytemap_draw_text x2 y2 b o2 text font blue_ width_
+
 class FilledRectangle extends FilledRectangle_:
   color_ := ?
 

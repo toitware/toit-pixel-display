@@ -8,14 +8,16 @@ See https://docs.toit.io/language/sdk/display
 */
 
 import bitmap show *
+import font show Font
+import icons show Icon
+
 import .bar_code
 import .common
+import .element
 import .texture
 import .two_color as two_color
 import .three_color as three_color
 import .two_bit_texture as two_bit
-import font show Font
-import icons show Icon
 import .four_gray as four_gray
 import .true_color as true_color
 import .gray_scale as gray_scale
@@ -30,8 +32,6 @@ FLAG_GRAY_SCALE ::=      0b1000
 FLAG_SEVERAL_COLOR ::=   0b10000
 FLAG_TRUE_COLOR ::=      0b100000
 FLAG_PARTIAL_UPDATES ::= 0b1000000
-
-class Element:
 
 /**
 Abstract superclass for all pixel display drivers.
