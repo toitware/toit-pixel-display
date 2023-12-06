@@ -101,6 +101,7 @@ abstract class PixelDisplay implements Window:
   transform_ /Transform
 
   /**
+  Constructs a display connected via a $driver_ to a device.
   By default the orientation is the natural orientation of the display driver.
   If $portrait is false, then a landscape orientation is used.
   If $portrait is true, then a portrait orientation is used, or in the case
@@ -221,10 +222,10 @@ abstract class PixelDisplay implements Window:
   /** Removes all elements.  */
   remove_all:
     elements_.do: it.change_tracker = null
-    if elements_.size != 0: child_invalidated_element 0 0 driver_.width driver_.height
+    if elements_.size != 0: child_invalidated 0 0 driver_.width driver_.height
     elements_ = {}
 
-  child_invalidated_element x/int y/int w/int h/int -> none:
+  child_invalidated x/int y/int w/int h/int -> none:
     transform_.xywh x y w h: | x2 y2 w2 h2 |
       child_invalidated_ x2 y2 w2 h2
 
