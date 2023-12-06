@@ -14,7 +14,6 @@ import icons show Icon
 import .bar_code
 import .common
 import .element
-import .texture
 import .two_color as two_color
 import .three_color as three_color
 import .two_bit_texture as two_bit
@@ -63,42 +62,6 @@ abstract class AbstractDriver:
   close -> none:
 
 /**
-Current settings for adding textures to a display.
-I think we are getting rid of this.
-*/
-class GraphicsContext:
-  alignment /int ::= TEXT_TEXTURE_ALIGN_LEFT
-  color /int ::= 0
-  background /int ::= 0
-  font /Font? ::= null
-  transform /Transform ::= Transform.identity
-
-  constructor:
-
-  constructor.private_ .alignment .color .font .transform .background:
-
-  /// Returns a copy of this GraphicsContext, but with the given changes.
-  with -> GraphicsContext
-      --alignment/int=alignment
-      --font/Font?=font
-      --color/int=color
-      --transform/Transform?=transform
-      --translate_x/int=0
-      --translate_y/int=0
-      --rotation/int=0
-      --background/int=background:
-    if rotation != 0:
-      rotation %= 360
-      if rotation < 0: rotation += 360
-      if rotation % 90 != 0: throw "INVALID_ARGUMENT"
-      while rotation != 0:
-        transform = transform.rotate_left
-        rotation -= 90
-    if translate_x != 0 or translate_y != 0:
-      transform = transform.translate translate_x translate_y
-    return GraphicsContext.private_ alignment color font transform background
-
-/**
 Common code for pixel-based displays connected to devices.
 Height and width must be multiples of 8.
 This class keeps track of the list of things to draw, and
@@ -108,7 +71,7 @@ See https://docs.toit.io/language/sdk/display
 */
 abstract class PixelDisplay implements Window:
   // The image to display.
-  textures_ := {}
+  elements_ := {}
   background_ := null
   width: return driver_.width
   height: return driver_.width
@@ -180,33 +143,6 @@ abstract class PixelDisplay implements Window:
   abstract default_draw_color_ -> int
   abstract default_background_color_ -> int
 
-  /**
-  Returns a graphics context for the screen.
-  With `--landscape=false` the context will use the display in landscape mode (wider than tall).
-  With `--landscape=true` the context will use the display in portrait mode (taller than wide).
-  With `--inverted=true` the context will use the display rotated 180 degrees.
-  The default $color depends on the display.
-  */
-  context --landscape/bool?=null --inverted/bool=false --color/int=default_draw_color_ --alignment/int=TEXT_TEXTURE_ALIGN_LEFT --font/Font?=null --translate_x/int=0 --translate_y/int=0 --background/int=default_background_color_ -> GraphicsContext:
-    transform/Transform ::= ?
-    if landscape == null:
-      transform = Transform.identity
-      if inverted: throw "INVALID_ARGUMENT"
-    else if landscape:
-      if inverted:
-        transform = inverted_landscape
-      else:
-        transform = this.landscape
-    else:
-      if inverted:
-        transform = inverted_portrait
-      else:
-        transform = portrait
-    translated := transform
-    if translate_x != 0 or translate_y != 0:
-      translated = transform.translate translate_x translate_y
-    return GraphicsContext.private_ alignment color font translated background
-
   /** Returns a transform that uses the display in portrait mode.  */
   portrait -> Transform:
     if not portrait_:
@@ -255,39 +191,44 @@ abstract class PixelDisplay implements Window:
 
   abstract background= color/int -> none
 
-  /**
-  Adds a texture to a display.  The next time the display is refreshed, this
-    texture will be drawn.  Textures added to this display are drawn in the
-    order they were added, so the first-added textures are at the back and the
-    last-added are at the front.  However you can add textures via a
-    TextureGroup.  This enables you to later add textures that are not at the
-    front, by adding them to a TextureGroup that is not at the front.
-  */
-  add texture/ElementOrTexture_ -> none:
-    textures_.add texture
-    texture.change_tracker = this
-    texture.invalidate
+  set_styles styles/List -> none:
+    elements_.do:
+      if it is Element:
+        element := it as Element
+        element.set_styles styles
 
   /**
-  Removes a texture that was previously added.  You cannot remove a background
-    texture.  Instead you should set a new background with @background=.
+  Adds an element to a display.  The next time the display is refreshed, this
+    element will be drawn.  Elements added to this display are drawn in the
+    order they were added, so the first-added elements are at the back and the
+    last-added are at the front.  However elements can have children.
+    This enables you to later add elements that are not at the
+    front, by adding them as children of an Element that is not at the front.
   */
-  remove texture/ElementOrTexture_ -> none:
-    textures_.remove texture
-    texture.invalidate
-    texture.change_tracker = null
+  add element/Element -> none:
+    elements_.add element
+    element.change_tracker = this
+    element.invalidate
 
-  /** Removes all textures.  */
+  /**
+  Removes an element that was previously added.
+  */
+  remove element/Element -> none:
+    elements_.remove element
+    element.invalidate
+    element.change_tracker = null
+
+  /** Removes all elements.  */
   remove_all:
-    textures_.do: it.change_tracker = null
-    if textures_.size != 0: child_invalidated 0 0 driver_.width driver_.height
-    textures_ = {}
+    elements_.do: it.change_tracker = null
+    if elements_.size != 0: child_invalidated_element 0 0 driver_.width driver_.height
+    elements_ = {}
 
   child_invalidated_element x/int y/int w/int h/int -> none:
     transform_.xywh x y w h: | x2 y2 w2 h2 |
-      child_invalidated x2 y2 w2 h2
+      child_invalidated_ x2 y2 w2 h2
 
-  child_invalidated x/int y/int w/int h/int -> none:
+  child_invalidated_ x/int y/int w/int h/int -> none:
     if not dirty_: return  // Some devices don't use the dirty array to track changes.
     dirty_left_ = min dirty_left_ x
     dirty_right_ = max dirty_right_ (x + w)
@@ -327,28 +268,22 @@ abstract class PixelDisplay implements Window:
         y_rounding_
     canvas := create_canvas_ w step
     List.chunk_up 0 (round_up driver_.height y_rounding_) step: | top bottom |
-      // For the Textures.
-      canvas.x_offset_ = 0
-      canvas.y_offset_ = top
       // For the Elements.
       // To get the translation for this tile in the driver coordinates instead
       // of the display coordinates, we invert the 2d transform, then translate
       // it, then invert it again.
       canvas.transform = (transform_.invert.translate 0 top).invert
       canvas.set_all_pixels background_
-      textures_.do:
-        if it is SizedTexture:
-          it.write canvas
-        else:
-          it.draw canvas
+      elements_.do:
+        it.draw canvas
       draw_ 0 top driver_.width bottom canvas
     driver_.commit 0 0 driver_.width driver_.height
 
   /**
-  Draws the elements and textures.
+  Draws the elements.
 
   After changing the display, for example by adding, removing or moving
-    textures, call this to refresh the screen.  Optionally give a $speed
+    elements, call this to refresh the screen.  Optionally give a $speed
     between 0 and 100 to indicate the speed-image quality tradeoff.
   */
   draw --speed/int=50 -> none:
@@ -501,9 +436,6 @@ abstract class PixelDisplay implements Window:
 
   redraw_rect_ left/int top/int right/int bottom/int -> none:
     canvas := create_canvas_ (right - left) (bottom - top)
-    // For the Textures:
-    canvas.x_offset_ = left
-    canvas.y_offset_ = top
     // For the Elements:
     // To get the translation for this tile in the driver coordinates instead
     // of the display coordinates, we invert the 2d transform, then translate
@@ -511,11 +443,8 @@ abstract class PixelDisplay implements Window:
     canvas.transform = (transform_.invert.translate left top).invert
 
     canvas.set_all_pixels background_
-    textures_.do:
-      if it is SizedTexture:
-        it.write canvas
-      else:
-        it.draw canvas
+    elements_.do:
+      it.draw canvas
 
     draw_ left top right bottom canvas
 
@@ -558,73 +487,7 @@ class TwoColorPixelDisplay extends PixelDisplay:
   background= color/int -> none:
     if background_ != color:
       background_ = color
-      child_invalidated 0 0 driver_.width driver_.height
-
-  text context/GraphicsContext x/int y/int text/string -> two_color.TextTexture:
-    if context.font == null: throw "NO_FONT_GIVEN"
-    texture := two_color.TextTexture x y context.transform context.alignment text context.font context.color
-    add texture
-    return texture
-
-  icon context/GraphicsContext x/int y/int icon/Icon -> two_color.IconTexture:
-    texture := two_color.IconTexture x y context.transform context.alignment icon icon.font_ context.color
-    add texture
-    return texture
-
-  filled_rectangle context/GraphicsContext x/int y/int width/int height/int -> two_color.FilledRectangle:
-    texture := two_color.FilledRectangle context.color x y width height context.transform
-    add texture
-    return texture
-
-  /// A line from $x1,$y1 to $x2,$y2.
-  /// The line must be horizontal or vertical.
-  line context/GraphicsContext x1/int y1/int x2/int y2/int -> two_color.FilledRectangle:
-    texture := two_color.FilledRectangle.line context.color x1 y1 x2 y2 context.transform
-    add texture
-    return texture
-
-  /**
-  A texture that contains an uncompressed 2-color image.  Initially all
-    pixels are transparent, but pixels can be given the color from the context
-    with set_pixel.
-  */
-  bitmap context/GraphicsContext x/int y/int width/int height/int -> two_color.BitmapTexture:
-    texture := two_color.BitmapTexture x y width height context.transform context.color
-    add texture
-    return texture
-
-  /**
-  A texture that contains an uncompressed 2-color image.  Initially all
-    pixels have the background color from the context.  Pixels can be set to
-    the context color with set_pixel, or set to the context background color
-    with clear_pixel.
-  */
-  opaque_bitmap context/GraphicsContext x/int y/int width/int height/int -> two_color.OpaqueBitmapTexture:
-    texture := two_color.OpaqueBitmapTexture x y width height context.transform context.color context.background
-    add texture
-    return texture
-
-  /**
-  A texture backed by a P4 (binary two-level) PBM file.  The white areas
-    (zeros) are rendered transparent and the black areas (ones) are rendered in
-    an the color from the context.  This is normally more efficient than the
-    Pbm class, but it cannot scale the image.
-  */
-  pbm context/GraphicsContext x/int y/int bytes/ByteArray -> two_color.PbmTexture:
-    texture := two_color.PbmTexture x y context.transform context.color bytes
-    add texture
-    return texture
-
-  /**
-  A texture backed by a P4 (binary two-level) PBM file.  The colors in the
-    context are ignored, and pixels are rendered with the colors they have in
-    the file.  This is normally more efficient than the Pbm class, but it
-    cannot scale the image.
-  */
-  opaque_pbm context/GraphicsContext x/int y/int bytes/ByteArray -> two_color.OpaquePbmTexture:
-    texture := two_color.OpaquePbmTexture x y context.transform bytes
-    add texture
-    return texture
+      child_invalidated_ 0 0 driver_.width driver_.height
 
   max_canvas_height_ width/int -> int:
     height := 0
@@ -661,7 +524,7 @@ class FourGrayPixelDisplay extends TwoBitPixelDisplay_:
   background= color/int -> none:
     if background_ != color:
       background_ = color
-      child_invalidated 0 0 driver_.width driver_.height
+      child_invalidated_ 0 0 driver_.width driver_.height
 
   default_draw_color_ -> int:
     return four_gray.BLACK
@@ -671,60 +534,6 @@ class FourGrayPixelDisplay extends TwoBitPixelDisplay_:
 
   create_canvas_ w/int h/int -> Canvas:
     return four_gray.Canvas_ w h
-
-  text context/GraphicsContext x/int y/int text/string -> four_gray.TextTexture:
-    if context.font == null: throw "NO_FONT_GIVEN"
-    texture := four_gray.TextTexture x y context.transform context.alignment text context.font context.color
-    add texture
-    return texture
-
-  icon context/GraphicsContext x/int y/int icon/Icon -> four_gray.IconTexture:
-    texture := four_gray.IconTexture x y context.transform context.alignment icon icon.font_ context.color
-    add texture
-    return texture
-
-  filled_rectangle context/GraphicsContext x/int y/int width/int height/int -> four_gray.FilledRectangle:
-    texture := four_gray.FilledRectangle context.color x y width height context.transform
-    add texture
-    return texture
-
-  /// A line from x1,y1 to x2,y2.  The line must be horizontal or vertical.
-  line context/GraphicsContext x1/int y1/int x2/int y2/int -> four_gray.FilledRectangle:
-    texture := four_gray.FilledRectangle.line context.color x1 y1 x2 y2 context.transform
-    add texture
-    return texture
-
-  /**
-  A texture that contains an uncompressed 2-color image.  Initially all
-    pixels are transparent, but pixels can be given the color from the
-    context with set_pixel.
-  */
-  bitmap context/GraphicsContext x/int y/int width/int height/int -> four_gray.BitmapTexture:
-    texture := four_gray.BitmapTexture x y width height context.transform context.color
-    add texture
-    return texture
-
-  /**
-  A texture that contains an uncompressed 2-color image.  Initially all
-    pixels have the background color from the context.  Pixels can be set to
-    the context color with set_pixel, or set to the context background color
-    with clear_pixel.
-  */
-  opaque_bitmap context/GraphicsContext x/int y/int width/int height/int -> four_gray.OpaqueBitmapTexture:
-    texture := four_gray.OpaqueBitmapTexture x y width height context.transform context.color context.background
-    add texture
-    return texture
-
-  /**
-  A texture that contains an uncompressed 4-gray image.  Initially all
-    pixels have the background color from the context.  Pixels can be set to
-    any gray level with the context color with set_pixel, or set to the context
-    background color with clear_pixel.
-  */
-  pixmap context/GraphicsContext x/int y/int width/int height/int -> four_gray.OpaquePixmapTexture:
-    texture := four_gray.OpaquePixmapTexture x y width height context.transform context.background
-    add texture
-    return texture
 
 /**
 Pixel-based display with black, white, and red, connected to a device.
@@ -742,7 +551,7 @@ class ThreeColorPixelDisplay extends TwoBitPixelDisplay_:
   background= color/int -> none:
     if background_ != color:
       background_ = color
-      child_invalidated 0 0 driver_.width driver_.height
+      child_invalidated_ 0 0 driver_.width driver_.height
 
   default_draw_color_ -> int:
     return three_color.BLACK
@@ -752,49 +561,6 @@ class ThreeColorPixelDisplay extends TwoBitPixelDisplay_:
 
   create_canvas_ w/int h/int -> Canvas:
     return three_color.Canvas_ w h
-
-  text context/GraphicsContext x/int y/int text/string -> three_color.TextTexture:
-    if context.font == null: throw "NO_FONT_GIVEN"
-    texture := three_color.TextTexture x y context.transform context.alignment text context.font context.color
-    add texture
-    return texture
-
-  icon context/GraphicsContext x/int y/int icon/Icon -> three_color.IconTexture:
-    texture := three_color.IconTexture x y context.transform context.alignment icon icon.font_ context.color
-    add texture
-    return texture
-
-  filled_rectangle context/GraphicsContext x/int y/int width/int height/int -> three_color.FilledRectangle:
-    texture := three_color.FilledRectangle context.color x y width height context.transform
-    add texture
-    return texture
-
-  /// A line from x1,y1 to x2,y2.  The line must be horizontal or vertical.
-  line context/GraphicsContext x1/int y1/int x2/int y2/int -> three_color.FilledRectangle:
-    texture := three_color.FilledRectangle.line context.color x1 y1 x2 y2 context.transform
-    add texture
-    return texture
-
-  /**
-  A texture that contains an uncompressed 2-color image.  Initially all
-    pixels are transparent, but pixels can be given the color from the context
-    with set_pixel.
-  */
-  bitmap context/GraphicsContext x/int y/int width/int height/int -> three_color.BitmapTexture:
-    texture := three_color.BitmapTexture x y width height context.transform context.color
-    add texture
-    return texture
-
-  /**
-  A texture that contains an uncompressed 2-color image.  Initially all
-    pixels have the background color from the context.  Pixels can be set to
-    the context color with set_pixel, or set to the context background color
-    with clear_pixel.
-  */
-  opaque_bitmap context/GraphicsContext x/int y/int width/int height/int -> three_color.OpaqueBitmapTexture:
-    texture := three_color.OpaqueBitmapTexture x y width height context.transform context.color context.background
-    add texture
-    return texture
 
 abstract class TwoBitPixelDisplay_ extends PixelDisplay:
   background_ := three_color.WHITE
@@ -834,50 +600,7 @@ class GrayScalePixelDisplay extends PixelDisplay:
   background= color/int -> none:
     if background_ != color:
       background_ = color
-      child_invalidated 0 0 driver_.width driver_.height
-
-  text context/GraphicsContext x/int y/int text/string -> gray_scale.TextTexture:
-    if context.font == null: throw "NO_FONT_GIVEN"
-    texture := gray_scale.TextTexture x y context.transform context.alignment text context.font context.color
-    add texture
-    return texture
-
-  icon context/GraphicsContext x/int y/int icon/Icon -> gray_scale.IconTexture:
-    texture := gray_scale.IconTexture x y context.transform context.alignment icon icon.font_ context.color
-    add texture
-    return texture
-
-  filled_rectangle context/GraphicsContext x/int y/int width/int height/int -> gray_scale.FilledRectangle:
-    texture := gray_scale.FilledRectangle context.color x y width height context.transform
-    add texture
-    return texture
-
-  /// A line from x1,y1 to x2,y2.  The line must be horizontal or vertical.
-  line context/GraphicsContext x1/int y1/int x2/int y2/int -> gray_scale.FilledRectangle:
-    texture := gray_scale.FilledRectangle.line context.color x1 y1 x2 y2 context.transform
-    add texture
-    return texture
-
-  /**
-  A texture that contains an uncompressed 2-color image.  Initially all
-    pixels are transparent, but pixels can be given the color from the context
-    with set_pixel.
-  */
-  bitmap context/GraphicsContext x/int y/int width/int height/int -> gray_scale.BitmapTexture:
-    texture := gray_scale.BitmapTexture x y width height context.transform context.color
-    add texture
-    return texture
-
-  /**
-  A texture that contains an uncompressed 2-color image.  Initially all
-    pixels have the background color from the context.  Pixels can be set to
-    the context color with set_pixel, or set to the context background color
-    with clear_pixel.
-  */
-  opaque_bitmap context/GraphicsContext x/int y/int width/int height/int -> gray_scale.OpaqueBitmapTexture:
-    texture := gray_scale.OpaqueBitmapTexture x y width height context.transform context.color context.background
-    add texture
-    return texture
+      child_invalidated_ 0 0 driver_.width driver_.height
 
   default_draw_color_ -> int:
     return gray_scale.BLACK
@@ -914,50 +637,7 @@ class SeveralColorPixelDisplay extends PixelDisplay:
   background= color/int -> none:
     if background_ != color:
       background_ = color
-      child_invalidated 0 0 driver_.width driver_.height
-
-  text context/GraphicsContext x/int y/int text/string -> several_color.TextTexture:
-    if context.font == null: throw "NO_FONT_GIVEN"
-    texture := several_color.TextTexture x y context.transform context.alignment text context.font context.color
-    add texture
-    return texture
-
-  icon context/GraphicsContext x/int y/int icon/Icon -> several_color.IconTexture:
-    texture := several_color.IconTexture x y context.transform context.alignment icon icon.font_ context.color
-    add texture
-    return texture
-
-  filled_rectangle context/GraphicsContext x/int y/int width/int height/int -> several_color.FilledRectangle:
-    texture := several_color.FilledRectangle context.color x y width height context.transform
-    add texture
-    return texture
-
-  /// A line from x1,y1 to x2,y2.  The line must be horizontal or vertical.
-  line context/GraphicsContext x1/int y1/int x2/int y2/int -> several_color.FilledRectangle:
-    texture := several_color.FilledRectangle.line context.color x1 y1 x2 y2 context.transform
-    add texture
-    return texture
-
-  /**
-  A texture that contains an uncompressed 2-color image.  Initially all
-    pixels are transparent, but pixels can be given the color from the context
-    with set_pixel.
-  */
-  bitmap context/GraphicsContext x/int y/int width/int height/int -> several_color.BitmapTexture:
-    texture := several_color.BitmapTexture x y width height context.transform context.color
-    add texture
-    return texture
-
-  /**
-  A texture that contains an uncompressed 2-color image.  Initially all
-    pixels have the background color from the context.  Pixels can be set to
-    the context color with set_pixel, or set to the context background color
-    with clear_pixel.
-  */
-  opaque_bitmap context/GraphicsContext x/int y/int width/int height/int -> several_color.OpaqueBitmapTexture:
-    texture := several_color.OpaqueBitmapTexture x y width height context.transform context.color context.background
-    add texture
-    return texture
+      child_invalidated_ 0 0 driver_.width driver_.height
 
   default_draw_color_ -> int:
     return 1
@@ -994,50 +674,7 @@ class TrueColorPixelDisplay extends PixelDisplay:
   background= color/int -> none:
     if background_ != color:
       background_ = color
-      child_invalidated 0 0 driver_.width driver_.height
-
-  text context/GraphicsContext x/int y/int text/string -> true_color.TextTexture:
-    if context.font == null: throw "NO_FONT_GIVEN"
-    texture := true_color.TextTexture x y context.transform context.alignment text context.font context.color
-    add texture
-    return texture
-
-  icon context/GraphicsContext x/int y/int icon/Icon -> true_color.IconTexture:
-    texture := true_color.IconTexture x y context.transform context.alignment icon icon.font_ context.color
-    add texture
-    return texture
-
-  filled_rectangle context/GraphicsContext x/int y/int width/int height/int -> true_color.FilledRectangle:
-    texture := true_color.FilledRectangle context.color x y width height context.transform
-    add texture
-    return texture
-
-  /// A line from x1,y1 to x2,y2.  The line must be horizontal or vertical.
-  line context/GraphicsContext x1/int y1/int x2/int y2/int -> true_color.FilledRectangle:
-    texture := true_color.FilledRectangle.line context.color x1 y1 x2 y2 context.transform
-    add texture
-    return texture
-
-  /**
-  A texture that contains an uncompressed 2-color image.  Initially all
-    pixels are transparent, but pixels can be given the color from the context
-    with set_pixel.
-  */
-  bitmap context/GraphicsContext x/int y/int width/int height/int -> true_color.BitmapTexture:
-    texture := true_color.BitmapTexture x y width height context.transform context.color
-    add texture
-    return texture
-
-  /**
-  A texture that contains an uncompressed 2-color image.  Initially all
-    pixels have the background color from the context.  Pixels can be set to
-    the context color with set_pixel, or set to the context background color
-    with clear_pixel.
-  */
-  opaque_bitmap context/GraphicsContext x/int y/int width/int height/int -> true_color.OpaqueBitmapTexture:
-    texture := true_color.OpaqueBitmapTexture x y width height context.transform context.color context.background
-    add texture
-    return texture
+      child_invalidated_ 0 0 driver_.width driver_.height
 
   default_draw_color_ -> int:
     return true_color.BLACK

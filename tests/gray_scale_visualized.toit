@@ -6,6 +6,7 @@ import expect show *
 import font show Font
 import pixel_display show *
 import pixel_display.gray_scale show *
+import pixel_display.element show *
 import .png_visualizer
 
 main args:
@@ -18,20 +19,24 @@ main args:
 
   sans10 := Font.get "sans10"
 
-  ctx := display.context --landscape --color=0xc0 --font=sans10
+  display.add
+      Div --x=10 --y=20 --w=30 --h=40 --background=0x80
+  display.add
+      Label --x=50 --y=20 --label="Testing" --font=sans10 --color=0xc0
 
-  display.filled_rectangle (ctx.with --color=0x80) 10 20 30 40
-  display.text ctx 50 20 "Testing"
-  middle_line := display.text ctx 50 40 "the display"
+  middle_line := Label --x=50 --y=40 --label="the display" --font=sans10 --color=0xc0
+  display.add middle_line
   display.draw
-  display.text ctx 50 60 "for the win"
+
+  display.add
+      Label --x=50 --y=60 --label="for the win" --font=sans10 --color=0xc0
 
   display.draw
 
   middle_line.move_to 60 40
   display.draw
 
-  middle_line.text = "the DISPLAY"
+  middle_line.label = "the DISPLAY"
   display.draw
 
   driver.write_png
