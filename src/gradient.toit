@@ -66,12 +66,9 @@ class GradientBackground implements Background:
     rendering_.draw canvas x y --autocropped=autocropped
 
   static normalize_angle_ angle/int -> int:
-    if 0 <= angle < 360:
-      return angle
-    else if angle < 0:
-      return angle % 360 + 360
-    else:
-      return angle % 360
+    angle %= 360
+    if angle < 0: angle += 360
+    return angle
 
   static validate_specifiers_ specifiers -> none:
     last_percent := 0
@@ -137,17 +134,18 @@ class GradientRendering_:
 
       // CSS gradient angles are:
       //    0 bottom to top.
-      //   90 left to right
-      //  180 top to bottom
-      //  270 right to left
+      //   90 left to right.
+      //  180 top to bottom.
+      //  270 right to left.
       // But we normalize them to be 0-179 and reverse the colors if needed.
 
-      // Create an angle that is between 0 and 90 degrees and has the same amount of
-      // verticalness as the gradient.
+      // Create an angle that is between 0 and 90 degrees and has the same
+      // amount of verticalness as the gradient.
       if angle >= 90: angle = 180 - angle
-      // Create an angle from the center of the rectangle to the top right corner.
-      // This is the angle that we will use to calculate the verticalness of the
-      // rectangle.
+      // Create an angle from the center of the rectangle to the top right
+      // corner.
+      // This is the angle that we will use to calculate the verticalness of
+      // the rectangle.
       rangle := math.atan (w.to_float / h)  // From 0 to PI/2.
       rangle *= 180.0 / math.PI            // From 0 to 90.
       draw_vertical_ = angle < rangle
@@ -192,10 +190,10 @@ class GradientRendering_:
     h := h_
     analysis := canvas.bounds_analysis x y w h
     if analysis == Canvas.DISJOINT: return
-    // Determine whether the draw operations will be automatically cropped for
+    // Determine whether the draw operations will be automatically clipped for
     // us, or whether we need to do it ourselves by using slices for drawing
     // operations.  We could also check whether we are inside a window that will
-    // use compositing to crop everything.
+    // use compositing to clip everything.
     if analysis == Canvas.CANVAS_IN_AREA or analysis == Canvas.COINCIDENT: autocropped = true
 
     // CSS gradient angles are:
@@ -205,16 +203,15 @@ class GradientRendering_:
     //  270 right to left
 
     repeats := texture_length_repeats_
-    offset := 0
     source_width := 0
     r := null
     g := null
     b := null
 
-    draw_block := : | y2 hw lines orientation |
+    update_r_g_b_block := : | y_or_x h_or_w lines orientation offset |
       o := offset >> 16
       // Repeats != 1 implies the gradient is vertical or horizontal, which
-      // means we don't need clipping.
+      // means we don't need any clipping.
       if autocropped or repeats != 1:
         source_width = texture_length_
         buf_size := texture_length_ * lines
@@ -222,44 +219,50 @@ class GradientRendering_:
         g = green_pixels_[..buf_size]
         b = blue_pixels_[..buf_size]
         if orientation == ORIENTATION_90:
-          y2 + o  // Return value.
+          y_or_x + o  // Return value.
         else:
-          y2 - o  // Return value.
+          y_or_x - o  // Return value.
       else:
-        r = red_pixels_[o .. o + hw]
-        g = green_pixels_[o .. o + hw]
-        b = blue_pixels_[o .. o + hw]
-        source_width = hw
-        y2  // Return value.
+        r = red_pixels_[o .. o + h_or_w]
+        g = green_pixels_[o .. o + h_or_w]
+        b = blue_pixels_[o .. o + h_or_w]
+        source_width = h_or_w
+        y_or_x  // Return value.
 
     if draw_vertical_:
       // The gradient goes broadly vertically, and we draw in vertical strips.
       orientation/int := ORIENTATION_90
+      // X2 and y2 are the x, y location we are drawing the gradient, but
+      // adjusted for orientation.
       x2/int := x
       y2/int := y + h
       if angle >= 90:  // Top to bottom.
         orientation = ORIENTATION_270
         x2++
         y2 = y
-      step := ((texture_length_ - h) << 16) / w  // n.16 fixed point.
+      // Use fixed point with 16 bits after the decimal point.
+      step := ((texture_length_ - h) << 16) / w
+      offset := 0
       for i := 0; i < w; i += repeats:
         lines := min repeats (w - i)
-        y3 := draw_block.call y2 h lines orientation
+        skew_adjusted_y := update_r_g_b_block.call y2 h lines orientation offset
         if canvas.gray_scale:
-          canvas.pixmap     (i + x2) y3 --pixels=b        --source_width=source_width --orientation=orientation
+          canvas.pixmap     (i + x2) skew_adjusted_y --pixels=b        --source_width=source_width --orientation=orientation
         else:
-          canvas.rgb_pixmap (i + x2) y3 --r=r --g=g --b=b --source_width=source_width --orientation=orientation
+          canvas.rgb_pixmap (i + x2) skew_adjusted_y --r=r --g=g --b=b --source_width=source_width --orientation=orientation
         offset += step
     else:
-      // The gradient goes broadly horizontally, and we draw in horizontal strips.
+      // The gradient goes broadly horizontally, and we draw in horizontal
+      // strips.
       up/bool := angle >= 90
       step := ((texture_length_ - w) << 16) / h  // n.16 fixed point.
+      offset := 0
       loop_body := : | i lines |
-        x3 := draw_block.call x w lines ORIENTATION_0
+        skew_adjusted_x := update_r_g_b_block.call x w lines ORIENTATION_0 offset
         if canvas.gray_scale:
-          canvas.pixmap     x3 (i + y) --pixels=b        --source_width=source_width
+          canvas.pixmap     skew_adjusted_x (i + y) --pixels=b        --source_width=source_width
         else:
-          canvas.rgb_pixmap x3 (i + y) --r=r --g=g --b=b --source_width=source_width
+          canvas.rgb_pixmap skew_adjusted_x (i + y) --r=r --g=g --b=b --source_width=source_width
         offset += step
       if up:
         for i := 0; i < h; i += repeats: loop_body.call i (min repeats (h - i))
