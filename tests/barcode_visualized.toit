@@ -2,8 +2,7 @@
 // Use of this source code is governed by a Zero-Clause BSD license that can
 // be found in the TESTS_LICENSE file.
 
-// Tests for TextElement that the change box is smaller when we only
-// change part of the text.
+// Tests drawing a supermarket-style bar code on a pixel display.
 
 import expect show *
 import pixel_display show *

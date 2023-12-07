@@ -39,7 +39,7 @@ class BarCodeEanElement extends CustomElement:
     else:
       super key value
 
-  code_ := ?  // 13 digit code as a string.
+  code_/string := ?  // 13 digit code as a string.
 
   code= value/string -> none:
     if value != code_: invalidate
