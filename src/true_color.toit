@@ -148,7 +148,7 @@ class Canvas_ extends Canvas:
             --orientation = o2
             --source = bytemap
             --source_width = source_width
-            --palette = palette
+            --palette = palette[i..]
             --destination = components_[i]
             --destination_width = width_
 
@@ -162,7 +162,7 @@ class Canvas_ extends Canvas:
 
     transform.xyo x y orientation: | x2 y2 o2 |
       for i := 0; i < 3; i++:
-        component_palette := palette ?  palette[i..] : #[]
+        component_palette := palette.size > i ?  palette[i..] : #[]
         bitmap_draw_bytemap x2 y2
             --alpha = alpha
             --orientation = o2
@@ -182,7 +182,7 @@ class Canvas_ extends Canvas:
     components := [r, g, b]
     transform.xyo x y orientation: | x2 y2 o2 |
       3.repeat: | i |
-        component_palette := palette ?  palette[i..] : #[]
+        component_palette := (palette and palette.size > i) ?  palette[i..] : #[]
         bitmap_draw_bytemap x2 y2
             --alpha = alpha
             --orientation = o2
