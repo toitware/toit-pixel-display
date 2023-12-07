@@ -2,8 +2,7 @@
 // Use of this source code is governed by a Zero-Clause BSD license that can
 // be found in the TESTS_LICENSE file.
 
-// Tests for Label that the change box is smaller when we only
-// change part of the text.
+// Tests writing PNGs to a black and white display.
 
 import bitmap show *
 import expect show *
