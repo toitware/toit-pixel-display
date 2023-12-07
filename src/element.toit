@@ -62,7 +62,13 @@ abstract class Element implements Window:
 
   abstract invalidate -> none
 
-  get_element_by_id id/string -> Element?:
+  /**
+  Finds an Element in the tree with the given id.
+  Returns null if no element is found.
+  The return type is any because you want to be able to assign the result
+    to a variable of type Div, which is a subtype of Element.
+  */
+  get_element_by_id id/string -> any:
     if id == this.id: return this
     if children:
       children.do: | child/Element |
