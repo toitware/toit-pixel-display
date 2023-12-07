@@ -92,6 +92,13 @@ class Canvas_ extends Canvas:
       // Draw the ones.
       transform.xyo x y orientation: | x2 y2 o2 |
         color := nearest_color_ palette 3
-        bitmap_draw_bitmap x2 y2 --color=(color & 1) --orientation=o2 --source=pixels --source_width=source_width --source_line_stride=source_line_stride --destination=pixels_ --destination_width=width_
+        bitmap_draw_bitmap x2 y2
+            --color = (color & 1)
+            --orientation = o2
+            --source = pixels
+            --source_width = source_width
+            --source_line_stride = source_line_stride
+            --destination = pixels_
+            --destination_width = width_
       return
     throw "No partially transparent PNGs on 2-color displays."

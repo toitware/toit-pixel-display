@@ -7,6 +7,7 @@
 import font show Font
 import bitmap show ORIENTATION_0 ORIENTATION_90 ORIENTATION_180 ORIENTATION_270
 
+import .element as element
 import .element show Element
 import .style
 
