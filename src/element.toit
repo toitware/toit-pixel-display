@@ -50,8 +50,8 @@ abstract class Element implements Window:
     if element_class:
       if not classes: classes = []
       classes.add element_class
-    background_=background
-    border_=border
+    background_ = background
+    border_ = border
     if children: children.do: | child/Element |
       child.change_tracker = this
 

@@ -265,11 +265,21 @@ class RoundedCornerBorder extends NoBorder:
     if transparency_map is one_byte.OneByteCanvas_:
       palette := opacity == 0xff ? #[] : shadow_palette_
       draw_corners_ x2 y2 right bottom radius_: | x y orientation |
-        transparency_map.pixmap x y --pixels=opacities_.byte_opacity --palette=palette --source_width=radius_ --orientation=orientation
+        transparency_map.pixmap x y
+            --pixels = opacities_.byte_opacity
+            --palette = palette
+            --source_width = radius_
+            --orientation = orientation
     else:
       draw_corners_ x2 y2 right bottom radius_: | x y orientation |
         stride := (round_up radius_ 8) >> 3
-        transparency_map.bitmap x y --pixels=opacities_.bit_opacity --alpha=ONE_ZERO_ALPHA_ --palette=ONE_ZERO_PALETTE_ --source_width=radius_ --source_line_stride=stride --orientation=orientation
+        transparency_map.bitmap x y
+            --pixels = opacities_.bit_opacity
+            --alpha = ONE_ZERO_ALPHA_
+            --palette = ONE_ZERO_PALETTE_
+            --source_width = radius_
+            --source_line_stride = stride
+            --orientation = orientation
 
   static ONE_ZERO_PALETTE_ ::= #[0, 0, 0, 1, 1, 1]
   static ONE_ZERO_ALPHA_ ::= #[0, 0xff]
@@ -370,7 +380,7 @@ class ShadowRoundedCornerBorder extends RoundedCornerBorder:
         one_byte_map.pixels_[blur_radius + blur_radius * one_byte_map.width_..]   // Source.
         (transparency_map_unpadded as one_byte.OneByteCanvas_).pixels_  // Destination.
         transparency_map_unpadded.width_   // Bytes per line.
-        --source_line_stride=transparency_map.width_
+        --source_line_stride = transparency_map.width_
     return transparency_map_unpadded
 
   draw_frame canvas/Canvas:
@@ -390,11 +400,11 @@ class RoundedCornerOpacity_:
     cache_[corner_radius] = new
     return new
 
-  static TABLE_SIZE_ ::= 256
+  static TABLE_SIZE_/int ::= 256
   // The heights of a top-right quarter circle of radius [TABLE_SIZE_].
-  static QUARTER_CIRCLE_ ::= create_quarter_circle_array_ TABLE_SIZE_
+  static QUARTER_CIRCLE_/ByteArray ::= create_quarter_circle_array_ TABLE_SIZE_
 
-  static create_quarter_circle_array_ size:
+  static create_quarter_circle_array_ size -> ByteArray:
     array := ByteArray size
     hypotenuse := (size - 1) * (size - 1)
     size.repeat:
@@ -435,12 +445,12 @@ class RoundedCornerOpacity_:
     destination_line_stride := bitmap_width >> 3
     8.repeat: | bit |
       bitmap.blit byte_opacity[bit..] bit_opacity ((radius + 7 - bit) >> 3)
-          --source_pixel_stride=8
-          --source_line_stride=radius
-          --destination_line_stride=destination_line_stride
-          --shift=bit
-          --mask=(0x80 >> bit)
-          --operation=bitmap.OR
+          --source_pixel_stride = 8
+          --source_line_stride = radius
+          --destination_line_stride = destination_line_stride
+          --shift = bit
+          --mask = (0x80 >> bit)
+          --operation = bitmap.OR
 
 /**
 A container (starting with a PixelDisplay) has a Style associated with it.
