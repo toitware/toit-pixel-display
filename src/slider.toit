@@ -101,8 +101,8 @@ class Slider extends CustomElement:
           blend = true
     if not blend: return
 
-    lo_alpha := background_lo_ ? canvas.make_alpha_map : ClippingDiv.ALL_TRANSPARENT
-    hi_alpha := background_hi_ ? canvas.make_alpha_map : ClippingDiv.ALL_TRANSPARENT
+    lo_alpha := background_lo_ ? canvas.make_alpha_map : Canvas.ALL_TRANSPARENT
+    hi_alpha := background_hi_ ? canvas.make_alpha_map : Canvas.ALL_TRANSPARENT
     lo := canvas.create_similar
     hi := canvas.create_similar
 

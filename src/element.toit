@@ -449,9 +449,6 @@ class ClippingDiv extends Div:
       extent --x=x --y=y --w=w --h=h: | outer_x outer_y outer_w outer_h |
         change_tracker.child_invalidated outer_x outer_y outer_w outer_h
 
-  static ALL_TRANSPARENT ::= #[0]
-  static ALL_OPAQUE ::= #[0xff]
-
   static is_all_transparent opacity -> bool:
     if opacity is not ByteArray: return false
     return opacity.size == 1 and opacity[0] == 0
@@ -526,7 +523,7 @@ class ClippingDiv extends Div:
     the top and left edges may be plotted at negative coordinates.
   */
   frame_map canvas/Canvas:
-    if not border_: return ClippingDiv.ALL_TRANSPARENT  // No border visible.
+    if not border_: return Canvas.ALL_TRANSPARENT  // No border visible.
     return border_.frame_map canvas w h
 
   /**

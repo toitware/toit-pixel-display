@@ -7,7 +7,6 @@
 import font show Font
 import bitmap show ORIENTATION_0 ORIENTATION_90 ORIENTATION_180 ORIENTATION_270
 
-import .element as element
 import .element show Element
 import .style
 
@@ -126,13 +125,18 @@ abstract class Canvas:
       if x2 <= 0 and y2 <= 0 and right >= width_ and bottom >= height_: return CANVAS_IN_AREA
     return OVERLAP
 
+  /// For use with $composit.
+  static ALL_TRANSPARENT ::= #[0]
+  /// For use with $composit.
+  static ALL_OPAQUE ::= #[0xff]
+
   /**
   Mixes the $frame_canvas and the $painting_canvas together and draws
     them on the reciever.
   The opacity arguments determine the transparency (alpha) of the two
     canvas arguments.  They can be either canvases returned from
-    $make_alpha_map, or they can be $Element.ALL_OPAQUE or
-    $Element.ALL_TRANSPARENT.
+    $make_alpha_map, or they can be $ALL_OPAQUE or
+    $ALL_TRANSPARENT.
   */
   abstract composit frame_opacity frame_canvas/Canvas painting_opacity painting_canvas/Canvas
 
@@ -206,7 +210,7 @@ abstract class Canvas:
   /**
   Draws the given 8-bit pixmap on the canvas.
   The source pixmap has one byte per pixel, which is an index into the
-    $palette and $argument arguments.  The order of the pixmap is as in
+    $palette and $alpha arguments.  The order of the pixmap is as in
     PNG, so the lines are ordered from top to bottom, and within each
     line the bytes are ordered from left to right.
   The $alpha argument controls which pixel indexes are transparent.  A
