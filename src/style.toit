@@ -53,26 +53,48 @@ class MultipleBackgrounds implements Background:
       Background.draw it canvas x y w h --autocropped=autocropped
 
 interface Border:
-  /// Draws the border within the given rectangle.
+  /**
+  Draws the border within the given rectangle.
+  */
   draw canvas/Canvas x/int y/int w/int h/int -> none
 
+  /**
+  Calls the block with x, y, w, h, to indicate the area that needs to be
+    redrawn if the container with this border moves.
+  For example for drop shadows this will include the shadow.
+  */
   invalidation_area x/int y/int w/int h/int [block] -> none
 
+  /**
+  Calls the block with the w and h after the border has been subtracted.
+  */
   inner_dimensions w/int h/int [block] -> none
 
+  /**
+  Calls the block with the width of the left and top edges, indicating how much
+    the content needs to be shifted to the right and down to make room for the
+    border.
+  */
   offsets [block] -> none
 
-  // Draws 100% opacity for the border and frame shape.  We don't need to carve
-  // out the window content, there is assumed to be a different alpha map for
-  // that.
+  /**
+  Draws 100% opacity for the border and frame shape.
+  We don't need to carve out the window content, there is assumed to be a
+    different alpha map for that.
+  */
   frame_map canvas/Canvas w/int h/int
 
-  // Draws 100% opacity for the window content, a filled rectangle.
+  /**
+  Draws 100% opacity for the window content.
+  In the simplest case this is a filled rectangle.
+  */
   content_map canvas/Canvas w/int h/int
 
-class NoBorder implements Border:
-  needs_clipping -> bool: return false
-
+/**
+Borders that are not actually drawn, but you can see where they are by the
+  boundary between the window content and the surroundings.
+*/
+abstract class InvisibleBorder implements Border:
   draw canvas x y w h:
     // Nothing to draw.
 
@@ -88,6 +110,9 @@ class NoBorder implements Border:
   frame_map canvas w h:
     return element.ClippingDiv.ALL_TRANSPARENT
 
+  abstract content_map canvas/Canvas w/int h/int
+
+class NoBorder extends InvisibleBorder:
   content_map canvas/Canvas w/int h/int:
     transparency_map := canvas.make_alpha_map
     transparency_map.rectangle 0 0 --w=w --h=h --color=0xff
@@ -107,8 +132,6 @@ class SolidBorder implements Border:
   constructor --border_width/BorderWidth --color/int:
     color_ = color
     border_width_ = border_width
-
-  needs_clipping -> bool: return false
 
   invalidation_area x/int y/int w/int h/int [block]:
     block.call x y w h
@@ -206,7 +229,7 @@ class BorderWidth:
     block.call left top
 
 /** A zero width border that gives an object rounded corners. */
-class RoundedCornerBorder extends NoBorder:
+class RoundedCornerBorder extends InvisibleBorder:
   radius_/int := ?
   opacities_/RoundedCornerOpacity_? := null
   shadow_palette_/ByteArray := #[]
@@ -215,19 +238,11 @@ class RoundedCornerBorder extends NoBorder:
     if not 0 <= radius <= RoundedCornerOpacity_.TABLE_SIZE_: throw "OUT_OF_RANGE"
     radius_ = radius
 
-  needs_clipping -> bool: return true
-
   radius -> int: return radius_
-
-  extent x/int y/int w/int h/int [block]:
-    block.call x y w h   // Does not protrude beyond the inner bounds.
 
   ensure_opacities_:
     if opacities_: return
     opacities_ = RoundedCornerOpacity_.get radius_
-
-  frame_map canvas/Canvas w/int h/int:
-    return element.ClippingDiv.ALL_TRANSPARENT  // No frame on these windows.
 
   // Draws 100% opacity for the window content, a filled rounded-corner rectangle.
   content_map canvas/Canvas w/int h/int:

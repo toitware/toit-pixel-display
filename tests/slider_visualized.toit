@@ -2,8 +2,8 @@
 // Use of this source code is governed by a Zero-Clause BSD license that can
 // be found in the TESTS_LICENSE file.
 
-// Tests for Label that the change box is smaller when we only
-// change part of the text.
+// Tests some simple vertical sliders where there is a movable boundary between
+// two different backgrounds.
 
 import bitmap show *
 import expect show *
