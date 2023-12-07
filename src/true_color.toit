@@ -148,7 +148,7 @@ class Canvas_ extends Canvas:
             --orientation = o2
             --source = bytemap
             --source_width = source_width
-            --palette = palette
+            --palette = palette[i..]
             --destination = components_[i]
             --destination_width = width_
 
