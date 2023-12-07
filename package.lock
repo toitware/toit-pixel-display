@@ -1,0 +1,9 @@
+sdk: ^2.0.0-alpha.121
+prefixes:
+  png-tools: toit-png-tools
+packages:
+  toit-png-tools:
+    url: github.com/toitware/toit-png-tools
+    name: png-tools
+    version: 1.0.0
+    hash: ee472ac9d4333a138206f9d3a817d3c5432d6f87

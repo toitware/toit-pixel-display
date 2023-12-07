@@ -2,3 +2,7 @@ name: pixel_display
 description: Common code to drive all pixel-based displays.
 environment:
   sdk: ^2.0.0-alpha.121
+dependencies:
+  png-tools:
+    url: github.com/toitware/toit-png-tools
+    version: ^1.0.0
