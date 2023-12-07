@@ -40,3 +40,9 @@ class Canvas_ extends two_bit.Canvas_:
     result := Canvas_ width_ height_
     result.transform = transform
     return result
+
+  static NEAREST_TABLE_ ::= #[BLACK, DARK_GRAY, LIGHT_GRAY, WHITE]
+
+  // Convert from a PNG color (0 = black, 255 = white) to a 2-bit 4-gray color.
+  nearest_color_ palette/ByteArray offset/int -> int:
+    return NEAREST_TABLE_[palette[offset] >> 6]

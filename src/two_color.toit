@@ -66,3 +66,39 @@ class Canvas_ extends Canvas:
   text x/int y/int --text/string --color/int --font/Font --orientation/int=ORIENTATION_0:
     transform.xyo x y orientation: | x2 y2 o2 |
       bitmap_draw_text x2 y2 color o2 text font pixels_ width_
+
+  // Convert from a PNG color (0 = black, 255 = white) to white or black.
+  nearest_color_ palette/ByteArray offset/int -> int:
+    return palette[offset] < 128 ? BLACK : WHITE
+
+  bitmap x/int y/int -> none
+      --pixels/ByteArray
+      --alpha/ByteArray         // 2-element byte array.
+      --palette/ByteArray       // 4 element byte array.
+      --source_width/int        // In pixels.
+      --source_line_stride/int  // In bytes.
+      --orientation/int=ORIENTATION_0:
+    source_byte_width := (source_width + 7) >> 3
+    zero_alpha := alpha[0]
+    // Fast case if the alpha is either 0 or 0xff, because we can use the
+    // primitives that paint 1's with a particular color and leave the zeros
+    // transparent.  We don't check for the case where 0 is opaque and 1 is
+    // transparent, because pngunzip fixes that for us.
+    if alpha[1] == 0xff and (zero_alpha == 0xff or zero_alpha == 0):
+      if zero_alpha == 0xff:
+        h := (pixels.size + source_line_stride - source_byte_width ) / source_line_stride
+        // Draw the zeros.
+        rectangle x y --w=source_width --h=h --color=(nearest_color_ palette 0)
+      // Draw the ones.
+      transform.xyo x y orientation: | x2 y2 o2 |
+        color := nearest_color_ palette 3
+        bitmap_draw_bitmap x2 y2
+            --color = (color & 1)
+            --orientation = o2
+            --source = pixels
+            --source_width = source_width
+            --source_line_stride = source_line_stride
+            --destination = pixels_
+            --destination_width = width_
+      return
+    throw "No partially transparent PNGs on 2-color displays."

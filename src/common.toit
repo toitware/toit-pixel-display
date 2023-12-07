@@ -7,6 +7,7 @@
 import font show Font
 import bitmap show ORIENTATION_0 ORIENTATION_90 ORIENTATION_180 ORIENTATION_270
 
+import .element as element
 import .element show Element
 import .style
 
@@ -86,6 +87,21 @@ abstract class Canvas:
 
   abstract text x/int y/int --text/string --color/int --font/Font --orientation/int
   abstract text x/int y/int --text/string --color/int --font/Font
+
+  abstract bitmap x/int y/int -> none
+      --pixels/ByteArray
+      --alpha/ByteArray          // 2-element byte array.
+      --palette/ByteArray        // 6-element byte array.
+      --source_width/int         // In pixels.
+      --source_line_stride/int   // In bytes.
+
+  abstract bitmap x/int y/int -> none
+      --pixels/ByteArray
+      --alpha/ByteArray          // 2-element byte array.
+      --palette/ByteArray        // 6-element byte array.
+      --source_width/int         // In pixels.
+      --source_line_stride/int   // In bytes.
+      --orientation/int
 
   pixmap x/int y/int
       --pixels/ByteArray

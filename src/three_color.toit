@@ -38,3 +38,13 @@ class Canvas_ extends two_bit.Canvas_:
     result := Canvas_ width_ height_
     result.transform = transform
     return result
+
+  // Convert from a PNG color (0 = black, 255 = white) to a 2-bit
+  // red-white-black color.
+  nearest_color_ palette/ByteArray offset/int -> int:
+    r := palette[offset]
+    g := palette[offset + 1]
+    b := palette[offset + 2]
+    if r > 0x60 and r > g + b: return RED
+    value := (r * 77 + g * 150 + b * 29) >> 14
+    return value < 2 ? BLACK : WHITE
