@@ -1,15 +1,15 @@
-// Copyright (C) 2020 Toitware ApS. All rights reserved.
+// Copyright (C) 2023 Toitware ApS. All rights reserved.
 // Use of this source code is governed by an MIT-style license that can be
 // found in the LICENSE file.
 
 /**
-Classes useful for $ThreeColorPixelDisplay.
+Constants useful for $PixelDisplay.three_color.
 For use with e-paper black, white, and red displays.
 */
 
 import font show Font
 import icons show Icon
-import .pixel_display show ThreeColorPixelDisplay  // For the doc comment.
+import .pixel_display show PixelDisplay  // For the doc comment.
 import .two_bit_texture
 import .two_bit_texture as two_bit
 

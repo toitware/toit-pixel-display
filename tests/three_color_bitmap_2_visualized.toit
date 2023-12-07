@@ -25,7 +25,7 @@ main args:
   basename := args[0]
 
   driver := ThreeColorPngVisualizer 440 240 basename --outline=BLACK
-  display := ThreeColorPixelDisplay driver
+  display := PixelDisplay.three_color driver
   display.background = WHITE
 
   heater-red := file.read_content "tests/third_party/pictogrammers/heater-red.png"

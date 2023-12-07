@@ -14,7 +14,7 @@ main args:
     print "Usage: script.toit png-basename"
     exit 1
   driver := TrueColorPngVisualizer 129 89 args[0] --outline=0xffff00
-  display := TrueColorPixelDisplay driver --portrait
+  display := PixelDisplay.true_color driver --portrait
   display.background = get_rgb 0 1 2
 
   sans10 := Font.get "sans10"

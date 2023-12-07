@@ -14,7 +14,7 @@ main args:
     print "Usage: script.toit png-basename"
     exit 1
   driver := GrayScalePngVisualizer 160 64 args[0] --outline=0xff
-  display := GrayScalePixelDisplay driver
+  display := PixelDisplay.gray_scale driver
   display.background = 0x40
 
   sans10 := Font.get "sans10"

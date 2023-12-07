@@ -1,9 +1,9 @@
-// Copyright (C) 2018 Toitware ApS. All rights reserved.
+// Copyright (C) 2023 Toitware ApS. All rights reserved.
 // Use of this source code is governed by an MIT-style license that can be
 // found in the LICENSE file.
 
 /**
-Classes useful for RGB $TrueColorPixelDisplay.
+Functions and constants useful for the RGB $PixelDisplay.true_color display.
 */
 
 import binary show BIG_ENDIAN
@@ -12,20 +12,33 @@ import font show Font
 import icons show Icon
 import .common
 import .gray_scale as gray_scale_
-import .pixel_display show TrueColorPixelDisplay  // For the doc comment.
+import .pixel_display show PixelDisplay  // For the doc comment.
 
+/**
+Create a 24 bit color from three components in the 0-255 range.
+As an alternative, you can use the web-similar syntax, 0xrrggbb.
+*/
 get_rgb r/int g/int b/int -> int:
   return (r << 16) | (g << 8) | b
 
 WHITE ::= 0xff_ff_ff
 BLACK ::= 0
 
+/**
+Extract the red component in the 0-255 range from a color.
+*/
 red_component pixel/int -> int:
   return pixel >> 16
 
+/**
+Extract the green component in the 0-255 range from a color.
+*/
 green_component pixel/int -> int:
   return (pixel >> 8) & 0xff
 
+/**
+Extract the blue component in the 0-255 range from a color.
+*/
 blue_component pixel/int -> int:
   return pixel & 0xff
 

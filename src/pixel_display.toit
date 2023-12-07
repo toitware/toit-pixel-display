@@ -102,13 +102,103 @@ abstract class PixelDisplay implements Window:
 
   /**
   Constructs a display connected via a $driver_ to a device.
+  The display is suitable for true-color (24 bit color) display drivers.
   By default the orientation is the natural orientation of the display driver.
   If $portrait is false, then a landscape orientation is used.
   If $portrait is true, then a portrait orientation is used, or in the case
      that the display driver is exactly square, a rotated orientation is used.
   The orientation is rotated by 180 degrees if $inverted is true.
   */
-  constructor .driver_ --transform/Transform?=null --portrait/bool?=null --inverted/bool=false:
+  constructor.true_color driver/AbstractDriver
+      --inverted/bool=false
+      --portrait/bool=false
+      --transform/Transform?=null:
+    return TrueColorPixelDisplay_ driver --inverted=inverted --portrait=portrait --transform=transform
+
+  /**
+  Constructs a display connected via a $driver_ to a device.
+  The display is suitable for gray-scale (8 bit gray) display drivers.
+  By default the orientation is the natural orientation of the display driver.
+  If $portrait is false, then a landscape orientation is used.
+  If $portrait is true, then a portrait orientation is used, or in the case
+     that the display driver is exactly square, a rotated orientation is used.
+  The orientation is rotated by 180 degrees if $inverted is true.
+  */
+  constructor.gray_scale driver/AbstractDriver
+      --inverted/bool=false
+      --portrait/bool=false
+      --transform/Transform?=null:
+    return GrayScalePixelDisplay_ driver --inverted=inverted --portrait=portrait --transform=transform
+
+  /**
+  Constructs a display connected via a $driver_ to a device.
+  The display is suitable for pseudo-color (8 bits per pixel) display drivers.
+  By default the orientation is the natural orientation of the display driver.
+  If $portrait is false, then a landscape orientation is used.
+  If $portrait is true, then a portrait orientation is used, or in the case
+     that the display driver is exactly square, a rotated orientation is used.
+  The orientation is rotated by 180 degrees if $inverted is true.
+  */
+  constructor.several_color driver/AbstractDriver
+      --inverted/bool=false
+      --portrait/bool=false
+      --transform/Transform?=null:
+    return SeveralColorPixelDisplay_ driver --inverted=inverted --portrait=portrait --transform=transform
+
+  /**
+  Constructs a display connected via a $driver_ to a device.
+  The display is suitable for four-gray (2 bit gray) display drivers.
+  By default the orientation is the natural orientation of the display driver.
+  If $portrait is false, then a landscape orientation is used.
+  If $portrait is true, then a portrait orientation is used, or in the case
+     that the display driver is exactly square, a rotated orientation is used.
+  The orientation is rotated by 180 degrees if $inverted is true.
+  */
+  constructor.four_gray driver/AbstractDriver
+      --inverted/bool=false
+      --portrait/bool=false
+      --transform/Transform?=null:
+    return FourGrayPixelDisplay_ driver --inverted=inverted --portrait=portrait --transform=transform
+
+  /**
+  Constructs a display connected via a $driver_ to a device.
+  The display is suitable for three-color (red, white, black) display drivers.
+  By default the orientation is the natural orientation of the display driver.
+  If $portrait is false, then a landscape orientation is used.
+  If $portrait is true, then a portrait orientation is used, or in the case
+     that the display driver is exactly square, a rotated orientation is used.
+  The orientation is rotated by 180 degrees if $inverted is true.
+  */
+  constructor.three_color driver/AbstractDriver
+      --inverted/bool=false
+      --portrait/bool=false
+      --transform/Transform?=null:
+    return ThreeColorPixelDisplay_ driver --inverted=inverted --portrait=portrait --transform=transform
+
+  /**
+  Constructs a display connected via a $driver_ to a device.
+  The display is suitable for two-color (white, black) display drivers.
+  By default the orientation is the natural orientation of the display driver.
+  If $portrait is false, then a landscape orientation is used.
+  If $portrait is true, then a portrait orientation is used, or in the case
+     that the display driver is exactly square, a rotated orientation is used.
+  The orientation is rotated by 180 degrees if $inverted is true.
+  */
+  constructor.two_color driver/AbstractDriver
+      --inverted/bool=false
+      --portrait/bool=false
+      --transform/Transform?=null:
+    return TwoColorPixelDisplay_ driver --inverted=inverted --portrait=portrait --transform=transform
+
+  /**
+  Constructs a display connected via a $driver_ to a device.
+  By default the orientation is the natural orientation of the display driver.
+  If $portrait is false, then a landscape orientation is used.
+  If $portrait is true, then a portrait orientation is used, or in the case
+     that the display driver is exactly square, a rotated orientation is used.
+  The orientation is rotated by 180 degrees if $inverted is true.
+  */
+  constructor .driver_ --inverted/bool?=false --transform/Transform?=null --portrait/bool?=null:
     x_rounding_ = driver_.x_rounding
     y_rounding_ = driver_.y_rounding
     height := round_up driver_.height y_rounding_
@@ -141,56 +231,10 @@ abstract class PixelDisplay implements Window:
     if driver_.flags & FLAG_PARTIAL_UPDATES != 0:
       all_is_dirty_
 
-  abstract default_draw_color_ -> int
-  abstract default_background_color_ -> int
-
-  /** Returns a transform that uses the display in portrait mode.  */
-  portrait -> Transform:
-    if not portrait_:
-      if driver_.height >= driver_.width:
-        portrait_ = Transform.identity
-      else:
-        portrait_ = (Transform.identity.translate 0 driver_.height).rotate_left
-    return portrait_
-  portrait_ := null
-
-  /**
-  Returns a transform that uses the display in portrait mode, but rotated
-    180 degrees relative to the portrait method.
-  */
-  inverted_portrait -> Transform:
-    if not inverted_portrait_:
-      if driver_.height >= driver_.width:
-        inverted_portrait_ = (Transform.identity.translate driver_.width driver_.height).rotate_left.rotate_left
-      else:
-        inverted_portrait_ = (Transform.identity.translate driver_.width 0).rotate_right
-    return inverted_portrait_
-  inverted_portrait_ := null
-
-  /** Returns a transform that uses the display in landscape mode.  */
-  landscape -> Transform:
-    if not landscape_:
-      if driver_.height < driver_.width:
-        landscape_ = Transform.identity
-      else:
-        landscape_ = (Transform.identity.translate 0 driver_.height).rotate_left
-    return landscape_
-  landscape_ := null
-
-  /**
-  Returns a transform that uses the display in landscape mode, but rotated
-    180 degrees relative to the landscape method.  Sometimes called 'seascape'.
-  */
-  inverted_landscape -> Transform:
-    if not inverted_landscape_:
-      if driver_.height < driver_.width:
-        inverted_landscape_ = (Transform.identity.translate driver_.width driver_.height).rotate_left.rotate_left
-      else:
-        inverted_landscape_ = (Transform.identity.translate driver_.width 0).rotate_right
-    return inverted_landscape_
-  inverted_landscape_ := null
-
-  abstract background= color/int -> none
+  background= color/int -> none:
+    if background_ != color:
+      background_ = color
+      child_invalidated_ 0 0 driver_.width driver_.height
 
   set_styles styles/List -> none:
     elements_.do:
@@ -474,21 +518,10 @@ This class keeps track of the list of things to draw, and
   the display with $draw.
 See https://docs.toit.io/language/sdk/display
 */
-class TwoColorPixelDisplay extends PixelDisplay:
+class TwoColorPixelDisplay_ extends PixelDisplay:
   constructor driver/AbstractDriver --inverted/bool=false --portrait/bool=false --transform/Transform?=null:
     super driver --inverted=inverted --portrait=portrait --transform=transform
     background_ = two_color.WHITE
-
-  default_draw_color_ -> int:
-    return two_color.BLACK
-
-  default_background_color_ -> int:
-    return two_color.WHITE
-
-  background= color/int -> none:
-    if background_ != color:
-      background_ = color
-      child_invalidated_ 0 0 driver_.width driver_.height
 
   max_canvas_height_ width/int -> int:
     height := 0
@@ -517,21 +550,10 @@ This class keeps track of the list of things to draw, and
   the display with $draw.
 See https://docs.toit.io/language/sdk/display
 */
-class FourGrayPixelDisplay extends TwoBitPixelDisplay_:
-  constructor driver/AbstractDriver:
-    super driver
+class FourGrayPixelDisplay_ extends TwoBitPixelDisplay_:
+  constructor driver/AbstractDriver --inverted/bool=false --portrait/bool=false --transform/Transform?=null:
+    super driver --inverted=inverted --portrait=portrait --transform=transform
     background_ = four_gray.WHITE
-
-  background= color/int -> none:
-    if background_ != color:
-      background_ = color
-      child_invalidated_ 0 0 driver_.width driver_.height
-
-  default_draw_color_ -> int:
-    return four_gray.BLACK
-
-  default_background_color_ -> int:
-    return four_gray.WHITE
 
   create_canvas_ w/int h/int -> Canvas:
     return four_gray.Canvas_ w h
@@ -544,21 +566,10 @@ This class keeps track of the list of things to draw, and
   the display with $draw.
 See https://docs.toit.io/language/sdk/display
 */
-class ThreeColorPixelDisplay extends TwoBitPixelDisplay_:
-  constructor driver/AbstractDriver:
-    super driver
+class ThreeColorPixelDisplay_ extends TwoBitPixelDisplay_:
+  constructor driver/AbstractDriver --inverted/bool=false --portrait/bool=false --transform/Transform?=null:
+    super driver --inverted=inverted --portrait=portrait --transform=transform
     background_ = three_color.WHITE
-
-  background= color/int -> none:
-    if background_ != color:
-      background_ = color
-      child_invalidated_ 0 0 driver_.width driver_.height
-
-  default_draw_color_ -> int:
-    return three_color.BLACK
-
-  default_background_color_ -> int:
-    return three_color.WHITE
 
   create_canvas_ w/int h/int -> Canvas:
     return three_color.Canvas_ w h
@@ -593,21 +604,10 @@ This class keeps track of the list of things to draw, and
   the display with $draw.
 See https://docs.toit.io/language/sdk/display
 */
-class GrayScalePixelDisplay extends PixelDisplay:
+class GrayScalePixelDisplay_ extends PixelDisplay:
   constructor driver/AbstractDriver --inverted/bool=false --portrait/bool=false --transform/Transform?=null:
     super driver --inverted=inverted --portrait=portrait --transform=transform
     background_ = gray_scale.WHITE
-
-  background= color/int -> none:
-    if background_ != color:
-      background_ = color
-      child_invalidated_ 0 0 driver_.width driver_.height
-
-  default_draw_color_ -> int:
-    return gray_scale.BLACK
-
-  default_background_color_ -> int:
-    return gray_scale.WHITE
 
   max_canvas_height_ width:
     height := 0
@@ -630,21 +630,10 @@ This class keeps track of the list of things to draw, and
   the display with $draw.
 See https://docs.toit.io/language/sdk/display
 */
-class SeveralColorPixelDisplay extends PixelDisplay:
+class SeveralColorPixelDisplay_ extends PixelDisplay:
   constructor driver/AbstractDriver --inverted/bool=false --portrait/bool=false --transform/Transform?=null:
     super driver --inverted=inverted --portrait=portrait --transform=transform
     background_ = 0
-
-  background= color/int -> none:
-    if background_ != color:
-      background_ = color
-      child_invalidated_ 0 0 driver_.width driver_.height
-
-  default_draw_color_ -> int:
-    return 1
-
-  default_background_color_ -> int:
-    return 0
 
   max_canvas_height_ width:
     height := 0
@@ -667,21 +656,10 @@ This class keeps track of the list of things to draw, and
   the display with $draw.
 See https://docs.toit.io/language/sdk/display
 */
-class TrueColorPixelDisplay extends PixelDisplay:
+class TrueColorPixelDisplay_ extends PixelDisplay:
   constructor driver/AbstractDriver --inverted/bool=false --portrait/bool=false --transform/Transform?=null:
     super driver --inverted=inverted --portrait=portrait --transform=transform
     background_ = true_color.WHITE
-
-  background= color/int -> none:
-    if background_ != color:
-      background_ = color
-      child_invalidated_ 0 0 driver_.width driver_.height
-
-  default_draw_color_ -> int:
-    return true_color.BLACK
-
-  default_background_color_ -> int:
-    return true_color.WHITE
 
   max_canvas_height_ width:
     height := 0

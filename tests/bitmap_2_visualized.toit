@@ -24,7 +24,7 @@ main args:
   basename := args[0]
 
   driver := TrueColorPngVisualizer 524 240 basename --outline=0xffffff
-  display := TrueColorPixelDisplay driver
+  display := PixelDisplay.true_color driver
   display.background = 0xe0e080
 
   heater := file.read_content "tests/third_party/pictogrammers/heater.png"

@@ -17,7 +17,7 @@ main args:
     print "Usage: script.toit png-basename"
     exit 1
   driver := ThreeColorPngVisualizer 240 160 args[0] --outline=RED
-  display := ThreeColorPixelDisplay driver
+  display := PixelDisplay.three_color driver
   display.background = WHITE
 
   win := ClippingDiv --x=30 --y=30 --w=180 --h=100 --background=RED --border=(RoundedCornerBorder --radius=17)

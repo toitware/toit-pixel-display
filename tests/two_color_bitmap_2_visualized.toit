@@ -25,7 +25,7 @@ main args:
   basename := args[0]
 
   driver := TwoColorPngVisualizer 440 240 basename --outline=BLACK
-  display := TwoColorPixelDisplay driver
+  display := PixelDisplay.two_color driver
   display.background = WHITE
 
   heater-red := file.read_content "tests/third_party/pictogrammers/heater-red.png"

@@ -25,7 +25,7 @@ main args:
   basename := args[0]
 
   driver := FourGrayPngVisualizer 440 240 basename --outline=WHITE
-  display := FourGrayPixelDisplay driver
+  display := PixelDisplay.four_gray driver
   display.background = LIGHT_GRAY
 
   heater-red := file.read_content "tests/third_party/pictogrammers/heater-red.png"

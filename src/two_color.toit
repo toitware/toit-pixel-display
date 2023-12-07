@@ -1,9 +1,9 @@
-// Copyright (C) 2018 Toitware ApS. All rights reserved.
+// Copyright (C) 2023 Toitware ApS. All rights reserved.
 // Use of this source code is governed by an MIT-style license that can be
 // found in the LICENSE file.
 
 /**
-Classes useful for black-and-white $TwoColorPixelDisplay.
+Constants useful for black-and-white $PixelDisplay.two_color.
 For use with e-paper displays and the SSD1306 128x64 display
   (driver at https://pkg.toit.io/package/ssd1306&url=github.com%2Ftoitware%2Ftoit-ssd1306&index=latest)
 */
@@ -12,7 +12,7 @@ import bitmap show *
 import font show Font
 import icons show Icon
 import .common
-import .pixel_display show TwoColorPixelDisplay  // For the doc comment.
+import .pixel_display show PixelDisplay  // For the doc comment.
 
 WHITE ::= 0
 BLACK ::= 1

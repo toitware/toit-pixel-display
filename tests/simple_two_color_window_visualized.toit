@@ -16,7 +16,7 @@ main args:
     print "Usage: script.toit png-basename"
     exit 1
   driver := TwoColorPngVisualizer 240 160 args[0] --outline=BLACK
-  display := TwoColorPixelDisplay driver
+  display := PixelDisplay.two_color driver
   display.background = BLACK
 
   win := ClippingDiv --x=30 --y=30 --w=180 --h=100

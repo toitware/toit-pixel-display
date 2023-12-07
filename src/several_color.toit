@@ -1,16 +1,10 @@
-// Copyright (C) 2021 Toitware ApS. All rights reserved.
+// Copyright (C) 2023 Toitware ApS. All rights reserved.
 // Use of this source code is governed by an MIT-style license that can be
 // found in the LICENSE file.
-
-/**
-Classes useful for $SeveralColorPixelDisplay.
-For use with displays that have between 5 and 256 discrete colors.
-*/
 
 import bitmap show *
 import font show Font
 import icons show Icon
-import .pixel_display show SeveralColorPixelDisplay  // For the doc comment.
 import .one_byte
 import .two_color as two_color
 

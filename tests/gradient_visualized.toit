@@ -18,7 +18,7 @@ main args:
     print "Usage: script.toit png-basename"
     exit 1
   driver := TrueColorPngVisualizer 192 80 args[0] --outline=0x4040ff
-  display := TrueColorPixelDisplay driver
+  display := PixelDisplay.true_color driver
   display.background = 0x808080
 
   gradient := GradientBackground --angle=0 --specifiers=[

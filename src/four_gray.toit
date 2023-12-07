@@ -1,9 +1,9 @@
-// Copyright (C) 2020 Toitware ApS. All rights reserved.
+// Copyright (C) 2023 Toitware ApS. All rights reserved.
 // Use of this source code is governed by an MIT-style license that can be
 // found in the LICENSE file.
 
 /**
-Classes useful for $FourGrayPixelDisplay.
+Constants useful for $PixelDisplay.four_gray.
 For use with e-paper displays with four tones of gray.
 */
 
@@ -11,13 +11,17 @@ import bitmap show *
 import font show Font
 import icons show Icon
 import .common
-import .pixel_display show FourGrayPixelDisplay  // For the doc comment.
+import .pixel_display show PixelDisplay  // For the doc comment.
 import .two_bit_texture
 import .two_bit_texture as two_bit
 
+/// Color value for use with $PixelDisplay.four_gray.
 WHITE ::= 0
+/// Color value for use with $PixelDisplay.four_gray.
 LIGHT_GRAY ::= 1
+/// Color value for use with $PixelDisplay.four_gray.
 DARK_GRAY ::= 2
+/// Color value for use with $PixelDisplay.four_gray.
 BLACK ::= 3
 
 // The canvas contains two bitmapped ByteArrays, giving 4 grays.

@@ -24,7 +24,7 @@ main args:
   basename := args[0]
 
   driver := GrayScalePngVisualizer 524 240 basename --outline=0xffffff
-  display := GrayScalePixelDisplay driver
+  display := PixelDisplay.gray_scale driver
   display.background = 0xe0
 
   heater := file.read_content "tests/third_party/pictogrammers/heater.png"

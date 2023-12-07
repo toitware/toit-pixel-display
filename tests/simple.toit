@@ -74,7 +74,7 @@ main:
 
 invalidate_test:
   driver := DrawRecordingDriver
-  display := TrueColorPixelDisplay driver
+  display := PixelDisplay.true_color driver
 
   context := display.context
 
@@ -130,22 +130,22 @@ invalidate_test:
 
 for_the_win_test:
   driver2 := TwoColorDriver
-  display2 := TwoColorPixelDisplay driver2
+  display2 := PixelDisplay.two_color driver2
 
   driver3 := ThreeColorDriver
-  display3 := ThreeColorPixelDisplay driver3
+  display3 := PixelDisplay.three_color driver3
 
   driver4 := FourGrayDriver
-  display4 := FourGrayPixelDisplay driver4
+  display4 := PixelDisplay.four_gray driver4
 
   driver_true := TrueColorDriver
-  display_true := TrueColorPixelDisplay driver_true
+  display_true := PixelDisplay.true_color driver_true
 
   driver_gray := GrayScaleDriver
-  display_gray := GrayScalePixelDisplay driver_gray
+  display_gray := PixelDisplay.gray_scale driver_gray
 
   driver_several := SeveralColorDriver
-  display_several := SeveralColorPixelDisplay driver_several
+  display_several := PixelDisplay.several_color driver_several
 
   sans10 := Font.get "sans10"
 
