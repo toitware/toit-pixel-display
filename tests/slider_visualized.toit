@@ -22,7 +22,7 @@ main args:
   WIDTH ::= 220
   HEIGHT ::= 140
   driver := TrueColorPngVisualizer WIDTH HEIGHT args[0] --outline=0x4040ff
-  display := TrueColorPixelDisplay driver
+  display := PixelDisplay.true_color driver
   display.background = 0x808080
 
   heat := GradientBackground --angle=0 --specifiers=[

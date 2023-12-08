@@ -24,7 +24,7 @@ class TestDriver extends AbstractDriver:
 
 main:
   driver := TestDriver
-  display := GrayScalePixelDisplay driver
+  display := PixelDisplay.gray_scale driver
   display.background = 1
 
   sans10 := Font.get "sans10"

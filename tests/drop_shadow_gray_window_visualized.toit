@@ -17,7 +17,7 @@ main args:
     print "Usage: script.toit png-basename"
     exit 1
   driver := GrayScalePngVisualizer 160 240 args[0] --outline=0x10
-  display := GrayScalePixelDisplay driver
+  display := PixelDisplay.gray_scale driver
   display.background = 160
 
   background_gradient := GradientBackground --angle=180

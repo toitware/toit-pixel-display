@@ -1,21 +1,24 @@
-// Copyright (C) 2021 Toitware ApS. All rights reserved.
+// Copyright (C) 2023 Toitware ApS. All rights reserved.
 // Use of this source code is governed by an MIT-style license that can be
 // found in the LICENSE file.
 
 /**
-Classes useful for $GrayScalePixelDisplay.
-For use with monochrome displays with many tones of gray.
+Constants useful for $PixelDisplay.gray_scale.
 */
 
 import bitmap show *
 import font show Font
 import icons show Icon
-import .pixel_display show GrayScalePixelDisplay  // For the doc comment.
+import .pixel_display show PixelDisplay  // For the doc comments.
 import .one_byte
 
+/// Color value for use with $PixelDisplay.gray_scale.
 WHITE ::= 255
+/// Color value for use with $PixelDisplay.gray_scale.
 LIGHT_GRAY ::= 170
+/// Color value for use with $PixelDisplay.gray_scale.
 DARK_GRAY ::= 85
+/// Color value for use with $PixelDisplay.gray_scale.
 BLACK ::= 0
 
 // The canvas contains a ByteArray.

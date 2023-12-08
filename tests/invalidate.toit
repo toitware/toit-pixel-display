@@ -43,7 +43,7 @@ main:
 
 small_test:
   driver := AreaRememberingDriver 128 64
-  display := TrueColorPixelDisplay driver
+  display := PixelDisplay.true_color driver
   display.background = get_rgb 0 1 2
 
   display.draw
@@ -96,7 +96,7 @@ small_test:
 
 large_test w h:
   driver := AreaRememberingDriver w h
-  display := TrueColorPixelDisplay driver
+  display := PixelDisplay.true_color driver
   display.background = get_rgb 0 1 2
 
   display.draw

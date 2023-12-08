@@ -16,7 +16,7 @@ main args:
     print "Usage: script.toit png-basename"
     exit 1
   driver := SeveralColorPngVisualizer 240 160 args[0] --outline=SEVERAL_BLUE
-  display := SeveralColorPixelDisplay driver
+  display := PixelDisplay.several_color driver
   display.background = SEVERAL_BLUE
 
   win := ClippingDiv --x=30 --y=30 --w=180 --h=100 --background=SEVERAL_LIGHT_GRAY --border=(RoundedCornerBorder --radius=15)

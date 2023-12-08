@@ -16,7 +16,7 @@ main args:
     print "Usage: script.toit png-basename"
     exit 1
   driver := SeveralColorPngVisualizer 120 160 args[0] --outline=SEVERAL_BLUE
-  display := SeveralColorPixelDisplay driver --portrait=false
+  display := PixelDisplay.several_color driver --portrait=false
   display.background = SEVERAL_GRAY
 
   style := Style --type_map={
