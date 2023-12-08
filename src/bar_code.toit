@@ -48,6 +48,7 @@ class BarCodeEanElement extends CustomElement:
   code -> string: return code_
 
   /**
+  Constructs a new bar code element.
   $code_: The 13 digit product code.
   $x: The left edge of the barcode in the coordinate system of the transform.
   $y: The top edge of the barcode in the coordinate system of the transform.
@@ -55,15 +56,14 @@ class BarCodeEanElement extends CustomElement:
   See $Element.constructor for the other parameters.
   */
   constructor
+      --code/string
       --x/int?=null
       --y/int?=null
       --style/Style?=null
-      --element_class/string?=null
       --classes/List?=null
       --id/string?=null
       --background=null
-      --border/Border?=null
-      --code/string:
+      --border/Border?=null:
     // The numbers go below the bar code in a way that depends on the size
     // of the digits, so we need to take that into account when calculating
     // the bounding box.
@@ -78,7 +78,6 @@ class BarCodeEanElement extends CustomElement:
         --w = w
         --h = h
         --style = style
-        --element_class = element_class
         --classes = classes
         --id = id
         --background = background

@@ -47,7 +47,7 @@ toit_doc_examples_test:
 element_tree_test:
   elements := Div [
       Square --id="first-square",
-      Square --element_class="fish",
+      Square --classes=["fish"],
       ]
 
   first := elements.get_element_by_id "first-square"
@@ -59,10 +59,10 @@ combine_test:
   elements := Div [
       Div --id="special" [
           Square --id="first-square",
-          Square --id="second-square" --element_class="fish",
+          Square --id="second-square" --classes=["fish"],
           ],
-      Square --element_class="fish",
-      Square --element_class="fowl",
+      Square --classes=["fish"],
+      Square --classes=["fowl"],
       ]
 
   style := Style
@@ -132,8 +132,8 @@ extra_properties_test:
 /// A class that stubs out the display methods we don't need
 ///   for test purposes.
 abstract class TestElement extends Element:
-  constructor --style/Style?=null --element_class/string?=null --classes/List?=null --id/string?=null children/List?=null:
-    super --style=style --element_class=element_class --classes=classes --id=id children
+  constructor --style/Style?=null --classes/List?=null --id/string?=null children/List?=null:
+    super --style=style --classes=classes --id=id children
 
   invalidate -> none:
 
@@ -147,8 +147,8 @@ class Square extends TestElement:
   w/int? := null
   h/int? := null
 
-  constructor --style/Style?=null --element_class/string?=null --classes/List?=null --id/string?=null children/List?=null:
-    super --style=style --element_class=element_class --classes=classes --id=id children
+  constructor --style/Style?=null --classes/List?=null --id/string?=null children/List?=null:
+    super --style=style --classes=classes --id=id children
 
   set_attribute_ key/string value -> none:
     if key == "width":
@@ -165,8 +165,8 @@ class Div extends TestElement:
   w/int? := null
   h/int? := null
 
-  constructor --style/Style?=null --element_class/string?=null --classes/List?=null --id/string?=null children/List?=null:
-    super --style=style --element_class=element_class --classes=classes --id=id children
+  constructor --style/Style?=null --classes/List?=null --id/string?=null children/List?=null:
+    super --style=style --classes=classes --id=id children
 
   set_attribute_ key/string value -> none:
     if key == "width":
@@ -181,8 +181,8 @@ class FooHaver extends TestElement:
   w: return 0
   h: return 0
 
-  constructor --style/Style?=null --element_class/string?=null --classes/List?=null --id/string?=null children/List?=null:
-    super --style=style --element_class=element_class --classes=classes --id=id children
+  constructor --style/Style?=null --classes/List?=null --id/string?=null children/List?=null:
+    super --style=style --classes=classes --id=id children
   
   set_attribute_ key/string value -> none:
     if key == "foo":

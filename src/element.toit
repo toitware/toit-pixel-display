@@ -38,12 +38,11 @@ abstract class Element implements Window:
   /**
   Constructs an Element.
   The x and y coordinates are relative to the parent element.
-  The style can be used to apply a custom $Style object to this element
+  The $style can be used to apply a custom Style object to this element
     alone.  Normally, you would apply a style to the whole tree of elements
     using $PixelDisplay.set_styles method.
-  The $element_class is a string that can be used to identify the element
-    in the style sheet.  If you want to give the element multiple classes,
-    use the $classes parameter instead, which takes a list of strings.
+  The $classes are strings that can be used to identify the element
+    in the style sheet.  You can give an element multiple classes.
   The $id is a string that can be used to identify the element in the style
     sheet.  It should be unique in the whole tree of elements.  It is also used
     for $PixelDisplay.get_element_by_id.
@@ -55,7 +54,6 @@ abstract class Element implements Window:
       --x/int?=null
       --y/int?=null
       --style/Style?=null
-      --element_class/string?=null
       --.classes/List?=null
       --.id/string?=null
       --background=null
@@ -64,9 +62,6 @@ abstract class Element implements Window:
     x_ = x
     y_ = y
     style_ = style
-    if element_class:
-      if not classes: classes = []
-      classes.add element_class
     background_ = background
     border_ = border
     if children: children.do: | child/Element |
@@ -212,7 +207,7 @@ class Div extends Element:
     constructor.
   Because it has no clipping and compositing, it is restricted to simple
     borders without rounded corners and shadows.
-  See $Element.constructor for the other arguments.
+  See $Element.constructor for a description of the other parameters.
   */
   constructor
       --x/int?=null
@@ -220,7 +215,6 @@ class Div extends Element:
       --w/int?=null
       --h/int?=null
       --style/Style?=null
-      --element_class/string?=null
       --classes/List?=null
       --id/string?=null
       --background=null
@@ -232,7 +226,6 @@ class Div extends Element:
         --x = x
         --y = y
         --style = style
-        --element_class = element_class
         --classes = classes
         --id = id
         --background = background
@@ -240,14 +233,12 @@ class Div extends Element:
         children
 
   /**
+  Variant of $Div.constructor.
   Constructs a Div that clips any draws inside of it.  It can
     have a shadow or other drawing outside its raw x y w h area, depending
     on its border style.
-  A Div is an element that does not layout its children.  They should all
-    have explicit x and y positions, that will be relative to this Div.
   Because it has clipping and compositing, it can have more interesting borders
     like rounded corners.
-  See $Div.constructor.
   */
   constructor.clipping
       --x/int?=null
@@ -255,7 +246,6 @@ class Div extends Element:
       --w/int?=null
       --h/int?=null
       --style/Style?=null
-      --element_class/string?=null
       --classes/List?=null
       --id/string?=null
       --background=null
@@ -267,7 +257,6 @@ class Div extends Element:
         --w = w
         --h = h
         --style = style
-        --element_class = element_class
         --classes = classes
         --id = id
         --background = background
@@ -384,7 +373,6 @@ class Label extends Element implements ColoredElement:
       --x/int?=null
       --y/int?=null
       --style/Style?=null
-      --element_class/string?=null
       --classes/List?=null
       --id/string?=null
       --color/int=0
@@ -401,7 +389,6 @@ class Label extends Element implements ColoredElement:
         --x = x
         --y = y
         --style = style
-        --element_class = element_class
         --classes = classes
         --id = id
 
@@ -522,7 +509,6 @@ abstract class CustomElement extends ClippingDiv_:
       --w/int?=null
       --h/int?=null
       --style/Style?=null
-      --element_class/string?=null
       --classes/List?=null
       --id/string?=null
       --background=null
@@ -533,7 +519,6 @@ abstract class CustomElement extends ClippingDiv_:
         --w = w
         --h = h
         --style = style
-        --element_class = element_class
         --classes = classes
         --id = id
         --background = background
@@ -603,7 +588,6 @@ class ClippingDiv_ extends Div:
       --w/int?=null
       --h/int?=null
       --style/Style?=null
-      --element_class/string?=null
       --classes/List?=null
       --id/string?=null
       --background=null
@@ -615,7 +599,6 @@ class ClippingDiv_ extends Div:
         --w = w
         --h = h
         --style = style
-        --element_class = element_class
         --classes = classes
         --id = id
         --background = background

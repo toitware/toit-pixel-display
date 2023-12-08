@@ -9,7 +9,7 @@ import .style
 
 /**
 A vertical or horizontal slider that can indicate a value between a minimum and
-  a maxiumum.
+  a maximum.
 You can provide a background to draw when the slider is above a certain level,
   and a different one for when the slider is below that level.  If either
   background is omitted the slider is transparent in that section.
@@ -32,9 +32,10 @@ class Slider extends CustomElement:
 
   /**
   Constructs a new slider element.
-  You can provide a background to draw when the slider is above a certain level,
-    and a different one for when the slider is below that level.  If either
-    background is omitted the slider is transparent in that section.
+  You can provide a background to draw when the slider is above a certain level
+    ($background_hi), and a different one for when the slider is below that
+    level ($background_lo).  If either background is omitted the slider is
+    transparent in that section.
   The initial level of the slider is given by $value, and it should be between
     the values of $min and $max, which default to 0 and 100, respectively.
   The boundary between the two backgrounds is drawn in a linear position
@@ -50,7 +51,6 @@ class Slider extends CustomElement:
       --w/int?=null
       --h/int?=null
       --style/Style?=null
-      --element_class/string?=null
       --classes/List?=null
       --id/string?=null
       --border/Border?=null
@@ -76,7 +76,6 @@ class Slider extends CustomElement:
         --w=w
         --h=h
         --style = style
-        --element_class = element_class
         --classes = classes
         --id = id
         --border = border

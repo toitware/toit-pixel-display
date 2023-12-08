@@ -50,8 +50,8 @@ interface Window:
   /**
   Finds an Element in the tree with the given id.
   Returns null if no element is found.
-  The return type is any because you want to be able to assign the result
-    to a variable of type Div, which is a subtype of Element.
+  The return type is `any` because you want to be able to assign the result
+    to a subtypes of $Element, for example to a variable of type Div.
   */
   get_element_by_id id/string -> any
 

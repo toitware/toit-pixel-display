@@ -11,7 +11,7 @@ import png_tools.png_reader
 /**
 Element that draws a PNG image.
 The width and height of the element is determined by the image.
-The image is given by a byte array which is a valid PNG file.
+The image is given by a byte array, $png_file, which must be a valid PNG file.
 The PNG file can be converted to a Toit byte array using the
    xxxd tool (https://github.com/toitware/xxxd).
 The PNG file can be compressed (a normal PNG file) or uncompressed.
@@ -47,7 +47,6 @@ class Png extends CustomElement:
       --x/int?=null
       --y/int?=null
       --style/Style?=null
-      --element_class/string?=null
       --classes/List?=null
       --id/string?=null
       --background=null
@@ -66,7 +65,6 @@ class Png extends CustomElement:
         --w = png_.width
         --h = png_.height
         --style = style
-        --element_class = element_class
         --classes = classes
         --id = id
         --background = background
