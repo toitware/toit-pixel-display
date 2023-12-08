@@ -19,7 +19,7 @@ main args:
   display := PixelDisplay.three_color driver
   display.background = WHITE
 
-  win := ClippingDiv --x=30 --y=30 --w=180 --h=100 --background=RED
+  win := Div.clipping --x=30 --y=30 --w=180 --h=100 --background=RED
   display.add win
 
   text := Label --x=90 --y=55 --label="Hello, World!" --font=sans10 --color=BLACK

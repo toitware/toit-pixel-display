@@ -23,7 +23,7 @@ main args:
       "bar-code-ean": Style --color=SEVERAL_BLACK --background=SEVERAL_WHITE,
   }
 
-  barcode := BarCodeEanElement --x=15 --y=15 "4035999001512"
+  barcode := BarCodeEanElement --x=15 --y=15 --code="4035999001512"
   display.add barcode
   display.set_styles [style]
   display.draw

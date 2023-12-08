@@ -8,8 +8,9 @@ import .four_gray as four_gray
 import .true_color as true_color
 import .gray_scale as gray_scale
 import .one_byte as one_byte
-import .style
+import .style show *
 import .common
+import .pixel_display show PixelDisplay
 import font show Font
 import math
 
@@ -34,11 +35,25 @@ abstract class Element implements Window:
   x -> int?: return x_
   y -> int?: return y_
 
+  /**
+  Constructs an Element.
+  The x and y coordinates are relative to the parent element.
+  The $style can be used to apply a custom Style object to this element
+    alone.  Normally, you would apply a style to the whole tree of elements
+    using $PixelDisplay.set_styles method.
+  The $classes are strings that can be used to identify the element
+    in the style sheet.  You can give an element multiple classes.
+  The $id is a string that can be used to identify the element in the style
+    sheet.  It should be unique in the whole tree of elements.  It is also used
+    for $PixelDisplay.get_element_by_id.
+  The $background is an integer color (0xRRGGBB) or a $Background object.
+    It can be set using styles instead of here in the constructor.
+  The children are a $List of elements that should be contained in this element.
+  */
   constructor
       --x/int?=null
       --y/int?=null
       --style/Style?=null
-      --element_class/string?=null
       --.classes/List?=null
       --.id/string?=null
       --background=null
@@ -47,9 +62,6 @@ abstract class Element implements Window:
     x_ = x
     y_ = y
     style_ = style
-    if element_class:
-      if not classes: classes = []
-      classes.add element_class
     background_ = background
     border_ = border
     if children: children.do: | child/Element |
@@ -144,20 +156,20 @@ abstract class Element implements Window:
     install_style := : | style/Style |
       style.matching_styles --type=type --classes=classes --id=id: | style/Style |
         style.iterate_properties: | key/string value |
-          set_attribute key value
+          set_attribute_ key value
         if children:
           if not styles_for_children: styles_for_children = styles.copy
           styles_for_children.add style
     styles.do install_style
     if style_:
       style_.iterate_properties: | key/string value |
-        set_attribute key value
+        set_attribute_ key value
       install_style.call style_
     if children:
       children.do: | child/Element |
         child.set_styles (styles_for_children or styles)
 
-  set_attribute key/string value -> none:
+  set_attribute_ key/string value -> none:
     if key == "background":
       if background_ != value:
         invalidate
@@ -175,19 +187,34 @@ interface ColoredElement:
   color -> int?
   color= value/int -> none
 
+/**
+A rectangular element that can be placed on a display.
+It can contain other elements, and draws itself on Canvases.
+*/
 class Div extends Element:
   w_ /int? := null
   h_ /int? := null
 
   type -> string: return "div"
 
+  /**
+  Constructs a Div.
+  A Div is an element that does not layout its children.  They should all
+    have explicit x and y positions, that will be relative to this Div.
+  A Div constructed with this constructor does not automatically clip its
+    children, so they can accidentally extend beyond the bounds of the Div.
+    This is a efficiency win, but if you want clipping, use the $Div.clipping
+    constructor.
+  Because it has no clipping and compositing, it is restricted to simple
+    borders without rounded corners and shadows.
+  See $Element.constructor for a description of the other parameters.
+  */
   constructor
       --x/int?=null
       --y/int?=null
       --w/int?=null
       --h/int?=null
       --style/Style?=null
-      --element_class/string?=null
       --classes/List?=null
       --id/string?=null
       --background=null
@@ -195,7 +222,46 @@ class Div extends Element:
       children/List?=null:
     w_ = w
     h_ = h
-    super --x=x --y=y --style=style --element_class=element_class --classes=classes --id=id --background=background --border=border children
+    super
+        --x = x
+        --y = y
+        --style = style
+        --classes = classes
+        --id = id
+        --background = background
+        --border = border
+        children
+
+  /**
+  Variant of $Div.constructor.
+  Constructs a Div that clips any draws inside of it.  It can
+    have a shadow or other drawing outside its raw x y w h area, depending
+    on its border style.
+  Because it has clipping and compositing, it can have more interesting borders
+    like rounded corners.
+  */
+  constructor.clipping
+      --x/int?=null
+      --y/int?=null
+      --w/int?=null
+      --h/int?=null
+      --style/Style?=null
+      --classes/List?=null
+      --id/string?=null
+      --background=null
+      --border/Border?=null
+      children/List?=null:
+    return ClippingDiv_
+        --x = x
+        --y = y
+        --w = w
+        --h = h
+        --style = style
+        --classes = classes
+        --id = id
+        --background = background
+        --border = border
+        children
 
   invalidate:
     if change_tracker and x and y and w and h:
@@ -223,7 +289,7 @@ class Div extends Element:
       h_ = h
       invalidate
 
-  set_attribute key/string value -> none:
+  set_attribute_ key/string value -> none:
     if key == "width":
       w = value
     else if key == "height":
@@ -234,7 +300,7 @@ class Div extends Element:
   draw canvas/Canvas -> none:
     old_transform := canvas.transform
     canvas.transform = old_transform.translate x_ y_
-    Background.draw background_ canvas 0 0 w h --no-autocropped
+    Background.draw background_ canvas 0 0 w h --no-autoclipped
     custom_draw canvas
     if border_: border_.draw canvas 0 0 w h
     canvas.transform = old_transform
@@ -242,6 +308,11 @@ class Div extends Element:
   custom_draw canvas/Canvas -> none:
     if children: children.do: it.draw canvas
 
+/**
+An element that is a single line of text.
+Like other elements it can have a background, but it is not intended to have
+  children contained in it.
+*/
 class Label extends Element implements ColoredElement:
   color_/int := ?
   label_/string := ?
@@ -255,11 +326,17 @@ class Label extends Element implements ColoredElement:
 
   type -> string: return "label"
 
-  set_attribute key/string value -> none:
+  set_attribute_ key/string value -> none:
     if key == "color":
       color = value
     else if key == "font":
       font = value
+    else if key == "orientation":
+      orientation = value
+    else if key == "alignment":
+      alignment = value
+    else:
+      super key value
 
   color -> int?: return color_
 
@@ -276,17 +353,47 @@ class Label extends Element implements ColoredElement:
       left_ = null  // Trigger recalculation.
       invalidate
 
-  constructor --x/int?=null --y/int?=null --color/int=0 --label/string="" --font/Font?=null --orientation/int=ORIENTATION_0 --alignment/int=ALIGN_LEFT:
+
+  /**
+  Constructs a Label.
+  An Label is an element that is a single line of text.
+  Unlike other elements it does not have a background and a border - the
+    background is always transparent and the border is always invisible.
+  The $alignment is one of $ALIGN_LEFT, $ALIGN_CENTER, or $ALIGN_RIGHT.
+  The $orientation is one of $ORIENTATION_0, $ORIENTATION_90, $ORIENTATION_180,
+    or $ORIENTATION_270.
+  The $color, $font, $orientation, and $alignment can be set using styles
+    instead of here in the constructor.  The label (text) can be set and
+    changed later with the label setter.  Like any change of appearance
+    in an element, it doesn't become visible until the $PixelDisplay.draw
+    method is called.
+  See $Element.constructor for the other arguments.
+  */
+  constructor
+      --x/int?=null
+      --y/int?=null
+      --style/Style?=null
+      --classes/List?=null
+      --id/string?=null
+      --color/int=0
+      --label/string=""
+      --font/Font?=null
+      --orientation/int=ORIENTATION_0
+      --alignment/int=ALIGN_LEFT:
     color_ = color
     label_ = label
     alignment_ = alignment
     orientation_ = orientation
     font_ = font
-    super --x=x --y=y
+    super
+        --x = x
+        --y = y
+        --style = style
+        --classes = classes
+        --id = id
 
   /**
   Calls the block with the left, top, width, and height.
-  For zero sized objects, doesn't call the block.
   */
   xywh_ [block]:
     if not left_:
@@ -392,12 +499,30 @@ The background is drawn before $custom_draw is called, and the border
   is drawn after.
 Drawing operations are automatically clipped to w and h.
 */
-abstract class CustomElement extends ClippingDiv:
+abstract class CustomElement extends ClippingDiv_:
   abstract w -> int?
   abstract h -> int?
 
-  constructor --x/int?=null --y/int?=null --w/int?=null --h/int?=null:
-    super --x=x --y=y --w=w --h=h
+  constructor
+      --x/int?=null
+      --y/int?=null
+      --w/int?=null
+      --h/int?=null
+      --style/Style?=null
+      --classes/List?=null
+      --id/string?=null
+      --background=null
+      --border/Border?=null:
+    super
+        --x = x
+        --y = y
+        --w = w
+        --h = h
+        --style = style
+        --classes = classes
+        --id = id
+        --background = background
+        --border = border
 
   invalidate:
     if change_tracker and x and y and w and h:
@@ -407,10 +532,10 @@ abstract class CustomElement extends ClippingDiv:
     if not (x and y): return
     analysis := canvas.bounds_analysis x y w h
     if analysis == Canvas.DISJOINT: return
-    autocropped := analysis == Canvas.CANVAS_IN_AREA or analysis == Canvas.COINCIDENT
+    autoclipped := analysis == Canvas.CANVAS_IN_AREA or analysis == Canvas.COINCIDENT
     old_transform := canvas.transform
     canvas.transform = old_transform.translate x_ y_
-    Background.draw background_ canvas 0 0 w h --autocropped=autocropped
+    Background.draw background_ canvas 0 0 w h --autoclipped=autoclipped
     custom_draw canvas
     if border_: border_.draw canvas 0 0 w h
     canvas.transform = old_transform
@@ -424,14 +549,14 @@ abstract class CustomElement extends ClippingDiv:
   abstract custom_draw canvas/Canvas -> none
 
 /**
-A ClippingDiv is like a div, but it clips any draws inside of it.  It can
+A ClippingDiv_ is like a div, but it clips any draws inside of it.  It can
   have a shadow or other drawing outside its raw x y w h area, called the
   decoration.
 For style purposes it has the type "div", not "clipping-div".
 Because it has clipping and compositing, it can have more interesting borders
   like rounded corners.
 */
-class ClippingDiv extends Div:
+class ClippingDiv_ extends Div:
   /**
   Calls the block with x, y, w, h, which includes the decoration.
   */
@@ -463,13 +588,22 @@ class ClippingDiv extends Div:
       --w/int?=null
       --h/int?=null
       --style/Style?=null
-      --element_class/string?=null
       --classes/List?=null
       --id/string?=null
       --background=null
       --border/Border?=null
       children/List?=null:
-    super --x=x --y=y --w=w --h=h --style=style --element_class=element_class --classes=classes --id=id --background=background --border=border children
+    super
+        --x = x
+        --y = y
+        --w = w
+        --h = h
+        --style = style
+        --classes = classes
+        --id = id
+        --background = background
+        --border = border
+        children
 
   // After the textures under us have drawn themselves, we draw on top.
   draw canvas/Canvas -> none:
@@ -502,7 +636,7 @@ class ClippingDiv extends Div:
       if border_: border_.draw border_canvas 0 0 w h
 
     painting_canvas := canvas.create_similar
-    Background.draw background_ painting_canvas 0 0 w h --autocropped
+    Background.draw background_ painting_canvas 0 0 w h --autoclipped
     custom_draw painting_canvas
 
     canvas.composit frame_opacity border_canvas content_opacity painting_canvas

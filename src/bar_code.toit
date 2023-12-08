@@ -5,7 +5,7 @@
 import font show Font
 
 import .common
-import .element show CustomElement
+import .element show CustomElement Element
 import .style
 
 EAN_13_QUIET_ZONE_WIDTH ::= 9
@@ -22,7 +22,7 @@ EAN_13_G_CODES_ ::= [0x27, 0x33, 0x1b, 0x21, 0x1d, 0x39, 0x05, 0x11, 0x09, 0x17]
 // Encoding of the first (invisible) digit.
 EAN_13_FIRST_CODES_ ::= [0x00, 0x0b, 0x0d, 0x0e, 0x13, 0x19, 0x1c, 0x15, 0x16, 0x1a]
 
-// Element that draws a standard EAN-13 bar code.  TODO: Other scales.
+/// Element that draws a standard EAN-13 bar code.
 class BarCodeEanElement extends CustomElement:
   color_/int? := 0
   background_ := 0xff
@@ -31,7 +31,7 @@ class BarCodeEanElement extends CustomElement:
 
   type -> string: return "bar-code-ean"
 
-  set_attribute key/string value -> none:
+  set_attribute_ key/string value -> none:
     if key == "color":
       if color_ != value:
         invalidate
@@ -48,20 +48,40 @@ class BarCodeEanElement extends CustomElement:
   code -> string: return code_
 
   /**
+  Constructs a new bar code element.
   $code_: The 13 digit product code.
   $x: The left edge of the barcode in the coordinate system of the transform.
   $y: The top edge of the barcode in the coordinate system of the transform.
   Use $set_styles to set the background to white and the color to black.
+  See $Element.constructor for the other parameters.
   */
-  constructor .code_/string --x/int?=null --y/int?=null:
+  constructor
+      --code/string
+      --x/int?=null
+      --y/int?=null
+      --style/Style?=null
+      --classes/List?=null
+      --id/string?=null
+      --background=null
+      --border/Border?=null:
     // The numbers go below the bar code in a way that depends on the size
     // of the digits, so we need to take that into account when calculating
     // the bounding box.
+    code_ = code
     number_height_ = (sans10_.text_extent "8")[1]
     height := EAN_13_HEIGHT + number_height_ - EAN_13_BOTTOM_SPACE
     w := EAN_13_WIDTH
     h := height + 1
-    super --x=x --y=y --w=w --h=h
+    super
+        --x = x
+        --y = y
+        --w = w
+        --h = h
+        --style = style
+        --classes = classes
+        --id = id
+        --background = background
+        --border = border
 
   l_ digit:
     return EAN_13_L_CODES_[digit & 0xf]
@@ -72,8 +92,9 @@ class BarCodeEanElement extends CustomElement:
   r_ digit:
     return (l_ digit) ^ 0x7f
 
-  // Make a white background behind the bar code and draw the digits along the bottom.
-  draw_background_ canvas/Canvas:
+  // Make a white background behind the bar code and draw the digits along the
+  // bottom.
+  draw_text_ canvas/Canvas:
     // Bar code coordinates.
     text_x := EAN_13_QUIET_ZONE_WIDTH + EAN_13_START_WIDTH
     text_y := EAN_13_HEIGHT + number_height_ - EAN_13_BOTTOM_SPACE + 1
@@ -95,7 +116,7 @@ class BarCodeEanElement extends CustomElement:
 
   // Redraw routine.
   custom_draw canvas/Canvas:
-    draw_background_ canvas
+    draw_text_ canvas
 
     x := EAN_13_QUIET_ZONE_WIDTH
     long_height := EAN_13_HEIGHT

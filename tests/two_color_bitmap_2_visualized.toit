@@ -11,7 +11,7 @@ import font
 import host.file
 import pixel_display show *
 import pixel_display.element show *
-import pixel_display.png show PngElement
+import pixel_display.png show Png
 import pixel_display.two_color show WHITE BLACK
 import .png_visualizer
 
@@ -37,15 +37,15 @@ main args:
   heater-white-bg := file.read_content "tests/third_party/pictogrammers/heater-white-bg.png"
   heater-white-bg-uncompressed := file.read_content "tests/third_party/pictogrammers/heater-white-bg-uncompressed.png"
 
-  display.add (PngElement --x=100 --y=32 heater-red)
-  display.add (PngElement --x=184 --y=32 heater-2-bit)
-  display.add (PngElement --x=268 --y=32 heater-bw)
-  display.add (PngElement --x=352 --y=32 heater-white-bg)
+  display.add (Png --x=100 --y=32 --png_file=heater-red)
+  display.add (Png --x=184 --y=32 --png_file=heater-2-bit)
+  display.add (Png --x=268 --y=32 --png_file=heater-bw)
+  display.add (Png --x=352 --y=32 --png_file=heater-white-bg)
 
-  display.add (PngElement --x=100 --y=120 heater-red-uncompressed)
-  display.add (PngElement --x=184 --y=120 heater-2-bit-uncompressed)
-  display.add (PngElement --x=268 --y=120 heater-bw-uncompressed)
-  display.add (PngElement --x=352 --y=120 heater-white-bg-uncompressed)
+  display.add (Png --x=100 --y=120 --png_file=heater-red-uncompressed)
+  display.add (Png --x=184 --y=120 --png_file=heater-2-bit-uncompressed)
+  display.add (Png --x=268 --y=120 --png_file=heater-bw-uncompressed)
+  display.add (Png --x=352 --y=120 --png_file=heater-white-bg-uncompressed)
 
   display.draw
 

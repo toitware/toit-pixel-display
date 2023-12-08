@@ -20,7 +20,7 @@ main args:
   display := PixelDisplay.two_color driver
   display.background = BLACK
 
-  win := ClippingDiv --x=30 --y=30 --w=180 --h=100 --background=WHITE --border=(RoundedCornerBorder --radius=17)
+  win := Div.clipping --x=30 --y=30 --w=180 --h=100 --background=WHITE --border=(RoundedCornerBorder --radius=17)
   display.add win
 
   text := Label --x=90 --y=55 --label="Hello, World!" --font=sans10 --color=BLACK

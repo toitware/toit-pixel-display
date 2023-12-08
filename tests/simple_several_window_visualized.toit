@@ -18,7 +18,7 @@ main args:
   display := PixelDisplay.several_color driver
   display.background = SEVERAL_BLUE
 
-  win := ClippingDiv --x=30 --y=30 --w=180 --h=100 --background=SEVERAL_LIGHT_GRAY
+  win := Div.clipping --x=30 --y=30 --w=180 --h=100 --background=SEVERAL_LIGHT_GRAY
   display.add win
 
   text := Label --x=90 --y=55 --label="Hello, World!" --font=sans10 --color=SEVERAL_BLACK
