@@ -28,19 +28,6 @@ jobs:
         with:
           toit-version: ${{ env.TOIT_VERSION }}
 
-      - name: Setup constants
-        shell: bash
-        run: |
-          if [[ "$RUNNER_OS" = "Windows" ]]; then
-            echo "TOITRUN=toit.run.exe" >> $GITHUB_ENV
-            echo "TOITPKG=toit.pkg.exe" >> $GITHUB_ENV
-            echo "TOITC=toit.compile.exe" >> $GITHUB_ENV
-          else
-            echo "TOITRUN=toit.run" >> $GITHUB_ENV
-            echo "TOITPKG=toit.pkg" >> $GITHUB_ENV
-            echo "TOITC=toit.compile" >> $GITHUB_ENV
-          fi
-
       # Fetch the dependencies. Different for each platform.
       - name: Install dependencies - Linux
         if: runner.os == 'Linux'
