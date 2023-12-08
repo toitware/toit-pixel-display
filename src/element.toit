@@ -14,9 +14,9 @@ import font show Font
 import math
 
 /**
-Something that can be placed on a display.  They can contain other
+An element that can be placed on a display.  They can contain other
   elements, and draw themselves on Canvases.
-They can be stacked up and will be drawn from back to front, with transparency.
+Elements can be stacked up and are drawn from back to front, with transparency.
 */
 abstract class Element implements Window:
   hash_code/int ::= generate_hash_code_
