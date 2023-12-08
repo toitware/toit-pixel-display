@@ -40,7 +40,7 @@ foreach(file ${TESTS})
 
   add_test(
     NAME "${test_name}"
-    COMMAND toit.run.exe "tests/${file}"
+    COMMAND toit.run${CMAKE_EXECUTABLE_SUFFIX} "tests/${file}"
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
   )
 
