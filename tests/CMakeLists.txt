@@ -5,8 +5,8 @@
 file(GLOB TESTS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*_test.toit" "*_test_slow.toit")
 file(GLOB VISUALIZED RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*_visualized.toit" "*_visualized_slow.toit")
 
-set(TOITRUN "toit.run" CACHE FILEPATH "The executable used to run the tests")
-set(TOITPKG "toit.pkg" CACHE FILEPATH "The executable used to install the packages")
+set(TOITRUN "toit.run" CACHE STRING "The executable used to run the tests")
+set(TOITPKG "toit.pkg" CACHE STRING "The executable used to install the packages")
 set(TEST_TIMEOUT 40 CACHE STRING "The maximal amount of time each test is allowed to run")
 set(SLOW_TEST_TIMEOUT 200 CACHE STRING "The maximal amount of time each slow test is allowed to run")
 
