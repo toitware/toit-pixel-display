@@ -53,7 +53,7 @@ jobs:
         shell: bash
         run: |
           make rebuild-cmake
-          cmake "-DTOITRUN=$TOITRUN" "-DTOITPKG=$TOITPKG" "-DTOITC=$TOITC" build
+          cmake build
 
       - name: Install packages
         run: |
