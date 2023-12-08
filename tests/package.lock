@@ -1,21 +1,19 @@
 sdk: ^2.0.0-alpha.121
 prefixes:
   host: pkg-host
-  pixel_display: ..
+  pixel-display: ..
   png-tools: toit-png-tools
 packages:
   ..:
     path: ..
     prefixes:
-      png-tools: toitware/toit-png-tools
+      png-tools: toit-png-tools
   pkg-host:
     url: github.com/toitlang/pkg-host
     name: host
     version: 1.10.0
     hash: e1c11a0e0bf65fe810520e8d893e554a8fe33b78
   toit-png-tools:
-    path: toit-png-tools
-  toitware/toit-png-tools:
     url: github.com/toitware/toit-png-tools
     name: png-tools
     version: 1.0.0
