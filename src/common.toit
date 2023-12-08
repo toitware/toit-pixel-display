@@ -7,7 +7,6 @@
 import font show Font
 import bitmap show ORIENTATION_0 ORIENTATION_90 ORIENTATION_180 ORIENTATION_270
 
-import .element as element
 import .element show Element
 import .style
 
@@ -18,34 +17,47 @@ You can add and remove element objects to a Window.  They will be drawn
   and are overwritten by elements added later.
 */
 interface Window:
+  /**
+  Add an element to a Window.  Elements are drawn back-to-front in
+    the order they are added.
+  An element can only be added once a Window, and cannot be
+    added to several windows at a time.
+  */
   add element/Element -> none
-  remove element/Element -> none
-  remove_all -> none
-
-  // Called by elements that have been added to this.
-  // Called by elements that have been added to this.
-  child_invalidated_element x/int y/int w/int h/int -> none
-
-/**
-Something you can draw on a canvas.  It could be a text string, a pixmap or
-  a geometric figure. They can be stacked up and will be drawn from back to
-  front, with transparency.
-*/
-abstract class ElementOrTexture_:
-  hash_code/int ::= random 0 0x10000000
-  change_tracker/Window? := null
 
   /**
-  Writes the image data to a canvas window.
-  $canvas: Some sort of canvas.  The precise type depends on the depth of the display.
+  Remove an element from a Window.
+  Next time the draw method is called on the display, the area
+    formerly occupied by the element will be redrawn.
   */
-  write canvas/Canvas -> none:
-    write_ canvas
+  remove element/Element -> none
 
-  abstract write_ canvas
+  /**
+  Remove all elements from a Window.
+  See $remove.
+  */
+  remove_all -> none
 
-  abstract invalidate -> none
+  /**
+  Called by elements that have been added to this window, when they change
+    or move.
+  This will cause the area described to be redrawn, next time the draw method
+    is called on the display.
+  The coordinates are in this instance's coordinate space.
+  */
+  child_invalidated x/int y/int w/int h/int -> none
 
+/**
+A canvas to draw on.
+When the display is being redrawn, the area that needs updating is
+  divided into reasonably-sized rectangles.  Each rectangle
+  is represented by an object of this class.
+The draw methods of the elements are called with this canvas, and
+  they can use methods on the canvas to draw themselves.
+The canvas is generally smaller than the display in order to
+  reduce peak memory usage.  This means the draw method can be called
+  many times on each element.
+*/
 abstract class Canvas:
   width_ / int
   height_ / int
@@ -53,6 +65,10 @@ abstract class Canvas:
 
   constructor .width_ .height_:
 
+  /**
+  Returns a new canvas with the same dimensions and transform (coordinate
+    system) as this one.
+  */
   abstract create_similar -> Canvas
 
   abstract set_all_pixels color/int -> none
@@ -60,15 +76,43 @@ abstract class Canvas:
   abstract supports_8_bit -> bool
   abstract gray_scale -> bool
 
-  abstract make_alpha_map -> Canvas
-  abstract make_alpha_map --padding/int -> Canvas
+  /**
+  Returns a new canvas that is either gray-scale or 1-bit.
+  The returned canvas is intended for use with masking and
+    compositing operations.
+  A canvas type that allows mixing and averaging of colors (for example, a
+    true-color canvas) generally returns a gray-scale canvas where white
+    (0xff) represents an opaque pixel, and black (0) represents a transparent
+    pixel.
+  A canvas type that does not allow mixing and averaging of colors (for example,
+    a black/white/red canvas) returns a one-bit canvas where 1
+    represents an opaque pixel, and 0 represents a transparent pixel.
+  The returned canvas is larger on all four edges of the canvas by the
+    given $padding, defaulting to 0.
+  */
+  abstract make_alpha_map --padding/int=0 -> Canvas
 
-  static DISJOINT           ::= 0  // The area and the canvas are disjoint.
-  static AREA_IN_CANVAS     ::= 1  // The area is a subset of the canvas.
-  static CANVAS_IN_AREA     ::= 2  // The canvas is a subset of the area.
-  static COINCIDENT         ::= 3  // The area and the canvas are identical.
-  static OVERLAP            ::= 4  // The areas overlap, but neither is a subset of the other.
+  /// Result from $bounds_analysis: The area and the canvas are disjoint.
+  static DISJOINT           ::= 0
+  /// Result from $bounds_analysis: The area is a subset of the canvas.
+  static AREA_IN_CANVAS     ::= 1
+  /// Result from $bounds_analysis: The canvas is a subset of the area.
+  static CANVAS_IN_AREA     ::= 2
+  /// Result from $bounds_analysis: The area and the canvas are identical.
+  static COINCIDENT         ::= 3
+  /// Result from $bounds_analysis: The areas overlap, but neither is a subset of the other.
+  static OVERLAP            ::= 4
 
+  /**
+  Checks whether the given area overlaps with the canvas.
+  This can be used to avoid doing work in an element's draw
+    method if the element and the canvas do not overlap.
+  If the canvas is wholly within the area of the element,
+    then the element can save space and time by not worrying
+    about clipping its drawing operations.
+  All the drawing operations are automatically clipped to the
+    area of the canvas, and this is often sufficient clipping.
+  */
   bounds_analysis x/int y/int w/int h/int -> int:
     if h == 0 or w == 0 or width_ == 0 or height_ == 0: return DISJOINT
     transform.xywh x y w h: | x2 y2 w2 h2 |
@@ -81,28 +125,112 @@ abstract class Canvas:
       if x2 <= 0 and y2 <= 0 and right >= width_ and bottom >= height_: return CANVAS_IN_AREA
     return OVERLAP
 
+  /**
+  Constant to indicate that all pixels are transparent.
+  For use with $composit.
+  */
+  static ALL_TRANSPARENT ::= #[0]
+  /**
+  Constant to indicate that all pixels are opaque.
+  For use with $composit.
+  */
+  static ALL_OPAQUE ::= #[0xff]
+
+  /**
+  Mixes the $frame_canvas and the $painting_canvas together and draws
+    them on the reciever.
+  The opacity arguments determine the transparency (alpha) of the two
+    canvas arguments.  They can be either canvases returned from
+    $make_alpha_map, or they can be $ALL_OPAQUE or
+    $ALL_TRANSPARENT.
+  */
   abstract composit frame_opacity frame_canvas/Canvas painting_opacity painting_canvas/Canvas
 
+  /**
+  Draws a solid rectangle on the canvas in the given color.
+  The rectangle is automatically clipped to the area of the canvas
+    so it is not an error for the rectangle to be outside the
+    canvas.
+  */
   abstract rectangle x/int y/int --w/int --h/int --color/int -> none
 
+  /**
+  Draws the given text on the canvas in the given color.
+  The background of the text is not drawn, that is, it is transparent.
+  The text is automatically clipped to the area of the canvas
+    so it is not an error for the text to be outside the
+    canvas.
+  The orientation is normally $ORIENTATION_0 (from "import bitmap"), but can be
+    $ORIENTATION_90, $ORIENTATION_180, or $ORIENTATION_270, representing
+    anti-clockwise rotation.
+  The $x and $y represent the origin (bottom left corner) of the text.
+    The text may extend below and to the left of this point if it contains
+    descenders or starts with a character like "J" or "/", which in many fonts
+    extend to the left of their origin.
+  */
   abstract text x/int y/int --text/string --color/int --font/Font --orientation/int
   abstract text x/int y/int --text/string --color/int --font/Font
 
+  /**
+  Draws the given bitmap on the canvas.
+  The bit order is as in PNG, so the lines are ordered from top to
+    bottom, and within each line the bytes are ordered from left
+    to right.  Within each byte, the high bits are on the left, and
+    the low bits are on the right.
+  Using the $alpha argument, the bitmap can be drawn with transparency.
+    For examples if $alpha is #[0, 0xff] then the zeros in the bitmap
+    are not drawn (transparent), whereas the the ones are drawn in the
+    the color given by the $palette argument.  Other values between
+    0 (transparent) and 0xff (opaque) can be used to give partial transparency.
+  Using the $palette argument, the colors of the bitmap can be given,
+    in rgbrgb order.  For example to draw the 0's in red and the 1's in
+    white you would use #[0xff, 0, 0, 0xff, 0xff, 0xff] as the palette.
+  The bitmap is automatically clipped to the area of the canvas
+    so it is not an error for the bitmap to be outside the
+    canvas.
+  Using $source_line_stride a number of bytes can be skipped at the
+    end of each line.  This is useful if the bitmap is padded, or
+    the source is an uncompressed PNG which has a zero at the start
+    of each line.
+  The $orientation argument can be $ORIENTATION_0, $ORIENTATION_90,
+    $ORIENTATION_180, or $ORIENTATION_270, from "import bitmap",
+    representing anti-clockwise rotation of the drawn bitmap.
+  */
   abstract bitmap x/int y/int -> none
       --pixels/ByteArray
       --alpha/ByteArray          // 2-element byte array.
       --palette/ByteArray        // 6-element byte array.
       --source_width/int         // In pixels.
       --source_line_stride/int   // In bytes.
+      --orientation/int=ORIENTATION_0
 
-  abstract bitmap x/int y/int -> none
-      --pixels/ByteArray
-      --alpha/ByteArray          // 2-element byte array.
-      --palette/ByteArray        // 6-element byte array.
-      --source_width/int         // In pixels.
-      --source_line_stride/int   // In bytes.
-      --orientation/int
-
+  /**
+  Draws the given 8-bit pixmap on the canvas.
+  The source pixmap has one byte per pixel, which is an index into the
+    $palette and $alpha arguments.  The order of the pixmap is as in
+    PNG, so the lines are ordered from top to bottom, and within each
+    line the bytes are ordered from left to right.
+  The $alpha argument controls which pixel indexes are transparent.  A
+    byte value of 0 means pixels with that index are transparent, and a byte
+    value of 0xff means the pixels with that index are opaque.
+  If the $alpha argument is shorter than the highest index in the pixmap, then
+    pixels with high indices are opaque.
+  The palette argument has 3 bytes per color, in rgbrgb order.  For example
+    if the pixmap uses 0 to represent transparency, 1 to represent red, and
+    2 to represent white, then the $palette should be
+    #[0, 0, 0, 0xff, 0, 0, 0xff, 0xff, 0xff] and the $alpha argument should
+    be #[0] to make the 0's transparent.
+  If the $palette argument is shorter than the highest index in the pixmap,
+    then pixels with high indices are assumed to be gray-scale with the
+    index representing the gray value (white = 0xff).
+  The $orientation argument can be ORIENTATION_0, ORIENTATION_90,
+    ORIENTATION_180, or ORIENTATION_270, from "import bitmap",
+    representing anti-clockwise rotation of the drawn pixmap.
+  Using $source_line_stride a number of bytes can be skipped at the
+    end of each line.  This is useful if the pixmap is padded, or
+    the source is an uncompressed PNG which has a zero at the start
+    of each line.
+  */
   pixmap x/int y/int
       --pixels/ByteArray
       --alpha/ByteArray=#[]
@@ -112,7 +240,23 @@ abstract class Canvas:
       --source_line_stride/int=source_width:
    throw "Unimplemented"
 
-  rgb_pixmap x/int y/int --r/ByteArray --g/ByteArray --b/ByteArray --source_width/int --orientation/int=ORIENTATION_0:
+  /**
+  Draws the given 24-bit pixmap on the canvas.
+  The three source pixmaps ($r, $g, and $b) have one byte per pixel, which is
+    the red, green, or blue component of the pixel.  The order of the pixmap
+    is as in PNG, so the lines are ordered from top to bottom, and within each
+    line the bytes are ordered from left to right.
+  The $orientation argument can be ORIENTATION_0, ORIENTATION_90,
+    ORIENTATION_180, or ORIENTATION_270, from "import bitmap",
+    representing anti-clockwise rotation of the drawn pixmap.
+  This method is only available on true-color canvases.
+  */
+  rgb_pixmap x/int y/int
+      --r/ByteArray
+      --g/ByteArray
+      --b/ByteArray
+      --source_width/int
+      --orientation/int=ORIENTATION_0:
     throw "UNSUPPORTED"  // Only on true color canvas.
 
 TRANSFORM_IDENTITY_ ::= Transform.with_ --x1=1 --x2=0 --y1=0 --y2=1 --tx=0 --ty=0

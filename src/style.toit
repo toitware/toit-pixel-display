@@ -108,7 +108,7 @@ abstract class InvisibleBorder implements Border:
     block.call 0 0
 
   frame_map canvas w h:
-    return element.ClippingDiv.ALL_TRANSPARENT
+    return Canvas.ALL_TRANSPARENT
 
   abstract content_map canvas/Canvas w/int h/int
 
@@ -156,7 +156,7 @@ class SolidBorder implements Border:
   // out the window content, there is assumed to be a different alpha map for
   // that.
   frame_map canvas/Canvas w/int h/int:
-    if border_width_ == 0: return element.ClippingDiv.ALL_TRANSPARENT  // The frame is not visible anywhere.
+    if border_width_ == 0: return Canvas.ALL_TRANSPARENT  // The frame is not visible anywhere.
     // Transform inner dimensions not including border
     border_widths := border_width_.left + border_width_.right
     border_heights := border_width_.top + border_width_.bottom
@@ -165,13 +165,13 @@ class SolidBorder implements Border:
         // In the middle, the window content is 100% opaque and draw on top of the
         // frame.  There is no need to provide a frame alpha map, so for efficiency we
         // just return 0 which indicates the frame is 100% transparent.
-        return element.ClippingDiv.ALL_TRANSPARENT
+        return Canvas.ALL_TRANSPARENT
     canvas.transform.xywh 0 0 w h: | x2 y2 w2 h2 |
       right := x2 + w2
       bottom := y2 + h2
       if right <= 0 or bottom <= 0 or x2 >= canvas.width_ or y2 >= canvas.height_:
         // The frame is completely outside the window, so it is 100% transparent.
-        return element.ClippingDiv.ALL_TRANSPARENT
+        return Canvas.ALL_TRANSPARENT
     // We need to create a bitmap to describe the frame's extent.
     transparency_map := canvas.make_alpha_map
     // Declare the whole area inside the frame's extent opaque.  The window content will
@@ -188,11 +188,11 @@ class SolidBorder implements Border:
     border_heights := border_width_.top + border_width_.bottom
     canvas.transform.xywh border_width_.left border_width_.top (w - border_widths) (h - border_heights): | x2 y2 w2 h2 |
       if x2 <= 0 and y2 <= 0 and x2 + w2 >= canvas.width_ and y2 + h2 >= canvas.height_:
-        return element.ClippingDiv.ALL_OPAQUE  // The content is 100% opaque in the middle.
+        return Canvas.ALL_OPAQUE  // The content is 100% opaque in the middle.
       right := x2 + w2
       bottom := y2 + h2
       if right <= 0 or bottom <= 0 or x2 >= canvas.width_ or y2 >= canvas.height_:
-        return element.ClippingDiv.ALL_TRANSPARENT  // The content is 100% transparent outside the window.
+        return Canvas.ALL_TRANSPARENT  // The content is 100% transparent outside the window.
     // We need to create a bitmap to describe the content's extent.
     transparency_map := canvas.make_alpha_map
     // Declare the whole area inside the content's extent opaque.  The window content will
@@ -250,10 +250,10 @@ class RoundedCornerBorder extends InvisibleBorder:
       right := x2 + w2
       bottom := y2 + h2
       if x2 >= canvas.width_ or y2 >= canvas.height_ or right <= 0 or bottom <= 0:
-        return element.ClippingDiv.ALL_TRANSPARENT  // The content is 100% transparent outside the window.
+        return Canvas.ALL_TRANSPARENT  // The content is 100% transparent outside the window.
       if x2           <= 0 and y2 + radius_ <= 0 and right           >= canvas.width_ and bottom - radius_ >= canvas.height_ or
          x2 + radius_ <= 0 and y2           <= 0 and right - radius_ >= canvas.width_ and bottom           >= canvas.height_:
-        return element.ClippingDiv.ALL_OPAQUE  // The content is 100% opaque in the cross in the middle where there are no corners.
+        return Canvas.ALL_OPAQUE  // The content is 100% opaque in the cross in the middle where there are no corners.
     // We need to create a bitmap to describe the content's extent.
     transparency_map := canvas.make_alpha_map
     draw_rounded_corners_ transparency_map 0 0 w h 0xff
@@ -364,14 +364,14 @@ class ShadowRoundedCornerBorder extends RoundedCornerBorder:
         // In the middle, the window content is 100% opaque and draw on top of the
         // frame.  There is no need to provide a frame alpha map, so for efficiency we
         // just return 0 which indicates the frame is 100% transparent.
-        return element.ClippingDiv.ALL_TRANSPARENT
+        return Canvas.ALL_TRANSPARENT
 
     // Transform outer dimensions including border to determine if the canvas
     // is wholly outside the window and its shadow.
     extent_helper_: | left top right bottom |
       canvas.transform.xywh -left -top (w + left + right) (h + top + bottom): | x2 y2 w2 h2 |
         if x2 + w2 <= 0 or y2 + h2 <= 0 or x2 >= canvas.width_ or y2 >= canvas.height_:
-          return element.ClippingDiv.ALL_TRANSPARENT  // The frame is not opaque outside the shadow
+          return Canvas.ALL_TRANSPARENT  // The frame is not opaque outside the shadow
 
     // Create a bitmap to describe the frame's extent.  It needs to be padded
     // relative to the canvas size so we can use the Gaussian blur.

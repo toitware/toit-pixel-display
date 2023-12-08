@@ -13,7 +13,14 @@ import .common
 import font show Font
 import math
 
-abstract class Element extends ElementOrTexture_ implements Window:
+/**
+An element that can be placed on a display.  They can contain other
+  elements, and draw themselves on Canvases.
+Elements can be stacked up and are drawn from back to front, with transparency.
+*/
+abstract class Element implements Window:
+  hash_code/int ::= generate_hash_code_
+  change_tracker/Window? := null
   style_/Style? := ?
   classes/List? := ?
   id/string? := ?
@@ -47,6 +54,13 @@ abstract class Element extends ElementOrTexture_ implements Window:
     border_ = border
     if children: children.do: | child/Element |
       child.change_tracker = this
+
+  static HASH_CODE_COUNTER_ := 0
+  static generate_hash_code_ -> int:
+    HASH_CODE_COUNTER_ += 13
+    return HASH_CODE_COUNTER_
+
+  abstract invalidate -> none
 
   /**
   Finds an Element in the tree with the given id.
@@ -111,19 +125,16 @@ abstract class Element extends ElementOrTexture_ implements Window:
       background_ = value
       invalidate
 
-  write_ canvas -> none:
-    throw "Can't call write_ on an Element"
-
   abstract draw canvas/Canvas -> none
 
-  child_invalidated_element x/int y/int w/int h/int -> none:
+  child_invalidated x/int y/int w/int h/int -> none:
     if change_tracker:
       x2 := max x_ (x_ + x)
       y2 := max y_ (y_ + y)
       right := min (x_ + this.w) (x_ + x + w)
       bottom := min (y_ + this.h) (y_ + y + h)
       if x2 < right and y2 < bottom:
-        change_tracker.child_invalidated_element x2 y2 (right - x2) (bottom - y2)
+        change_tracker.child_invalidated x2 y2 (right - x2) (bottom - y2)
 
   abstract w -> int?
   abstract h -> int?
@@ -188,7 +199,7 @@ class Div extends Element:
 
   invalidate:
     if change_tracker and x and y and w and h:
-      change_tracker.child_invalidated_element x y w h
+      change_tracker.child_invalidated x y w h
 
   w -> int?: return w_
   h -> int?: return h_
@@ -324,14 +335,14 @@ class Label extends Element implements ColoredElement:
   invalidate:
     if change_tracker and x and y and font_ and label_:
       xywh_: | x y w h |
-        change_tracker.child_invalidated_element x y w h
+        change_tracker.child_invalidated x y w h
 
   label= value/string -> none:
     if value == label_: return
     if orientation_ == ORIENTATION_0 and change_tracker and x and y:
       text_get_bounding_boxes_ label_ value alignment_ font_: | old/TextExtent_ new/TextExtent_ |
-        change_tracker.child_invalidated_element (x_ + old.x) (y_ + old.y) old.w old.h
-        change_tracker.child_invalidated_element (x_ + new.x) (y_ + new.y) new.w new.h
+        change_tracker.child_invalidated (x_ + old.x) (y_ + old.y) old.w old.h
+        change_tracker.child_invalidated (x_ + new.x) (y_ + new.y) new.w new.h
         label_ = value
         left_ = null  // Trigger recalculation.
         return
@@ -390,7 +401,7 @@ abstract class CustomElement extends ClippingDiv:
 
   invalidate:
     if change_tracker and x and y and w and h:
-      change_tracker.child_invalidated_element x y w h
+      change_tracker.child_invalidated x y w h
 
   draw canvas/Canvas -> none:
     if not (x and y): return
@@ -436,10 +447,7 @@ class ClippingDiv extends Div:
   invalidate --x=x_ --y=y_ --w=w_ --h=h_ -> none:
     if change_tracker:
       extent --x=x --y=y --w=w --h=h: | outer_x outer_y outer_w outer_h |
-        change_tracker.child_invalidated_element outer_x outer_y outer_w outer_h
-
-  static ALL_TRANSPARENT ::= #[0]
-  static ALL_OPAQUE ::= #[0xff]
+        change_tracker.child_invalidated outer_x outer_y outer_w outer_h
 
   static is_all_transparent opacity -> bool:
     if opacity is not ByteArray: return false
@@ -515,7 +523,7 @@ class ClippingDiv extends Div:
     the top and left edges may be plotted at negative coordinates.
   */
   frame_map canvas/Canvas:
-    if not border_: return ClippingDiv.ALL_TRANSPARENT  // No border visible.
+    if not border_: return Canvas.ALL_TRANSPARENT  // No border visible.
     return border_.frame_map canvas w h
 
   /**
