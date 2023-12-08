@@ -291,6 +291,10 @@ class Transform:
     y2_ = y2
     ty_ = ty
 
+  /**
+  Applies the other transform to this transform.
+  Returns a transform that does both transformations in one transform.
+  */
   apply other/Transform -> Transform:
     a0 := x1_
     a1 := y1_
@@ -310,6 +314,11 @@ class Transform:
         --tx = a0 * o4 + a2 * o5 + tx_
         --ty = a1 * o4 + a3 * o5 + ty_
 
+  /**
+  Inverts this transform, returning a new transform that represents the
+    inverse transformation.
+  Since we don't support scaling, there always exists an inverse transform.
+  */
   invert -> Transform:
     a0 := x1_
     a1 := y1_
@@ -325,6 +334,9 @@ class Transform:
         --tx = -a3 * tx_ + a2 * ty_
         --ty = a1 * tx_ - a0 * ty_
 
+  /**
+  Returns true if the transforms represent the same transformation.
+  */
   operator == other/Transform -> bool:
     if x1_ != other.x1_: return false
     if y1_ != other.y1_: return false
@@ -376,7 +388,7 @@ class Transform:
 
   /**
   Returns a new transform which represents this transform rotated left
-    around the origin in the space of this transform
+    around the origin in the space of this transform.
   */
   rotate_left -> Transform:
     return Transform.with_
@@ -389,7 +401,7 @@ class Transform:
 
   /**
   Returns a new transform which represents this transform rotated right
-    around the origin in the space of this transform
+    around the origin in the space of this transform.
   */
   rotate_right -> Transform:
     return Transform.with_
