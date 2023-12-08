@@ -4,10 +4,12 @@
 
 import .common
 import .element
+import .element show Element
 import .style
 
 /**
-A vertical slider that can indicate a value between a minimum and a maxiumum.
+A vertical or horizontal slider that can indicate a value between a minimum and
+  a maxiumum.
 You can provide a background to draw when the slider is above a certain level,
   and a different one for when the slider is below that level.  If either
   background is omitted the slider is transparent in that section.
@@ -26,9 +28,40 @@ class Slider extends CustomElement:
   thumb_max_/int?
   boundary_/int := 0
 
-  type -> string: return "vertical-slider"
+  type -> string: return "slider"
 
-  constructor --x/int?=null --y/int?=null --w/int?=null --h/int?=null --background-hi=null --background-lo=null --value/num?=null --min/num?=0 --max/num?=100 --thumb_min/int=0 --thumb_max/int?=null --horizontal/bool=false:
+  /**
+  Constructs a new slider element.
+  You can provide a background to draw when the slider is above a certain level,
+    and a different one for when the slider is below that level.  If either
+    background is omitted the slider is transparent in that section.
+  The initial level of the slider is given by $value, and it should be between
+    the values of $min and $max, which default to 0 and 100, respectively.
+  The boundary between the two backgrounds is drawn in a linear position
+    between $thumb_min and $thumb_max, which default to 0, and height or width
+    of the element, respectively.
+  The slider supports the extra $Style keys "background-lo", "background-hi",
+    "horizontal", "min", "max", and "value".
+  See also $Element.constructor.
+  */
+  constructor
+      --x/int?=null
+      --y/int?=null
+      --w/int?=null
+      --h/int?=null
+      --style/Style?=null
+      --element_class/string?=null
+      --classes/List?=null
+      --id/string?=null
+      --border/Border?=null
+      --background_hi=null
+      --background_lo=null
+      --value/num?=null
+      --min/num?=0
+      --max/num?=100
+      --thumb_min/int=0
+      --thumb_max/int?=null
+      --horizontal/bool=false:
     value_ = value
     min_ = min
     max_ = max
@@ -37,7 +70,16 @@ class Slider extends CustomElement:
     thumb_min_ = thumb_min
     thumb_max_ = thumb_max
     horizontal_ = horizontal
-    super --x=x --y=y --w=w --h=h
+    super
+        --x=x
+        --y=y
+        --w=w
+        --h=h
+        --style = style
+        --element_class = element_class
+        --classes = classes
+        --id = id
+        --border = border
     recalculate_
 
   thumb_max: return thumb_max_ or (horizontal_ ? w : h)
@@ -85,7 +127,7 @@ class Slider extends CustomElement:
         analysis = canvas.bounds_analysis 0 0 w (h - boundary_)
       if analysis != Canvas.DISJOINT:
         if analysis == Canvas.CANVAS_IN_AREA or analysis == Canvas.COINCIDENT:
-          background_lo_.draw canvas 0 0 w h --autocropped
+          background_lo_.draw canvas 0 0 w h --autoclipped
         else:
           blend = true
     if background_hi_ and boundary_ < thumb_max:
@@ -96,7 +138,7 @@ class Slider extends CustomElement:
         analysis = canvas.bounds_analysis 0 (h - boundary_) w h
       if analysis != Canvas.DISJOINT:
         if analysis == Canvas.CANVAS_IN_AREA or analysis == Canvas.COINCIDENT:
-          background_hi_.draw canvas 0 0 w h --autocropped
+          background_hi_.draw canvas 0 0 w h --autoclipped
         else:
           blend = true
     if not blend: return
@@ -111,17 +153,17 @@ class Slider extends CustomElement:
         lo_alpha.rectangle 0 0 --w=(w - boundary_) --h=h --color=0xff
       else:
         lo_alpha.rectangle 0 0 --w=w --h=(h - boundary_) --color=0xff
-      Background.draw background_lo_ lo 0 0 w h --autocropped
+      Background.draw background_lo_ lo 0 0 w h --autoclipped
     if background_hi_:
       if horizontal_:
         hi_alpha.rectangle (w - boundary_) 0 --w=boundary_ --h=h --color=0xff
       else:
         hi_alpha.rectangle 0 (h - boundary_) --w=w --h=boundary_ --color=0xff
-      Background.draw background_hi_ hi 0 0 w h --autocropped
+      Background.draw background_hi_ hi 0 0 w h --autoclipped
 
     canvas.composit hi_alpha hi lo_alpha lo
 
-  set_attribute key/string value -> none:
+  set_attribute_ key/string value -> none:
     if key == "value":
       value_ = value
       recalculate_

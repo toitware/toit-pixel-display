@@ -49,10 +49,10 @@ main args:
       ]
 
   content := Div --x=0 --y=0 --w=WIDTH --h=HEIGHT --background=background [
-      ClippingDiv --x=20 --y=20 --w=60 --h=30 --id="div1" --element_class="round",
-      ClippingDiv --x=100 --y=20 --w=60 --h=30 --id="div2" --element_class="round",
-      ClippingDiv --x=20 --y=70 --w=60 --h=30 --id="div3" --element_class="round",
-      ClippingDiv --x=100 --y=70 --w=60 --h=30 --id="div4" --element_class="round",
+      Div.clipping --x=20 --y=20 --w=60 --h=30 --id="div1" --element_class="round",
+      Div.clipping --x=100 --y=20 --w=60 --h=30 --id="div2" --element_class="round",
+      Div.clipping --x=20 --y=70 --w=60 --h=30 --id="div3" --element_class="round",
+      Div.clipping --x=100 --y=70 --w=60 --h=30 --id="div4" --element_class="round",
       ]
 
   display.add content

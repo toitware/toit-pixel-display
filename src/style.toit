@@ -22,21 +22,21 @@ There is support for just using ints (rgb colors) as backgrounds to save
   memory and flash.
 */
 interface Background:
-  draw canvas/Canvas x/int y/int w/int h/int --autocropped/bool -> none
+  draw canvas/Canvas x/int y/int w/int h/int --autoclipped/bool -> none
 
   /**
   We also use colors (ints) as backgrounds, so this helper method will
     either just draw the plain color background, or call the draw method
     on a real Background object.
   */
-  static draw background canvas/Canvas x/int y/int w/int h/int --autocropped/bool -> none:
+  static draw background canvas/Canvas x/int y/int w/int h/int --autoclipped/bool -> none:
     if background is int:
-      if autocropped:
+      if autoclipped:
         canvas.set_all_pixels background
       else:
         canvas.rectangle x y --w=w --h=h --color=background
     else if background != null:
-      (background as Background).draw canvas x y w h --autocropped=autocropped
+      (background as Background).draw canvas x y w h --autoclipped=autoclipped
 
   static check_valid background -> none:
     if background != null and background is not int and background is not Background:
@@ -48,9 +48,9 @@ class MultipleBackgrounds implements Background:
   constructor .list_:
     list_.do: if list_ is not Background: throw "INVALID_ARGUMENT"
 
-  draw canvas/Canvas x/int y/int w/int h/int --autocropped/bool -> none:
+  draw canvas/Canvas x/int y/int w/int h/int --autoclipped/bool -> none:
     list_.do:
-      Background.draw it canvas x y w h --autocropped=autocropped
+      Background.draw it canvas x y w h --autoclipped=autoclipped
 
 interface Border:
   /**

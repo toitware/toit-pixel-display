@@ -269,6 +269,12 @@ abstract class PixelDisplay implements Window:
     if elements_.size != 0: child_invalidated 0 0 driver_.width driver_.height
     elements_ = {}
 
+  get_element_by_id id/string -> any:
+    elements_.do: | child/Element |
+      found := child.get_element_by_id id
+      if found: return found
+    return null
+
   child_invalidated x/int y/int w/int h/int -> none:
     transform_.xywh x y w h: | x2 y2 w2 h2 |
       child_invalidated_ x2 y2 w2 h2

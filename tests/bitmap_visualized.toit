@@ -12,7 +12,7 @@ import host.file
 import pixel_display show *
 import pixel_display.element show *
 import pixel_display.gradient show *
-import pixel_display.png show PngElement
+import pixel_display.png show Png
 import .png_visualizer
 
 SANS := font.Font.get "sans10"
@@ -50,12 +50,12 @@ do basename/string w/int h/int:
 
   label := Label --x=44 --y=44 --label="UP ^" --font=SANS --color=0
   display.add label
-  png_element := PngElement --x=36 --y=32 purifier
+  png_element := Png --x=36 --y=32 --png_file=purifier
   display.add png_element
   display.draw
 
   display.remove png_element
-  png_element = PngElement --x=36 --y=32 purifier_compressed
+  png_element = Png --x=36 --y=32 --png_file=purifier_compressed
   display.add png_element
   display.draw
 

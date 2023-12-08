@@ -28,7 +28,7 @@ main args:
   background_gradient_element := Div --x=0 --y=0 --w=240 --h=160 --background=background_gradient
   display.add background_gradient_element
 
-  win := ClippingDiv --x=30 --y=30 --w=180 --h=100 --border=(ShadowRoundedCornerBorder --radius=15)
+  win := Div.clipping --x=30 --y=30 --w=180 --h=100 --border=(ShadowRoundedCornerBorder --radius=15)
   display.add win
 
   gradient := GradientBackground --angle=-30

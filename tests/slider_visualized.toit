@@ -50,7 +50,7 @@ main args:
 
   style := Style
       --type-map={
-          "vertical-slider": Style {
+          "slider": Style {
               "background-hi": heat,
               "background-lo": cold,
               "width": 20,

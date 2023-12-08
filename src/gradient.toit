@@ -61,9 +61,9 @@ class GradientBackground implements Background:
         hash_ = hash
     return hash_
 
-  draw canvas/Canvas x/int y/int w/int h/int --autocropped/bool -> none:
+  draw canvas/Canvas x/int y/int w/int h/int --autoclipped/bool -> none:
     if not rendering_: rendering_ = GradientRendering_.get w h this
-    rendering_.draw canvas x y --autocropped=autocropped
+    rendering_.draw canvas x y --autoclipped=autoclipped
 
   static normalize_angle_ angle/int -> int:
     angle %= 360
@@ -183,7 +183,7 @@ class GradientRendering_:
           green_pixels_.replace ((it + 1) * texture_length) green_pixels_[0..texture_length]
           blue_pixels_.replace ((it + 1) * texture_length) blue_pixels_[0..texture_length]
 
-  draw canvas/Canvas x/int y/int --autocropped/bool -> none:
+  draw canvas/Canvas x/int y/int --autoclipped/bool -> none:
     if not canvas.supports_8_bit: throw "UNSUPPORTED"
     angle := angle_
     w := w_
@@ -194,7 +194,7 @@ class GradientRendering_:
     // us, or whether we need to do it ourselves by using slices for drawing
     // operations.  We could also check whether we are inside a window that will
     // use compositing to clip everything.
-    if analysis == Canvas.CANVAS_IN_AREA or analysis == Canvas.COINCIDENT: autocropped = true
+    if analysis == Canvas.CANVAS_IN_AREA or analysis == Canvas.COINCIDENT: autoclipped = true
 
     // CSS gradient angles are:
     //    0 bottom to top.
@@ -212,7 +212,7 @@ class GradientRendering_:
       o := offset >> 16
       // Repeats != 1 implies the gradient is vertical or horizontal, which
       // means we don't need any clipping.
-      if autocropped or repeats != 1:
+      if autoclipped or repeats != 1:
         source_width = texture_length_
         buf_size := texture_length_ * lines
         r = red_pixels_[..buf_size]

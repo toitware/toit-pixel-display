@@ -136,7 +136,6 @@ abstract class TestElement extends Element:
     super --style=style --element_class=element_class --classes=classes --id=id children
 
   invalidate -> none:
-    unreachable
 
   draw canvas/Canvas -> none:
     unreachable
@@ -151,7 +150,7 @@ class Square extends TestElement:
   constructor --style/Style?=null --element_class/string?=null --classes/List?=null --id/string?=null children/List?=null:
     super --style=style --element_class=element_class --classes=classes --id=id children
 
-  set_attribute key/string value -> none:
+  set_attribute_ key/string value -> none:
     if key == "width":
       w = value
     else if key == "height":
@@ -169,7 +168,7 @@ class Div extends TestElement:
   constructor --style/Style?=null --element_class/string?=null --classes/List?=null --id/string?=null children/List?=null:
     super --style=style --element_class=element_class --classes=classes --id=id children
 
-  set_attribute key/string value -> none:
+  set_attribute_ key/string value -> none:
     if key == "width":
       w = value
     else if key == "height":
@@ -185,7 +184,7 @@ class FooHaver extends TestElement:
   constructor --style/Style?=null --element_class/string?=null --classes/List?=null --id/string?=null children/List?=null:
     super --style=style --element_class=element_class --classes=classes --id=id children
   
-  set_attribute key/string value -> none:
+  set_attribute_ key/string value -> none:
     if key == "foo":
       foo = value
 
