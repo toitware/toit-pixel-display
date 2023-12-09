@@ -79,7 +79,7 @@ abstract class PixelDisplay implements Window:
   inner-height: return driver_.width
 
   // Need-to-redraw is tracked as a bit array of dirty bits, arranged in
-  // SSD1306 layout so we can use bitmap_rectangle to invalidate areas.
+  // SSD1306 layout so we can use bitmap-rectangle to invalidate areas.
   // One bit in the dirty map covers an area of 8x8 pixels of the display.
   static CLEAN_ ::= 0
   static DIRTY_ ::= 1

@@ -78,7 +78,7 @@ abstract class OneByteCanvas_ extends Canvas:
       return
     // Unfortunately one of the alpha values is not 0 or 0xff, so we can't use
     // the bitmap draw primitive.  We can blow it up to bytes, then use the
-    // bitmap_draw_bytemap.
+    // bitmap-draw-bytemap.
     h := (pixels.size + source-line-stride - source-byte-width ) / source-line-stride
     bytemap := ByteArray source-width * h
     bitmap-draw-bitmap 0 0

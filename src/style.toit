@@ -416,7 +416,7 @@ class RoundedCornerOpacity_:
     return new
 
   static TABLE-SIZE_/int ::= 256
-  // The heights of a top-right quarter circle of radius [TABLE_SIZE_].
+  // The heights of a top-right quarter circle of radius [TABLE-SIZE_].
   static QUARTER-CIRCLE_/ByteArray ::= create-quarter-circle-array_ TABLE-SIZE_
 
   static create-quarter-circle-array_ size -> ByteArray:

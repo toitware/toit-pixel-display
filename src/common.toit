@@ -231,8 +231,8 @@ abstract class Canvas:
   If the $palette argument is shorter than the highest index in the pixmap,
     then pixels with high indices are assumed to be gray-scale with the
     index representing the gray value (white = 0xff).
-  The $orientation argument can be ORIENTATION_0, ORIENTATION_90,
-    ORIENTATION_180, or ORIENTATION_270, from "import bitmap",
+  The $orientation argument can be $ORIENTATION-0, $ORIENTATION-90,
+    $ORIENTATION-180, or $ORIENTATION-270, from "import bitmap",
     representing anti-clockwise rotation of the drawn pixmap.
   Using $source-line-stride a number of bytes can be skipped at the
     end of each line.  This is useful if the pixmap is padded, or
@@ -254,8 +254,8 @@ abstract class Canvas:
     the red, green, or blue component of the pixel.  The order of the pixmap
     is as in PNG, so the lines are ordered from top to bottom, and within each
     line the bytes are ordered from left to right.
-  The $orientation argument can be ORIENTATION_0, ORIENTATION_90,
-    ORIENTATION_180, or ORIENTATION_270, from "import bitmap",
+  The $orientation argument can be $ORIENTATION-0, $ORIENTATION-90,
+    $ORIENTATION-180, or $ORIENTATION-270, from "import bitmap",
     representing anti-clockwise rotation of the drawn pixmap.
   This method is only available on true-color canvases.
   */

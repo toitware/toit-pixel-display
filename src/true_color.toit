@@ -62,7 +62,7 @@ class Canvas_ extends Canvas:
     super width height
 
   stringify:
-    return "true_color.Canvas_ $(width_)x$height_"
+    return "true-color.Canvas_ $(width_)x$height_"
 
   set-all-pixels color/int -> none:
     bytemap-zap red_ (red-component color)
@@ -143,7 +143,7 @@ class Canvas_ extends Canvas:
       return
     // Unfortunately one of the alpha values is not 0 or 0xff, so we can't use
     // the bitmap draw primitive.  We can blow it up to bytes, then use the
-    // bitmap_draw_bytemap.
+    // bitmap-draw-bytemap.
     h := (pixels.size + source-line-stride - source-byte-width) / source-line-stride
     bytemap := ByteArray source-width * h
     bitmap-draw-bitmap 0 0

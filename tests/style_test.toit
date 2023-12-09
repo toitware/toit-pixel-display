@@ -42,7 +42,7 @@ toit-doc-examples-test:
           "fish-or-fowl": Style --color=0xffffff --background=0x606060,
       }
 
-/// Test a literal element tree can be constructed and get_element_by_id can be
+/// Test a literal element tree can be constructed and get-element-by-id can be
 ///   used to find a named element.
 element-tree-test:
   elements := Div [
@@ -53,7 +53,7 @@ element-tree-test:
   first := elements.get-element-by-id "first-square"
   expect first.id == "first-square"
 
-/// Test that we can use set_styles to distribute the styles to all the
+/// Test that we can use set-styles to distribute the styles to all the
 ///   elements.
 combine-test:
   elements := Div [
