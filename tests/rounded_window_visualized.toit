@@ -4,11 +4,11 @@
 
 import bitmap show *
 import font show Font
-import pixel_display show *
-import pixel_display.element show *
-import pixel_display.gradient show *
-import pixel_display.style show *
-import .png_visualizer
+import pixel-display show *
+import pixel-display.element show *
+import pixel-display.gradient show *
+import pixel-display.style show *
+import .png-visualizer
 
 main args:
   sans10 := Font.get "sans10"
@@ -17,16 +17,16 @@ main args:
     print "Usage: script.toit png-basename"
     exit 1
   driver := TrueColorPngVisualizer 240 160 args[0] --outline=0x101010
-  display := PixelDisplay.true_color driver
+  display := PixelDisplay.true-color driver
   display.background = 0x78aac8
 
-  background_gradient := GradientBackground --angle=180
+  background-gradient := GradientBackground --angle=180
       --specifiers=[
           GradientSpecifier --color=0x80ddff 10,
           GradientSpecifier --color=0x80ffdd 90,
       ]
-  background_gradient_element := Div --x=0 --y=0 --w=240 --h=160 --background=background_gradient
-  display.add background_gradient_element
+  background-gradient-element := Div --x=0 --y=0 --w=240 --h=160 --background=background-gradient
+  display.add background-gradient-element
 
   win := Div.clipping --x=30 --y=30 --w=180 --h=100 --border=(RoundedCornerBorder --radius=15)
   display.add win
@@ -36,21 +36,21 @@ main args:
           GradientSpecifier --color=0xffdd80 10,
           GradientSpecifier --color=0xddff80 90,
       ]
-  gradient_element := Div --x=0 --y=0 --w=180 --h=100 --background=gradient
-  win.add gradient_element
+  gradient-element := Div --x=0 --y=0 --w=180 --h=100 --background=gradient
+  win.add gradient-element
 
   text := Label --x=90 --y=55 --label="Hello, World!" --font=sans10 --color=0x101040
   win.add text
 
   display.draw
 
-  text.move_to 120 65
+  text.move-to 120 65
 
   display.draw
 
   // Window-relative coordinates.
-  text.move_to -10 7
+  text.move-to -10 7
 
   display.draw
 
-  driver.write_png
+  driver.write-png

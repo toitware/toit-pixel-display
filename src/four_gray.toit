@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 /**
-Constants useful for $PixelDisplay.four_gray.
+Constants useful for $PixelDisplay.four-gray.
 For use with e-paper displays with four tones of gray.
 */
 
@@ -11,17 +11,17 @@ import bitmap show *
 import font show Font
 import icons show Icon
 import .common
-import .pixel_display show PixelDisplay  // For the doc comment.
-import .two_bit_texture
-import .two_bit_texture as two_bit
+import .pixel-display show PixelDisplay  // For the doc comment.
+import .two-bit-texture
+import .two-bit-texture as two-bit
 
-/// Color value for use with $PixelDisplay.four_gray.
+/// Color value for use with $PixelDisplay.four-gray.
 WHITE ::= 0
-/// Color value for use with $PixelDisplay.four_gray.
-LIGHT_GRAY ::= 1
-/// Color value for use with $PixelDisplay.four_gray.
-DARK_GRAY ::= 2
-/// Color value for use with $PixelDisplay.four_gray.
+/// Color value for use with $PixelDisplay.four-gray.
+LIGHT-GRAY ::= 1
+/// Color value for use with $PixelDisplay.four-gray.
+DARK-GRAY ::= 2
+/// Color value for use with $PixelDisplay.four-gray.
 BLACK ::= 3
 
 // The canvas contains two bitmapped ByteArrays, giving 4 grays.
@@ -30,23 +30,23 @@ BLACK ::= 3
 //   1    0   Dark gray
 //   1    1   Black
 // Starts off with all pixels white.
-class Canvas_ extends two_bit.Canvas_:
+class Canvas_ extends two-bit.Canvas_:
   constructor width/int height/int:
     super width height
 
-  supports_8_bit -> bool: return false
-  gray_scale -> bool: return true
+  supports-8-bit -> bool: return false
+  gray-scale -> bool: return true
 
   /**
   Creates a blank texture with the same dimensions as this one.
   */
-  create_similar:
+  create-similar:
     result := Canvas_ width_ height_
     result.transform = transform
     return result
 
-  static NEAREST_TABLE_ ::= #[BLACK, DARK_GRAY, LIGHT_GRAY, WHITE]
+  static NEAREST-TABLE_ ::= #[BLACK, DARK-GRAY, LIGHT-GRAY, WHITE]
 
   // Convert from a PNG color (0 = black, 255 = white) to a 2-bit 4-gray color.
-  nearest_color_ palette/ByteArray offset/int -> int:
-    return NEAREST_TABLE_[palette[offset] >> 6]
+  nearest-color_ palette/ByteArray offset/int -> int:
+    return NEAREST-TABLE_[palette[offset] >> 6]

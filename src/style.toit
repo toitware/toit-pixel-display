@@ -3,18 +3,18 @@
 // found in the LICENSE file.
 
 import bitmap
-import bitmap show ORIENTATION_0 ORIENTATION_90 ORIENTATION_180 ORIENTATION_270
+import bitmap show ORIENTATION-0 ORIENTATION-90 ORIENTATION-180 ORIENTATION-270
 import font show Font
 
 import .common
 import .element as element
-import .one_byte as one_byte
+import .one-byte as one-byte
 
-ALIGN_LEFT ::= 0
-ALIGN_CENTER ::= 1
-ALIGN_RIGHT ::= 2
+ALIGN-LEFT ::= 0
+ALIGN-CENTER ::= 1
+ALIGN-RIGHT ::= 2
 
-EMPTY_STYLE_ ::= Style
+EMPTY-STYLE_ ::= Style
 
 /**
 A background is anything that can draw itself on an element as a background.
@@ -32,13 +32,13 @@ interface Background:
   static draw background canvas/Canvas x/int y/int w/int h/int --autoclipped/bool -> none:
     if background is int:
       if autoclipped:
-        canvas.set_all_pixels background
+        canvas.set-all-pixels background
       else:
         canvas.rectangle x y --w=w --h=h --color=background
     else if background != null:
       (background as Background).draw canvas x y w h --autoclipped=autoclipped
 
-  static check_valid background -> none:
+  static check-valid background -> none:
     if background != null and background is not int and background is not Background:
       throw "INVALID_ARGUMENT"
 
@@ -63,12 +63,12 @@ interface Border:
     redrawn if the container with this border moves.
   For example for drop shadows this will include the shadow.
   */
-  invalidation_area x/int y/int w/int h/int [block] -> none
+  invalidation-area x/int y/int w/int h/int [block] -> none
 
   /**
   Calls the block with the w and h after the border has been subtracted.
   */
-  inner_dimensions w/int h/int [block] -> none
+  inner-dimensions w/int h/int [block] -> none
 
   /**
   Calls the block with the width of the left and top edges, indicating how much
@@ -82,13 +82,13 @@ interface Border:
   We don't need to carve out the window content, there is assumed to be a
     different alpha map for that.
   */
-  frame_map canvas/Canvas w/int h/int
+  frame-map canvas/Canvas w/int h/int
 
   /**
   Draws 100% opacity for the window content.
   In the simplest case this is a filled rectangle.
   */
-  content_map canvas/Canvas w/int h/int
+  content-map canvas/Canvas w/int h/int
 
 /**
 Borders that are not actually drawn, but you can see where they are by the
@@ -98,110 +98,110 @@ abstract class InvisibleBorder implements Border:
   draw canvas x y w h:
     // Nothing to draw.
 
-  invalidation_area x/int y/int w/int h/int [block]:
+  invalidation-area x/int y/int w/int h/int [block]:
     block.call x y w h
 
-  inner_dimensions w h [block] -> none:
+  inner-dimensions w h [block] -> none:
     block.call w h
 
   offsets [block] -> none:
     block.call 0 0
 
-  frame_map canvas w h:
-    return Canvas.ALL_TRANSPARENT
+  frame-map canvas w h:
+    return Canvas.ALL-TRANSPARENT
 
-  abstract content_map canvas/Canvas w/int h/int
+  abstract content-map canvas/Canvas w/int h/int
 
 class NoBorder extends InvisibleBorder:
-  content_map canvas/Canvas w/int h/int:
-    transparency_map := canvas.make_alpha_map
-    transparency_map.rectangle 0 0 --w=w --h=h --color=0xff
-    return transparency_map
+  content-map canvas/Canvas w/int h/int:
+    transparency-map := canvas.make-alpha-map
+    transparency-map.rectangle 0 0 --w=w --h=h --color=0xff
+    return transparency-map
 
-NO_BORDER_/Border ::= NoBorder
+NO-BORDER_/Border ::= NoBorder
 
 /// A rectangular border inside the window's area, with a solid color.
 class SolidBorder implements Border:
-  border_width_/BorderWidth
+  border-width_/BorderWidth
   color_/int
 
   constructor --width/int --color/int:
     color_ = color
-    border_width_ = BorderWidth width
+    border-width_ = BorderWidth width
 
-  constructor --border_width/BorderWidth --color/int:
+  constructor --border-width/BorderWidth --color/int:
     color_ = color
-    border_width_ = border_width
+    border-width_ = border-width
 
-  invalidation_area x/int y/int w/int h/int [block]:
+  invalidation-area x/int y/int w/int h/int [block]:
     block.call x y w h
 
-  inner_dimensions w/int h/int [block] -> none:
-    border_width_.inner_dimensions w h block
+  inner-dimensions w/int h/int [block] -> none:
+    border-width_.inner-dimensions w h block
 
   offsets [block] -> none:
-    border_width_.offsets block
+    border-width_.offsets block
 
   draw canvas/Canvas x/int y/int w/int h/int -> none:
-    if border_width_.left != 0:
-      canvas.rectangle x y --w=border_width_.left --h=h --color=color_
-    if border_width_.right != 0:
-      canvas.rectangle (x + w - border_width_.right) y --w=border_width_.right --h=h --color=color_
-    if border_width_.top != 0:
-      canvas.rectangle x y --w=w --h=border_width_.top --color=color_
-    if border_width_.bottom != 0:
-      canvas.rectangle x (y + h - border_width_.bottom) --w=w --h=border_width_.bottom --color=color_
+    if border-width_.left != 0:
+      canvas.rectangle x y --w=border-width_.left --h=h --color=color_
+    if border-width_.right != 0:
+      canvas.rectangle (x + w - border-width_.right) y --w=border-width_.right --h=h --color=color_
+    if border-width_.top != 0:
+      canvas.rectangle x y --w=w --h=border-width_.top --color=color_
+    if border-width_.bottom != 0:
+      canvas.rectangle x (y + h - border-width_.bottom) --w=w --h=border-width_.bottom --color=color_
 
   // Draws 100% opacity for the border and frame shape.  We don't need to carve
   // out the window content, there is assumed to be a different alpha map for
   // that.
-  frame_map canvas/Canvas w/int h/int:
-    if border_width_ == 0: return Canvas.ALL_TRANSPARENT  // The frame is not visible anywhere.
+  frame-map canvas/Canvas w/int h/int:
+    if border-width_ == 0: return Canvas.ALL-TRANSPARENT  // The frame is not visible anywhere.
     // Transform inner dimensions not including border
-    border_widths := border_width_.left + border_width_.right
-    border_heights := border_width_.top + border_width_.bottom
-    canvas.transform.xywh border_width_.left border_width_.top (w - border_widths) (h - border_heights): | x2 y2 w2 h2 |
+    border-widths := border-width_.left + border-width_.right
+    border-heights := border-width_.top + border-width_.bottom
+    canvas.transform.xywh border-width_.left border-width_.top (w - border-widths) (h - border-heights): | x2 y2 w2 h2 |
       if x2 <= 0 and y2 <= 0 and x2 + w2 >= canvas.width_ and y2 + h2 >= canvas.height_:
         // In the middle, the window content is 100% opaque and draw on top of the
         // frame.  There is no need to provide a frame alpha map, so for efficiency we
         // just return 0 which indicates the frame is 100% transparent.
-        return Canvas.ALL_TRANSPARENT
+        return Canvas.ALL-TRANSPARENT
     canvas.transform.xywh 0 0 w h: | x2 y2 w2 h2 |
       right := x2 + w2
       bottom := y2 + h2
       if right <= 0 or bottom <= 0 or x2 >= canvas.width_ or y2 >= canvas.height_:
         // The frame is completely outside the window, so it is 100% transparent.
-        return Canvas.ALL_TRANSPARENT
+        return Canvas.ALL-TRANSPARENT
     // We need to create a bitmap to describe the frame's extent.
-    transparency_map := canvas.make_alpha_map
+    transparency-map := canvas.make-alpha-map
     // Declare the whole area inside the frame's extent opaque.  The window content will
     // draw on top of this as needed.
-    transparency_map.rectangle 0 0
+    transparency-map.rectangle 0 0
         --w = w
         --h = h
         --color = 0xff
-    return transparency_map
+    return transparency-map
 
   // Draws 100% opacity for the window content, a filled rectangle.
-  content_map canvas/Canvas w/int h/int:
-    border_widths := border_width_.left + border_width_.right
-    border_heights := border_width_.top + border_width_.bottom
-    canvas.transform.xywh border_width_.left border_width_.top (w - border_widths) (h - border_heights): | x2 y2 w2 h2 |
+  content-map canvas/Canvas w/int h/int:
+    border-widths := border-width_.left + border-width_.right
+    border-heights := border-width_.top + border-width_.bottom
+    canvas.transform.xywh border-width_.left border-width_.top (w - border-widths) (h - border-heights): | x2 y2 w2 h2 |
       if x2 <= 0 and y2 <= 0 and x2 + w2 >= canvas.width_ and y2 + h2 >= canvas.height_:
-        return Canvas.ALL_OPAQUE  // The content is 100% opaque in the middle.
+        return Canvas.ALL-OPAQUE  // The content is 100% opaque in the middle.
       right := x2 + w2
       bottom := y2 + h2
       if right <= 0 or bottom <= 0 or x2 >= canvas.width_ or y2 >= canvas.height_:
-        return Canvas.ALL_TRANSPARENT  // The content is 100% transparent outside the window.
+        return Canvas.ALL-TRANSPARENT  // The content is 100% transparent outside the window.
     // We need to create a bitmap to describe the content's extent.
-    transparency_map := canvas.make_alpha_map
+    transparency-map := canvas.make-alpha-map
     // Declare the whole area inside the content's extent opaque.  The window content will
     // draw on top of this as needed.
-    transparency_map.rectangle border_width_.left border_width_.top
-        --w = w - border_widths
-        --h = h - border_heights
+    transparency-map.rectangle border-width_.left border-width_.top
+        --w = w - border-widths
+        --h = h - border-heights
         --color = 0xff
-    return transparency_map
+    return transparency-map
 
 /// For use with $SolidBorder.
 class BorderWidth:
@@ -215,14 +215,14 @@ class BorderWidth:
     left = top = right = bottom = width
 
   /// A constructor with a different thickness on the top and bottom vs. the sides.
-  constructor --top_and_bottom/int --left_and_right/int:
-    top = bottom = top_and_bottom
-    left = right = left_and_right
+  constructor --top-and-bottom/int --left-and-right/int:
+    top = bottom = top-and-bottom
+    left = right = left-and-right
 
   /// A constructor with arbitrary thickness on all sides and zero on all unmentioned sides.
   constructor --.top/int=0 --.right/int=0 --.bottom/int=0 --.left/int=0:
 
-  inner_dimensions w/int h/int [block]:
+  inner-dimensions w/int h/int [block]:
     block.call (w - left - right) (h - top - bottom)
 
   offsets [block]:
@@ -232,40 +232,40 @@ class BorderWidth:
 class RoundedCornerBorder extends InvisibleBorder:
   radius_/int := ?
   opacities_/RoundedCornerOpacity_? := null
-  shadow_palette_/ByteArray := #[]
+  shadow-palette_/ByteArray := #[]
 
   constructor --radius/int=5:
-    if not 0 <= radius <= RoundedCornerOpacity_.TABLE_SIZE_: throw "OUT_OF_RANGE"
+    if not 0 <= radius <= RoundedCornerOpacity_.TABLE-SIZE_: throw "OUT_OF_RANGE"
     radius_ = radius
 
   radius -> int: return radius_
 
-  ensure_opacities_:
+  ensure-opacities_:
     if opacities_: return
     opacities_ = RoundedCornerOpacity_.get radius_
 
   // Draws 100% opacity for the window content, a filled rounded-corner rectangle.
-  content_map canvas/Canvas w/int h/int:
+  content-map canvas/Canvas w/int h/int:
     canvas.transform.xywh 0 0 w h: | x2 y2 w2 h2 |
       right := x2 + w2
       bottom := y2 + h2
       if x2 >= canvas.width_ or y2 >= canvas.height_ or right <= 0 or bottom <= 0:
-        return Canvas.ALL_TRANSPARENT  // The content is 100% transparent outside the window.
+        return Canvas.ALL-TRANSPARENT  // The content is 100% transparent outside the window.
       if x2           <= 0 and y2 + radius_ <= 0 and right           >= canvas.width_ and bottom - radius_ >= canvas.height_ or
          x2 + radius_ <= 0 and y2           <= 0 and right - radius_ >= canvas.width_ and bottom           >= canvas.height_:
-        return Canvas.ALL_OPAQUE  // The content is 100% opaque in the cross in the middle where there are no corners.
+        return Canvas.ALL-OPAQUE  // The content is 100% opaque in the cross in the middle where there are no corners.
     // We need to create a bitmap to describe the content's extent.
-    transparency_map := canvas.make_alpha_map
-    draw_rounded_corners_ transparency_map 0 0 w h 0xff
-    return transparency_map
+    transparency-map := canvas.make-alpha-map
+    draw-rounded-corners_ transparency-map 0 0 w h 0xff
+    return transparency-map
 
-  draw_rounded_corners_ transparency_map x2/int y2/int w2/int h2/int opacity/int -> none:
+  draw-rounded-corners_ transparency-map x2/int y2/int w2/int h2/int opacity/int -> none:
     // Part 1 of a cross of opacity (the rounded rectangle minus its corners).
-    transparency_map.rectangle (x2 + radius_) y2 --w=(w2 - 2 * radius_) --h=h2 --color=opacity
+    transparency-map.rectangle (x2 + radius_) y2 --w=(w2 - 2 * radius_) --h=h2 --color=opacity
     if radius_ == 0: return
-    ensure_opacities_
+    ensure-opacities_
     // Part 2 of the cross.
-    transparency_map.rectangle x2 (y2 + radius_) --w=w2 --h=(h2 - 2 * radius_) --color=opacity
+    transparency-map.rectangle x2 (y2 + radius_) --w=w2 --h=(h2 - 2 * radius_) --color=opacity
     // The rounded corners.
     // opacity_ has an alpha map shaped like this (only rounder).
     // ______
@@ -277,83 +277,83 @@ class RoundedCornerBorder extends InvisibleBorder:
     right := x2 + w2 - radius_
     top := y2 + radius_ - 1
     bottom := y2 + h2 - radius_
-    if transparency_map is one_byte.OneByteCanvas_:
-      palette := opacity == 0xff ? #[] : shadow_palette_
-      draw_corners_ x2 y2 right bottom radius_: | x y orientation |
-        transparency_map.pixmap x y
-            --pixels = opacities_.byte_opacity
+    if transparency-map is one-byte.OneByteCanvas_:
+      palette := opacity == 0xff ? #[] : shadow-palette_
+      draw-corners_ x2 y2 right bottom radius_: | x y orientation |
+        transparency-map.pixmap x y
+            --pixels = opacities_.byte-opacity
             --palette = palette
-            --source_width = radius_
+            --source-width = radius_
             --orientation = orientation
     else:
-      draw_corners_ x2 y2 right bottom radius_: | x y orientation |
-        stride := (round_up radius_ 8) >> 3
-        transparency_map.bitmap x y
-            --pixels = opacities_.bit_opacity
-            --alpha = ONE_ZERO_ALPHA_
-            --palette = ONE_ZERO_PALETTE_
-            --source_width = radius_
-            --source_line_stride = stride
+      draw-corners_ x2 y2 right bottom radius_: | x y orientation |
+        stride := (round-up radius_ 8) >> 3
+        transparency-map.bitmap x y
+            --pixels = opacities_.bit-opacity
+            --alpha = ONE-ZERO-ALPHA_
+            --palette = ONE-ZERO-PALETTE_
+            --source-width = radius_
+            --source-line-stride = stride
             --orientation = orientation
 
-  static ONE_ZERO_PALETTE_ ::= #[0, 0, 0, 1, 1, 1]
-  static ONE_ZERO_ALPHA_ ::= #[0, 0xff]
+  static ONE-ZERO-PALETTE_ ::= #[0, 0, 0, 1, 1, 1]
+  static ONE-ZERO-ALPHA_ ::= #[0, 0xff]
 
-  draw_corners_ left/int top/int right/int bottom/int corner_radius/int [block]:
+  draw-corners_ left/int top/int right/int bottom/int corner-radius/int [block]:
     // Top left corner:
-    block.call (left + corner_radius) (top + corner_radius) ORIENTATION_180
+    block.call (left + corner-radius) (top + corner-radius) ORIENTATION-180
     // Top right corner:
-    block.call right (top + corner_radius) ORIENTATION_90
+    block.call right (top + corner-radius) ORIENTATION-90
     // Bottom left corner:
-    block.call (left + corner_radius) bottom ORIENTATION_270
+    block.call (left + corner-radius) bottom ORIENTATION-270
     // Bottom right corner:
-    block.call right bottom ORIENTATION_0
+    block.call right bottom ORIENTATION-0
 
 class ShadowRoundedCornerBorder extends RoundedCornerBorder:
-  blur_radius_/int := ?
-  drop_distance_x_/int := ?
-  drop_distance_y_/int := ?
-  shadow_opacity_percent_/int := ?
+  blur-radius_/int := ?
+  drop-distance-x_/int := ?
+  drop-distance-y_/int := ?
+  shadow-opacity-percent_/int := ?
 
-  constructor --radius/int=5 --blur_radius/int=5 --drop_distance_x/int=10 --drop_distance_y/int=10 --shadow_opacity_percent/int=25:
-    if not 0 <= blur_radius <= 6: throw "OUT_OF_RANGE"
-    blur_radius_ = blur_radius
-    drop_distance_x_ = drop_distance_x
-    drop_distance_y_ = drop_distance_y
-    shadow_opacity_percent_ = shadow_opacity_percent
+  constructor --radius/int=5 --blur-radius/int=5 --drop-distance-x/int=10 --drop-distance-y/int=10 --shadow-opacity-percent/int=25:
+    if not 0 <= blur-radius <= 6: throw "OUT_OF_RANGE"
+    blur-radius_ = blur-radius
+    drop-distance-x_ = drop-distance-x
+    drop-distance-y_ = drop-distance-y
+    shadow-opacity-percent_ = shadow-opacity-percent
     super --radius=radius
-    update_shadow_palette_
+    update-shadow-palette_
 
-  extent_helper_ [block]:
-    extension_left := blur_radius_ > drop_distance_x_ ?  blur_radius_ - drop_distance_x_ : 0
-    extension_top := blur_radius_ > drop_distance_y_ ?  blur_radius_ - drop_distance_y_ : 0
-    extension_right := blur_radius_ > -drop_distance_x_ ? blur_radius_ + drop_distance_x_ : 0
-    extension_bottom := blur_radius_ > -drop_distance_y_ ? blur_radius_ + drop_distance_y_ : 0
-    block.call extension_left extension_top extension_right extension_bottom
+  extent-helper_ [block]:
+    extension-left := blur-radius_ > drop-distance-x_ ?  blur-radius_ - drop-distance-x_ : 0
+    extension-top := blur-radius_ > drop-distance-y_ ?  blur-radius_ - drop-distance-y_ : 0
+    extension-right := blur-radius_ > -drop-distance-x_ ? blur-radius_ + drop-distance-x_ : 0
+    extension-bottom := blur-radius_ > -drop-distance-y_ ? blur-radius_ + drop-distance-y_ : 0
+    block.call extension-left extension-top extension-right extension-bottom
 
-  invalidation_area x/int y/int w/int h/int [block]:
-    extent_helper_: | left top right bottom |
+  invalidation-area x/int y/int w/int h/int [block]:
+    extent-helper_: | left top right bottom |
       block.call
           x - left
           y - top
           w + left + right
           h + top + bottom
 
-  blur_radius -> int: return blur_radius_
+  blur-radius -> int: return blur-radius_
 
-  drop_distance_x -> int: return drop_distance_x_
+  drop-distance-x -> int: return drop-distance-x_
 
-  drop_distance_y -> int: return drop_distance_y_
+  drop-distance-y -> int: return drop-distance-y_
 
-  shadow_opacity_percent -> int: return shadow_opacity_percent_
+  shadow-opacity-percent -> int: return shadow-opacity-percent_
 
-  update_shadow_palette_ -> none:
-    max_shadow_opacity := (shadow_opacity_percent_ * 2.5500001).to_int
-    shadow_palette_ = #[]
-    if max_shadow_opacity != 0xff:
-      shadow_palette_ = ByteArray 0x300: ((it / 3) * max_shadow_opacity) / 0xff
+  update-shadow-palette_ -> none:
+    max-shadow-opacity := (shadow-opacity-percent_ * 2.5500001).to-int
+    shadow-palette_ = #[]
+    if max-shadow-opacity != 0xff:
+      shadow-palette_ = ByteArray 0x300: ((it / 3) * max-shadow-opacity) / 0xff
 
-  frame_map canvas/Canvas w/int h/int:
+  frame-map canvas/Canvas w/int h/int:
     // Transform inner dimensions excluding shadow to determine if the canvas
     // is wholly inside the window.
     canvas.transform.xywh 0 0 w h: | x2 y2 w2 h2 |
@@ -364,73 +364,73 @@ class ShadowRoundedCornerBorder extends RoundedCornerBorder:
         // In the middle, the window content is 100% opaque and draw on top of the
         // frame.  There is no need to provide a frame alpha map, so for efficiency we
         // just return 0 which indicates the frame is 100% transparent.
-        return Canvas.ALL_TRANSPARENT
+        return Canvas.ALL-TRANSPARENT
 
     // Transform outer dimensions including border to determine if the canvas
     // is wholly outside the window and its shadow.
-    extent_helper_: | left top right bottom |
+    extent-helper_: | left top right bottom |
       canvas.transform.xywh -left -top (w + left + right) (h + top + bottom): | x2 y2 w2 h2 |
         if x2 + w2 <= 0 or y2 + h2 <= 0 or x2 >= canvas.width_ or y2 >= canvas.height_:
-          return Canvas.ALL_TRANSPARENT  // The frame is not opaque outside the shadow
+          return Canvas.ALL-TRANSPARENT  // The frame is not opaque outside the shadow
 
     // Create a bitmap to describe the frame's extent.  It needs to be padded
     // relative to the canvas size so we can use the Gaussian blur.
-    transparency_map := canvas.make_alpha_map --padding=(blur_radius * 2)
-    transparency_map.transform = (canvas.transform.invert.translate -blur_radius -blur_radius).invert
+    transparency-map := canvas.make-alpha-map --padding=(blur-radius * 2)
+    transparency-map.transform = (canvas.transform.invert.translate -blur-radius -blur-radius).invert
 
-    max_shadow_opacity := (shadow_opacity_percent * 2.5500001).to_int
-    draw_rounded_corners_ transparency_map drop_distance_x_ drop_distance_y_ w h max_shadow_opacity
+    max-shadow-opacity := (shadow-opacity-percent * 2.5500001).to-int
+    draw-rounded-corners_ transparency-map drop-distance-x_ drop-distance-y_ w h max-shadow-opacity
 
-    if blur_radius == 0 or transparency_map is not one_byte.OneByteCanvas_:
-      return transparency_map
+    if blur-radius == 0 or transparency-map is not one-byte.OneByteCanvas_:
+      return transparency-map
 
-    one_byte_map := transparency_map as one_byte.OneByteCanvas_
+    one-byte-map := transparency-map as one-byte.OneByteCanvas_
 
     // Blur the shadow.
-    bitmap.bytemap_blur one_byte_map.pixels_ transparency_map.width_ blur_radius
+    bitmap.bytemap-blur one-byte-map.pixels_ transparency-map.width_ blur-radius
 
     // Crop off the extra that was added to blur.
-    transparency_map_unpadded := canvas.make_alpha_map
+    transparency-map-unpadded := canvas.make-alpha-map
     bitmap.blit
-        one_byte_map.pixels_[blur_radius + blur_radius * one_byte_map.width_..]   // Source.
-        (transparency_map_unpadded as one_byte.OneByteCanvas_).pixels_  // Destination.
-        transparency_map_unpadded.width_   // Bytes per line.
-        --source_line_stride = transparency_map.width_
-    return transparency_map_unpadded
+        one-byte-map.pixels_[blur-radius + blur-radius * one-byte-map.width_..]   // Source.
+        (transparency-map-unpadded as one-byte.OneByteCanvas_).pixels_  // Destination.
+        transparency-map-unpadded.width_   // Bytes per line.
+        --source-line-stride = transparency-map.width_
+    return transparency-map-unpadded
 
-  draw_frame canvas/Canvas:
-    canvas.set_all_pixels 0
+  draw-frame canvas/Canvas:
+    canvas.set-all-pixels 0
 
 class RoundedCornerOpacity_:
-  byte_opacity/ByteArray
-  bit_opacity/ByteArray
+  byte-opacity/ByteArray
+  bit-opacity/ByteArray
   radius/int
-  bitmap_width/int
+  bitmap-width/int
   static cache_ := Map.weak
 
-  static get corner_radius/int -> RoundedCornerOpacity_:
-    cached := cache_.get corner_radius
+  static get corner-radius/int -> RoundedCornerOpacity_:
+    cached := cache_.get corner-radius
     if cached: return cached
-    new := RoundedCornerOpacity_.private_ corner_radius
-    cache_[corner_radius] = new
+    new := RoundedCornerOpacity_.private_ corner-radius
+    cache_[corner-radius] = new
     return new
 
-  static TABLE_SIZE_/int ::= 256
+  static TABLE-SIZE_/int ::= 256
   // The heights of a top-right quarter circle of radius [TABLE_SIZE_].
-  static QUARTER_CIRCLE_/ByteArray ::= create_quarter_circle_array_ TABLE_SIZE_
+  static QUARTER-CIRCLE_/ByteArray ::= create-quarter-circle-array_ TABLE-SIZE_
 
-  static create_quarter_circle_array_ size -> ByteArray:
+  static create-quarter-circle-array_ size -> ByteArray:
     array := ByteArray size
     hypotenuse := (size - 1) * (size - 1)
     size.repeat:
-      array[it] = (hypotenuse - it * it).sqrt.to_int
+      array[it] = (hypotenuse - it * it).sqrt.to-int
     return array
 
   constructor.private_ .radius:
-    byte_opacity = ByteArray radius * radius
-    downsample := TABLE_SIZE_ / radius  // For example 81 for a radius of 3.
+    byte-opacity = ByteArray radius * radius
+    downsample := TABLE-SIZE_ / radius  // For example 81 for a radius of 3.
     steps := List radius:
-      (it * TABLE_SIZE_) / radius
+      (it * TABLE-SIZE_) / radius
     radius.repeat: | j |
       b := steps[j]
       radius.repeat: | i |
@@ -439,30 +439,30 @@ class RoundedCornerOpacity_:
         // Set the opacity according to whether the downsample x downsample
         // square is fully outside the circle, fully inside the circle or on
         // the edge.
-        if QUARTER_CIRCLE_[b + downsample - 1] >= a + downsample:
-          byte_opacity[idx] = 0xff  // Inside quarter circle.
-        else if QUARTER_CIRCLE_[b] < a:
-          byte_opacity[idx] = 0  // Outside quarter circle.
+        if QUARTER-CIRCLE_[b + downsample - 1] >= a + downsample:
+          byte-opacity[idx] = 0xff  // Inside quarter circle.
+        else if QUARTER-CIRCLE_[b] < a:
+          byte-opacity[idx] = 0  // Outside quarter circle.
         else:
           // Edge of quarter circle.
           total := 0
-          downsample.repeat: | small_y |
-            extent := QUARTER_CIRCLE_[b + small_y]
+          downsample.repeat: | small-y |
+            extent := QUARTER-CIRCLE_[b + small-y]
             if extent >= a + downsample:
               total += downsample
             else if extent > a:
               total += extent - a
-          byte_opacity[idx] = (0xff * total) / (downsample * downsample)
+          byte-opacity[idx] = (0xff * total) / (downsample * downsample)
     // Generate a bit version of the opacities in case we have to use it on a
     // 2-color or 3-color display.
-    bitmap_width = round_up radius 8
-    bit_opacity = ByteArray (byte_opacity.size / radius) * (bitmap_width >> 3)
-    destination_line_stride := bitmap_width >> 3
+    bitmap-width = round-up radius 8
+    bit-opacity = ByteArray (byte-opacity.size / radius) * (bitmap-width >> 3)
+    destination-line-stride := bitmap-width >> 3
     8.repeat: | bit |
-      bitmap.blit byte_opacity[bit..] bit_opacity ((radius + 7 - bit) >> 3)
-          --source_pixel_stride = 8
-          --source_line_stride = radius
-          --destination_line_stride = destination_line_stride
+      bitmap.blit byte-opacity[bit..] bit-opacity ((radius + 7 - bit) >> 3)
+          --source-pixel-stride = 8
+          --source-line-stride = radius
+          --destination-line-stride = destination-line-stride
           --shift = bit
           --mask = (0x80 >> bit)
           --operation = bitmap.OR
@@ -567,46 +567,46 @@ style := Style
 */
 class Style:
   map_/Map
-  id_map_/Map? := ?
-  class_map_/Map? := ?
-  type_map_/Map? := ?
+  id-map_/Map? := ?
+  class-map_/Map? := ?
+  type-map_/Map? := ?
 
-  constructor.empty: return EMPTY_STYLE_
+  constructor.empty: return EMPTY-STYLE_
 
   constructor
       --color/int?=null
       --font/Font?=null
       --background=null
       --border/Border?=null
-      --class_map/Map?=null
-      --id_map/Map?=null
-      --type_map/Map?=null
+      --class-map/Map?=null
+      --id-map/Map?=null
+      --type-map/Map?=null
       .map_={:}:
     if color != null: map_["color"] = color
     if font != null: map_["font"] = font
     if border != null: map_["border"] = border
-    Background.check_valid background
+    Background.check-valid background
     if background: map_["background"] = background
-    class_map_ = class_map
-    id_map_ = id_map
-    type_map_ = type_map
+    class-map_ = class-map
+    id-map_ = id-map
+    type-map_ = type-map
 
-  iterate_properties [block]:
+  iterate-properties [block]:
     map_.do: | key/string value |
       block.call key value
 
-  matching_styles --type/string? --classes/List? --id/string? [block]:
-    if type_map_ and type:
-      type_map_.get type --if_present=: | style/Style |
+  matching-styles --type/string? --classes/List? --id/string? [block]:
+    if type-map_ and type:
+      type-map_.get type --if-present=: | style/Style |
         block.call style
-    if class_map_ and classes and classes.size != 0:
+    if class-map_ and classes and classes.size != 0:
       if classes.size == 1:
-        class_map_.get classes[0] --if_present=: | style/Style |
+        class-map_.get classes[0] --if-present=: | style/Style |
           block.call style
       else:
-        class_map_.do: | key/string style/Style |
+        class-map_.do: | key/string style/Style |
           if classes.contains key:
             block.call style
-    if id_map_ and id:
-      id_map_.get id --if_present=: | style/Style |
+    if id-map_ and id:
+      id-map_.get id --if-present=: | style/Style |
         block.call style

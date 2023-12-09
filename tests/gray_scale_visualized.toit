@@ -4,17 +4,17 @@
 
 import expect show *
 import font show Font
-import pixel_display show *
-import pixel_display.gray_scale show *
-import pixel_display.element show *
-import .png_visualizer
+import pixel-display show *
+import pixel-display.gray-scale show *
+import pixel-display.element show *
+import .png-visualizer
 
 main args:
   if args.size != 1:
     print "Usage: script.toit png-basename"
     exit 1
   driver := GrayScalePngVisualizer 160 64 args[0] --outline=0xff
-  display := PixelDisplay.gray_scale driver
+  display := PixelDisplay.gray-scale driver
   display.background = 0x40
 
   sans10 := Font.get "sans10"
@@ -24,8 +24,8 @@ main args:
   display.add
       Label --x=50 --y=20 --label="Testing" --font=sans10 --color=0xc0
 
-  middle_line := Label --x=50 --y=40 --label="the display" --font=sans10 --color=0xc0
-  display.add middle_line
+  middle-line := Label --x=50 --y=40 --label="the display" --font=sans10 --color=0xc0
+  display.add middle-line
   display.draw
 
   display.add
@@ -33,10 +33,10 @@ main args:
 
   display.draw
 
-  middle_line.move_to 60 40
+  middle-line.move-to 60 40
   display.draw
 
-  middle_line.label = "the DISPLAY"
+  middle-line.label = "the DISPLAY"
   display.draw
 
-  driver.write_png
+  driver.write-png

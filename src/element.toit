@@ -2,15 +2,15 @@
 // Use of this source code is governed by an MIT-style license that can be
 // found in the LICENSE file.
 
-import binary show LITTLE_ENDIAN
+import binary show LITTLE-ENDIAN
 import bitmap show *
-import .four_gray as four_gray
-import .true_color as true_color
-import .gray_scale as gray_scale
-import .one_byte as one_byte
+import .four-gray as four-gray
+import .true-color as true-color
+import .gray-scale as gray-scale
+import .one-byte as one-byte
 import .style show *
 import .common
-import .pixel_display show PixelDisplay
+import .pixel-display show PixelDisplay
 import font show Font
 import math
 
@@ -20,8 +20,8 @@ An element that can be placed on a display.  They can contain other
 Elements can be stacked up and are drawn from back to front, with transparency.
 */
 abstract class Element implements Window:
-  hash_code/int ::= generate_hash_code_
-  change_tracker/Window? := null
+  hash-code/int ::= generate-hash-code_
+  change-tracker/Window? := null
   style_/Style? := ?
   classes/List? := ?
   id/string? := ?
@@ -40,12 +40,12 @@ abstract class Element implements Window:
   The x and y coordinates are relative to the parent element.
   The $style can be used to apply a custom Style object to this element
     alone.  Normally, you would apply a style to the whole tree of elements
-    using $PixelDisplay.set_styles method.
+    using $PixelDisplay.set-styles method.
   The $classes are strings that can be used to identify the element
     in the style sheet.  You can give an element multiple classes.
   The $id is a string that can be used to identify the element in the style
     sheet.  It should be unique in the whole tree of elements.  It is also used
-    for $PixelDisplay.get_element_by_id.
+    for $PixelDisplay.get-element-by-id.
   The $background is an integer color (0xRRGGBB) or a $Background object.
     It can be set using styles instead of here in the constructor.
   The children are a $List of elements that should be contained in this element.
@@ -65,12 +65,12 @@ abstract class Element implements Window:
     background_ = background
     border_ = border
     if children: children.do: | child/Element |
-      child.change_tracker = this
+      child.change-tracker = this
 
-  static HASH_CODE_COUNTER_ := 0
-  static generate_hash_code_ -> int:
-    HASH_CODE_COUNTER_ += 13
-    return HASH_CODE_COUNTER_
+  static HASH-CODE-COUNTER_ := 0
+  static generate-hash-code_ -> int:
+    HASH-CODE-COUNTER_ += 13
+    return HASH-CODE-COUNTER_
 
   abstract invalidate -> none
 
@@ -80,30 +80,30 @@ abstract class Element implements Window:
   The return type is any because you want to be able to assign the result
     to a variable of type Div, which is a subtype of Element.
   */
-  get_element_by_id id/string -> any:
+  get-element-by-id id/string -> any:
     if id == this.id: return this
     if children:
       children.do: | child/Element |
-        found := child.get_element_by_id id
+        found := child.get-element-by-id id
         if found: return found
     return null
 
   add element/Element -> none:
     if not children: children = []
     children.add element
-    element.change_tracker = this
+    element.change-tracker = this
     element.invalidate
 
   remove element/Element -> none:
     if children:
       children.remove element
       element.invalidate
-      element.change_tracker = null
+      element.change-tracker = null
 
-  remove_all -> none:
+  remove-all -> none:
     children.do:
       it.invalidate
-      it.change_tracker = null
+      it.change-tracker = null
     children = null
 
   x= value/int -> none:
@@ -116,7 +116,7 @@ abstract class Element implements Window:
     y_ = value
     invalidate
 
-  move_to x/int y/int:
+  move-to x/int y/int:
     invalidate
     x_ = x
     y_ = y
@@ -139,37 +139,37 @@ abstract class Element implements Window:
 
   abstract draw canvas/Canvas -> none
 
-  child_invalidated x/int y/int w/int h/int -> none:
-    if change_tracker:
+  child-invalidated x/int y/int w/int h/int -> none:
+    if change-tracker:
       x2 := max x_ (x_ + x)
       y2 := max y_ (y_ + y)
       right := min (x_ + this.w) (x_ + x + w)
       bottom := min (y_ + this.h) (y_ + y + h)
       if x2 < right and y2 < bottom:
-        change_tracker.child_invalidated x2 y2 (right - x2) (bottom - y2)
+        change-tracker.child-invalidated x2 y2 (right - x2) (bottom - y2)
 
   abstract w -> int?
   abstract h -> int?
 
-  set_styles styles/List -> none:
-    styles_for_children := null
-    install_style := : | style/Style |
-      style.matching_styles --type=type --classes=classes --id=id: | style/Style |
-        style.iterate_properties: | key/string value |
-          set_attribute_ key value
+  set-styles styles/List -> none:
+    styles-for-children := null
+    install-style := : | style/Style |
+      style.matching-styles --type=type --classes=classes --id=id: | style/Style |
+        style.iterate-properties: | key/string value |
+          set-attribute_ key value
         if children:
-          if not styles_for_children: styles_for_children = styles.copy
-          styles_for_children.add style
-    styles.do install_style
+          if not styles-for-children: styles-for-children = styles.copy
+          styles-for-children.add style
+    styles.do install-style
     if style_:
-      style_.iterate_properties: | key/string value |
-        set_attribute_ key value
-      install_style.call style_
+      style_.iterate-properties: | key/string value |
+        set-attribute_ key value
+      install-style.call style_
     if children:
       children.do: | child/Element |
-        child.set_styles (styles_for_children or styles)
+        child.set-styles (styles-for-children or styles)
 
-  set_attribute_ key/string value -> none:
+  set-attribute_ key/string value -> none:
     if key == "background":
       if background_ != value:
         invalidate
@@ -264,8 +264,8 @@ class Div extends Element:
         children
 
   invalidate:
-    if change_tracker and x and y and w and h:
-      change_tracker.child_invalidated x y w h
+    if change-tracker and x and y and w and h:
+      change-tracker.child-invalidated x y w h
 
   w -> int?: return w_
   h -> int?: return h_
@@ -282,14 +282,14 @@ class Div extends Element:
       h_ = value
       if value: invalidate
 
-  set_size w/int h/int -> none:
+  set-size w/int h/int -> none:
     if w_ != w or h_ != h:
       if w_ and h_: invalidate
       w_ = w
       h_ = h
       invalidate
 
-  set_attribute_ key/string value -> none:
+  set-attribute_ key/string value -> none:
     if key == "width":
       w = value
     else if key == "height":
@@ -298,14 +298,14 @@ class Div extends Element:
       super key value
 
   draw canvas/Canvas -> none:
-    old_transform := canvas.transform
-    canvas.transform = old_transform.translate x_ y_
+    old-transform := canvas.transform
+    canvas.transform = old-transform.translate x_ y_
     Background.draw background_ canvas 0 0 w h --no-autoclipped
-    custom_draw canvas
+    custom-draw canvas
     if border_: border_.draw canvas 0 0 w h
-    canvas.transform = old_transform
+    canvas.transform = old-transform
 
-  custom_draw canvas/Canvas -> none:
+  custom-draw canvas/Canvas -> none:
     if children: children.do: it.draw canvas
 
 /**
@@ -326,7 +326,7 @@ class Label extends Element implements ColoredElement:
 
   type -> string: return "label"
 
-  set_attribute_ key/string value -> none:
+  set-attribute_ key/string value -> none:
     if key == "color":
       color = value
     else if key == "font":
@@ -359,9 +359,9 @@ class Label extends Element implements ColoredElement:
   An Label is an element that is a single line of text.
   Unlike other elements it does not have a background and a border - the
     background is always transparent and the border is always invisible.
-  The $alignment is one of $ALIGN_LEFT, $ALIGN_CENTER, or $ALIGN_RIGHT.
-  The $orientation is one of $ORIENTATION_0, $ORIENTATION_90, $ORIENTATION_180,
-    or $ORIENTATION_270.
+  The $alignment is one of $ALIGN-LEFT, $ALIGN-CENTER, or $ALIGN-RIGHT.
+  The $orientation is one of $ORIENTATION-0, $ORIENTATION-90, $ORIENTATION-180,
+    or $ORIENTATION-270.
   The $color, $font, $orientation, and $alignment can be set using styles
     instead of here in the constructor.  The label (text) can be set and
     changed later with the label setter.  Like any change of appearance
@@ -378,8 +378,8 @@ class Label extends Element implements ColoredElement:
       --color/int=0
       --label/string=""
       --font/Font?=null
-      --orientation/int=ORIENTATION_0
-      --alignment/int=ALIGN_LEFT:
+      --orientation/int=ORIENTATION-0
+      --alignment/int=ALIGN-LEFT:
     color_ = color
     label_ = label
     alignment_ = alignment
@@ -397,32 +397,32 @@ class Label extends Element implements ColoredElement:
   */
   xywh_ [block]:
     if not left_:
-      extent/List := font_.text_extent label_
+      extent/List := font_.text-extent label_
       displacement := 0
-      if alignment_ != ALIGN_LEFT:
-        displacement = (font_.pixel_width label_)
-        if alignment_ == ALIGN_CENTER: displacement >>= 1
+      if alignment_ != ALIGN-LEFT:
+        displacement = (font_.pixel-width label_)
+        if alignment_ == ALIGN-CENTER: displacement >>= 1
       l := extent[2] - displacement
       r := extent[2] - displacement + extent[0]
       t := -extent[1] - extent[3]
       b := extent[3]
-      if orientation_ == ORIENTATION_0:
+      if orientation_ == ORIENTATION-0:
         left_   = l
         top_    = t
         width_  = extent[0]
         height_ = extent[1]
-      else if orientation_ == ORIENTATION_90:
+      else if orientation_ == ORIENTATION-90:
         left_   = t
         top_    = -r
         width_  = extent[1]
         height_ = extent[0]
-      else if orientation_ == ORIENTATION_180:
+      else if orientation_ == ORIENTATION-180:
         left_   = -r
         top_    = b
         width_  = extent[0]
         height_ = extent[1]
       else:
-        assert: orientation_ == ORIENTATION_270
+        assert: orientation_ == ORIENTATION-270
         left_   = b
         top_    = l
         width_  = extent[1]
@@ -440,16 +440,16 @@ class Label extends Element implements ColoredElement:
     return height_
 
   invalidate:
-    if change_tracker and x and y and font_ and label_:
+    if change-tracker and x and y and font_ and label_:
       xywh_: | x y w h |
-        change_tracker.child_invalidated x y w h
+        change-tracker.child-invalidated x y w h
 
   label= value/string -> none:
     if value == label_: return
-    if orientation_ == ORIENTATION_0 and change_tracker and x and y:
-      text_get_bounding_boxes_ label_ value alignment_ font_: | old/TextExtent_ new/TextExtent_ |
-        change_tracker.child_invalidated (x_ + old.x) (y_ + old.y) old.w old.h
-        change_tracker.child_invalidated (x_ + new.x) (y_ + new.y) new.w new.h
+    if orientation_ == ORIENTATION-0 and change-tracker and x and y:
+      text-get-bounding-boxes_ label_ value alignment_ font_: | old/TextExtent_ new/TextExtent_ |
+        change-tracker.child-invalidated (x_ + old.x) (y_ + old.y) old.w old.h
+        change-tracker.child-invalidated (x_ + new.x) (y_ + new.y) new.w new.h
         label_ = value
         left_ = null  // Trigger recalculation.
         return
@@ -476,26 +476,26 @@ class Label extends Element implements ColoredElement:
     x := x_
     y := y_
     if not (x and y): return
-    if alignment_ != ALIGN_LEFT:
-      text_width := font_.pixel_width label_
-      if alignment_ == ALIGN_CENTER: text_width >>= 1
-      if orientation_ == ORIENTATION_0:
-        x -= text_width
-      else if orientation_ == ORIENTATION_90:
-        y += text_width
-      else if orientation_ == ORIENTATION_180:
-        x += text_width
+    if alignment_ != ALIGN-LEFT:
+      text-width := font_.pixel-width label_
+      if alignment_ == ALIGN-CENTER: text-width >>= 1
+      if orientation_ == ORIENTATION-0:
+        x -= text-width
+      else if orientation_ == ORIENTATION-90:
+        y += text-width
+      else if orientation_ == ORIENTATION-180:
+        x += text-width
       else:
-        assert: orientation_ == ORIENTATION_270
-        y -= text_width
+        assert: orientation_ == ORIENTATION-270
+        y -= text-width
     canvas.text x y --text=label_ --color=color_ --font=font_ --orientation=orientation_
 
 /**
 A superclass for elements that can draw themselves.  Override the
-  $custom_draw method in your subclass to draw on the canvas.  The $w
+  $custom-draw method in your subclass to draw on the canvas.  The $w
   and $h methods/fields are used to determine the size of the element
   for redrawing purposes.
-The background is drawn before $custom_draw is called, and the border
+The background is drawn before $custom-draw is called, and the border
   is drawn after.
 Drawing operations are automatically clipped to w and h.
 */
@@ -525,20 +525,20 @@ abstract class CustomElement extends ClippingDiv_:
         --border = border
 
   invalidate:
-    if change_tracker and x and y and w and h:
-      change_tracker.child_invalidated x y w h
+    if change-tracker and x and y and w and h:
+      change-tracker.child-invalidated x y w h
 
   draw canvas/Canvas -> none:
     if not (x and y): return
-    analysis := canvas.bounds_analysis x y w h
+    analysis := canvas.bounds-analysis x y w h
     if analysis == Canvas.DISJOINT: return
-    autoclipped := analysis == Canvas.CANVAS_IN_AREA or analysis == Canvas.COINCIDENT
-    old_transform := canvas.transform
-    canvas.transform = old_transform.translate x_ y_
+    autoclipped := analysis == Canvas.CANVAS-IN-AREA or analysis == Canvas.COINCIDENT
+    old-transform := canvas.transform
+    canvas.transform = old-transform.translate x_ y_
     Background.draw background_ canvas 0 0 w h --autoclipped=autoclipped
-    custom_draw canvas
+    custom-draw canvas
     if border_: border_.draw canvas 0 0 w h
-    canvas.transform = old_transform
+    canvas.transform = old-transform
 
   /**
   Override this to draw your custom element.  The coordinate system is
@@ -546,7 +546,7 @@ abstract class CustomElement extends ClippingDiv_:
   The background has already been drawn when this is called, and the
     frame will be drawn afterwards.
   */
-  abstract custom_draw canvas/Canvas -> none
+  abstract custom-draw canvas/Canvas -> none
 
 /**
 A ClippingDiv_ is like a div, but it clips any draws inside of it.  It can
@@ -562,7 +562,7 @@ class ClippingDiv_ extends Div:
   */
   extent --x=x_ --y=y_ --w=w_ --h=h_ [block] -> none:
     if border_:
-      border_.invalidation_area x y w h block
+      border_.invalidation-area x y w h block
     else:
       block.call x y w h
 
@@ -570,15 +570,15 @@ class ClippingDiv_ extends Div:
   Invalidates the whole window including the decoration.
   */
   invalidate --x=x_ --y=y_ --w=w_ --h=h_ -> none:
-    if change_tracker:
-      extent --x=x --y=y --w=w --h=h: | outer_x outer_y outer_w outer_h |
-        change_tracker.child_invalidated outer_x outer_y outer_w outer_h
+    if change-tracker:
+      extent --x=x --y=y --w=w --h=h: | outer-x outer-y outer-w outer-h |
+        change-tracker.child-invalidated outer-x outer-y outer-w outer-h
 
-  static is_all_transparent opacity -> bool:
+  static is-all-transparent opacity -> bool:
     if opacity is not ByteArray: return false
     return opacity.size == 1 and opacity[0] == 0
 
-  static is_all_opaque opacity -> bool:
+  static is-all-opaque opacity -> bool:
     if opacity is not ByteArray: return false
     return opacity.size == 1 and opacity[0] == 0xff
 
@@ -609,39 +609,39 @@ class ClippingDiv_ extends Div:
   draw canvas/Canvas -> none:
     // If we are outside the window and the decorations, there is nothing to do.
     extent: | x2 y2 w2 h2 |
-      if (canvas.bounds_analysis x2 y2 w2 h2) == Canvas.DISJOINT: return
+      if (canvas.bounds-analysis x2 y2 w2 h2) == Canvas.DISJOINT: return
 
-    old_transform := canvas.transform
-    canvas.transform = old_transform.translate x_ y_
+    old-transform := canvas.transform
+    canvas.transform = old-transform.translate x_ y_
 
-    content_opacity := content_map canvas
+    content-opacity := content-map canvas
 
     // If the window is 100% painting at these coordinates then we can draw the
     // elements of the window and no compositing is required.
-    if is_all_opaque content_opacity:
-      canvas.transform = old_transform
+    if is-all-opaque content-opacity:
+      canvas.transform = old-transform
       super canvas  // Use the unclipped drawing method from Div.
       return
 
-    frame_opacity := frame_map canvas
+    frame-opacity := frame-map canvas
 
-    if is_all_transparent frame_opacity and is_all_transparent content_opacity:
-      canvas.transform = old_transform
+    if is-all-transparent frame-opacity and is-all-transparent content-opacity:
+      canvas.transform = old-transform
       return
 
     // The complicated case where we have to composit the tile with the border and decorations.
-    border_canvas := null
-    if not is_all_transparent frame_opacity:
-      border_canvas = canvas.create_similar
-      if border_: border_.draw border_canvas 0 0 w h
+    border-canvas := null
+    if not is-all-transparent frame-opacity:
+      border-canvas = canvas.create-similar
+      if border_: border_.draw border-canvas 0 0 w h
 
-    painting_canvas := canvas.create_similar
-    Background.draw background_ painting_canvas 0 0 w h --autoclipped
-    custom_draw painting_canvas
+    painting-canvas := canvas.create-similar
+    Background.draw background_ painting-canvas 0 0 w h --autoclipped
+    custom-draw painting-canvas
 
-    canvas.composit frame_opacity border_canvas content_opacity painting_canvas
+    canvas.composit frame-opacity border-canvas content-opacity painting-canvas
 
-    canvas.transform = old_transform
+    canvas.transform = old-transform
 
   type -> string: return "div"
 
@@ -656,9 +656,9 @@ class ClippingDiv_ extends Div:
   The coordinate system of the canvas is the coordinate system of the window, so
     the top and left edges may be plotted at negative coordinates.
   */
-  frame_map canvas/Canvas:
-    if not border_: return Canvas.ALL_TRANSPARENT  // No border visible.
-    return border_.frame_map canvas w h
+  frame-map canvas/Canvas:
+    if not border_: return Canvas.ALL-TRANSPARENT  // No border visible.
+    return border_.frame-map canvas w h
 
   /**
   Returns a canvas that is an alpha map for the given area that describes where
@@ -669,8 +669,8 @@ class ClippingDiv_ extends Div:
     single-entry byte array, which means all pixels have the same transparency.
   The coordinate system of the canvas is the coordinate system of the window.
   */
-  content_map canvas/Canvas:
-    return (border_ or NO_BORDER_).content_map canvas w h
+  content-map canvas/Canvas:
+    return (border_ or NO-BORDER_).content-map canvas w h
 
-  draw_frame canvas/Canvas:
+  draw-frame canvas/Canvas:
     if border_: border_.draw canvas 0 0 w h

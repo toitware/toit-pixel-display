@@ -8,128 +8,128 @@ import bitmap show *
 import crypto.sha1 as crypto
 import font show *
 
-import pixel_display.common show Transform
-import pixel_display.four_gray
-import pixel_display.two_bit_texture as two_bit
-import pixel_display.three_color
-import pixel_display.true_color
-import pixel_display.two_color
+import pixel-display.common show Transform
+import pixel-display.four-gray
+import pixel-display.two-bit-texture as two-bit
+import pixel-display.three-color
+import pixel-display.true-color
+import pixel-display.two-color
 
-THREE_COLOR ::= 0
-TWO_COLOR ::= 1
-FOUR_GRAY ::= 2
-TRUE_COLOR ::= 3
+THREE-COLOR ::= 0
+TWO-COLOR ::= 1
+FOUR-GRAY ::= 2
+TRUE-COLOR ::= 3
 VERSIONS := 4
 
-skip_version version/int -> bool:
-  if bitmap_primitives_present and version < TRUE_COLOR:
+skip-version version/int -> bool:
+  if bitmap-primitives-present and version < TRUE-COLOR:
     return false
-  if bytemap_primitives_present and version == TRUE_COLOR:
+  if bytemap-primitives-present and version == TRUE-COLOR:
     return false
   return true
 
 main:
-  feature_detect
-  test_simple_three_color
-  test_simple_four_gray
-  test_simple_two_color
-  test_simple_true_color
+  feature-detect
+  test-simple-three-color
+  test-simple-four-gray
+  test-simple-two-color
+  test-simple-true-color
 
-bitmap_primitives_present := true
-bytemap_primitives_present := true
+bitmap-primitives-present := true
+bytemap-primitives-present := true
 
-feature_detect:
+feature-detect:
   e := catch:
     ba := ByteArray 25
-    bytemap_blur ba 5 2
+    bytemap-blur ba 5 2
   if e == "UNIMPLEMENTED":
-    bytemap_primitives_present = false
+    bytemap-primitives-present = false
   e = catch:
     ba := ByteArray 16
-    bitmap_rectangle 0 0 0 1 1 ba 16
+    bitmap-rectangle 0 0 0 1 1 ba 16
   if e == "UNIMPLEMENTED":
-    bitmap_primitives_present = false
+    bitmap-primitives-present = false
 
 identity ::= Transform.identity
 
-orientation_to_transform x y orientation [block]:
+orientation-to-transform x y orientation [block]:
   transform := null
-  if orientation == ORIENTATION_0:
+  if orientation == ORIENTATION-0:
     transform = identity
   else:
     transform = Transform.identity.translate x y
     x = 0
     y = 0
-    if orientation == ORIENTATION_90:
-      transform = transform.rotate_right
-    else if orientation == ORIENTATION_180:
-      transform = transform.rotate_right.rotate_right
-    else if orientation == ORIENTATION_270:
-      transform = transform.rotate_left
+    if orientation == ORIENTATION-90:
+      transform = transform.rotate-right
+    else if orientation == ORIENTATION-180:
+      transform = transform.rotate-right.rotate-right
+    else if orientation == ORIENTATION-270:
+      transform = transform.rotate-left
   block.call x y transform
 
-canvas_factory version w h x y:
+canvas-factory version w h x y:
   result := ?
-  if version == THREE_COLOR:
-    result = three_color.Canvas_ w h
-  else if version == TWO_COLOR:
-    result = two_color.Canvas_ w h
-  else if version == FOUR_GRAY:
-    result = four_gray.Canvas_ w h
+  if version == THREE-COLOR:
+    result = three-color.Canvas_ w h
+  else if version == TWO-COLOR:
+    result = two-color.Canvas_ w h
+  else if version == FOUR-GRAY:
+    result = four-gray.Canvas_ w h
   else:
-    result = true_color.Canvas_ w h
-  result.x_offset_ = x
-  result.y_offset_ = y
+    result = true-color.Canvas_ w h
+  result.x-offset_ = x
+  result.y-offset_ = y
   return result
 
-test_simple_three_color:
-  red_bg := three_color.RED
+test-simple-three-color:
+  red-bg := three-color.RED
 
   // A little 8x8 canvas to draw on.
-  canvas := three_color.Canvas_ 8 8
+  canvas := three-color.Canvas_ 8 8
 
   // Fill the canvas with red.
-  canvas.set_all_pixels red_bg
+  canvas.set-all-pixels red-bg
 
   8.repeat: | x | 8.repeat: | y |
-    expect (canvas.get_pixel_ x y) == three_color.RED
+    expect (canvas.get-pixel_ x y) == three-color.RED
 
-test_simple_four_gray:
+test-simple-four-gray:
   // A little 8x8 canvas to draw on.
-  canvas := four_gray.Canvas_ 8 8
+  canvas := four-gray.Canvas_ 8 8
 
   // Fill the canvas with light gray.
-  canvas.set_all_pixels four_gray.LIGHT_GRAY
+  canvas.set-all-pixels four-gray.LIGHT-GRAY
 
   8.repeat: | x | 8.repeat: | y |
-    expect (canvas.get_pixel_ x y) == four_gray.LIGHT_GRAY
+    expect (canvas.get-pixel_ x y) == four-gray.LIGHT-GRAY
 
-test_simple_two_color:
+test-simple-two-color:
   // A little 8x8 canvas to draw on.
-  canvas := two_color.Canvas_ 8 8
+  canvas := two-color.Canvas_ 8 8
 
   8.repeat: | x | 8.repeat: | y |
-    expect (canvas.get_pixel_ x y) == two_color.WHITE
+    expect (canvas.get-pixel_ x y) == two-color.WHITE
 
   // Fill the canvas with black.
-  canvas.set_all_pixels two_color.BLACK
+  canvas.set-all-pixels two-color.BLACK
 
   8.repeat: | x | 8.repeat: | y |
-    expect (canvas.get_pixel_ x y) == two_color.BLACK
+    expect (canvas.get-pixel_ x y) == two-color.BLACK
 
-test_simple_true_color:
-  bluish := true_color.get_rgb 0x12 0x34 0x56
+test-simple-true-color:
+  bluish := true-color.get-rgb 0x12 0x34 0x56
 
   // A little 8x8 canvas to draw on.
-  canvas := true_color.Canvas_ 8 8
+  canvas := true-color.Canvas_ 8 8
 
-  black := true_color.get_rgb 0 0 0
+  black := true-color.get-rgb 0 0 0
 
   8.repeat: | x | 8.repeat: | y |
-    expect (canvas.get_pixel_ x y) == black
+    expect (canvas.get-pixel_ x y) == black
 
   // Fill the canvas with red.
-  canvas.set_all_pixels bluish
+  canvas.set-all-pixels bluish
 
   8.repeat: | x | 8.repeat: | y |
-    expect (canvas.get_pixel_ x y) == bluish
+    expect (canvas.get-pixel_ x y) == bluish

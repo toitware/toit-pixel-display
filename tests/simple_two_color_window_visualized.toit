@@ -4,10 +4,10 @@
 
 import bitmap show *
 import font show Font
-import pixel_display show *
-import pixel_display.element show *
-import pixel_display.two_color show BLACK WHITE
-import .png_visualizer
+import pixel-display show *
+import pixel-display.element show *
+import pixel-display.two-color show BLACK WHITE
+import .png-visualizer
 
 main args:
   sans10 := Font.get "sans10"
@@ -16,7 +16,7 @@ main args:
     print "Usage: script.toit png-basename"
     exit 1
   driver := TwoColorPngVisualizer 240 160 args[0] --outline=BLACK
-  display := PixelDisplay.two_color driver
+  display := PixelDisplay.two-color driver
   display.background = BLACK
 
   win := Div.clipping --x=30 --y=30 --w=180 --h=100
@@ -27,13 +27,13 @@ main args:
 
   display.draw
 
-  text.move_to 120 65
+  text.move-to 120 65
 
   display.draw
 
   // Window-relative coordinates.
-  text.move_to -10 7
+  text.move-to -10 7
 
   display.draw
 
-  driver.write_png
+  driver.write-png

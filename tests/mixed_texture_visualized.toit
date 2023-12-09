@@ -5,44 +5,44 @@
 // Element-based rectangles with simple borders.
 
 import expect show *
-import pixel_display show *
-import pixel_display.element show *
-import pixel_display.style show *
-import .png_visualizer
+import pixel-display show *
+import pixel-display.element show *
+import pixel-display.style show *
+import .png-visualizer
 
 main args:
   if args.size != 1:
     print "Usage: script.toit png-basename"
     exit 1
-  driver := SeveralColorPngVisualizer 200 64 args[0] --outline=SEVERAL_WHITE
-  display := PixelDisplay.several_color driver
-  display.background = SEVERAL_DARK_GRAY
+  driver := SeveralColorPngVisualizer 200 64 args[0] --outline=SEVERAL-WHITE
+  display := PixelDisplay.several-color driver
+  display.background = SEVERAL-DARK-GRAY
 
   // Slightlly smaller element-based rectangle.
-  element_rect   := Div --x=11  --y=21 --w=28 --h=18 --background=SEVERAL_BLACK
-  element_rect_2 := Div --x=110 --y=20 --w=30 --h=20 --background=SEVERAL_GREEN
-  element_rect_3 := Div --x=160 --y=10 --w=30 --h=30 --border=(SolidBorder --color=SEVERAL_BLUE --width=5)
-  display.add element_rect
-  display.add element_rect_2
-  display.add element_rect_3
+  element-rect   := Div --x=11  --y=21 --w=28 --h=18 --background=SEVERAL-BLACK
+  element-rect-2 := Div --x=110 --y=20 --w=30 --h=20 --background=SEVERAL-GREEN
+  element-rect-3 := Div --x=160 --y=10 --w=30 --h=30 --border=(SolidBorder --color=SEVERAL-BLUE --width=5)
+  display.add element-rect
+  display.add element-rect-2
+  display.add element-rect-3
   display.draw
 
-  element_rect.move_to 11 31
+  element-rect.move-to 11 31
   display.draw
 
-  element_rect_2.move_to 110 30
+  element-rect-2.move-to 110 30
   display.draw
 
-  display.remove element_rect
-  display.remove element_rect_2
+  display.remove element-rect
+  display.remove element-rect-2
 
-  element_rect_3.move_to 160 20
+  element-rect-3.move-to 160 20
   display.draw
 
-  element_rect_3.border = SolidBorder --color=SEVERAL_BLUE --width=2
+  element-rect-3.border = SolidBorder --color=SEVERAL-BLUE --width=2
   display.draw
 
-  element_rect_3.border = SolidBorder --color=SEVERAL_BLUE --width=7
+  element-rect-3.border = SolidBorder --color=SEVERAL-BLUE --width=7
   display.draw
 
-  driver.write_png
+  driver.write-png

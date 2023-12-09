@@ -3,15 +3,15 @@
 // found in the LICENSE file.
 
 /**
-Constants useful for $PixelDisplay.three_color.
+Constants useful for $PixelDisplay.three-color.
 For use with e-paper black, white, and red displays.
 */
 
 import font show Font
 import icons show Icon
-import .pixel_display show PixelDisplay  // For the doc comment.
-import .two_bit_texture
-import .two_bit_texture as two_bit
+import .pixel-display show PixelDisplay  // For the doc comment.
+import .two-bit-texture
+import .two-bit-texture as two-bit
 
 WHITE ::= 0
 BLACK ::= 1
@@ -24,24 +24,24 @@ RED ::= 2
 //   0    1   Red
 //   1    1   Invalid
 // Starts off with all pixels white.
-class Canvas_ extends two_bit.Canvas_:
+class Canvas_ extends two-bit.Canvas_:
   constructor width height:
     super width height
 
-  supports_8_bit -> bool: return false
-  gray_scale -> bool: return false
+  supports-8-bit -> bool: return false
+  gray-scale -> bool: return false
 
   /**
   Creates a blank texture with the same dimensions as this one.
   */
-  create_similar:
+  create-similar:
     result := Canvas_ width_ height_
     result.transform = transform
     return result
 
   // Convert from a PNG color (0 = black, 255 = white) to a 2-bit
   // red-white-black color.
-  nearest_color_ palette/ByteArray offset/int -> int:
+  nearest-color_ palette/ByteArray offset/int -> int:
     r := palette[offset]
     g := palette[offset + 1]
     b := palette[offset + 2]

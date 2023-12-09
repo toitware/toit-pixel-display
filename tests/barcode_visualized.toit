@@ -5,33 +5,33 @@
 // Tests drawing a supermarket-style bar code on a pixel display.
 
 import expect show *
-import pixel_display show *
-import pixel_display.bar_code show *
-import pixel_display.element show *
-import pixel_display.style show Style
-import .png_visualizer
+import pixel-display show *
+import pixel-display.bar-code show *
+import pixel-display.element show *
+import pixel-display.style show Style
+import .png-visualizer
 
 main args:
   if args.size != 1:
     print "Usage: script.toit png-basename"
     exit 1
-  driver := SeveralColorPngVisualizer 120 160 args[0] --outline=SEVERAL_BLUE
-  display := PixelDisplay.several_color driver --portrait=false
-  display.background = SEVERAL_GRAY
+  driver := SeveralColorPngVisualizer 120 160 args[0] --outline=SEVERAL-BLUE
+  display := PixelDisplay.several-color driver --portrait=false
+  display.background = SEVERAL-GRAY
 
-  style := Style --type_map={
-      "bar-code-ean": Style --color=SEVERAL_BLACK --background=SEVERAL_WHITE,
+  style := Style --type-map={
+      "bar-code-ean": Style --color=SEVERAL-BLACK --background=SEVERAL-WHITE,
   }
 
   barcode := BarCodeEanElement --x=15 --y=15 --code="4035999001512"
   display.add barcode
-  display.set_styles [style]
+  display.set-styles [style]
   display.draw
 
-  barcode.move_to 20 20
+  barcode.move-to 20 20
   display.draw
 
   barcode.code = "4000417020000"
   display.draw
 
-  driver.write_png
+  driver.write-png

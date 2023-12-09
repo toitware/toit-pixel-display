@@ -7,31 +7,31 @@
 // Uses a rotated frame (portrait mode).
 
 import expect show *
-import pixel_display show *
-import pixel_display.element show *
-import .png_visualizer
+import pixel-display show *
+import pixel-display.element show *
+import .png-visualizer
 
 main args:
   if args.size != 1:
     print "Usage: script.toit png-basename"
     exit 1
-  driver := SeveralColorPngVisualizer 160 64 args[0] --outline=SEVERAL_WHITE
-  display := PixelDisplay.several_color driver --inverted --portrait
-  display.background = SEVERAL_DARK_GRAY
+  driver := SeveralColorPngVisualizer 160 64 args[0] --outline=SEVERAL-WHITE
+  display := PixelDisplay.several-color driver --inverted --portrait
+  display.background = SEVERAL-DARK-GRAY
 
   // Element-based rectangle.
-  element_rect := Div --x=11 --y=21 --w=28 --h=18 --background=SEVERAL_BLACK
-  element_rect_2 := Div --x=10 --y=110 --w=30 --h=20 --background=SEVERAL_GREEN
-  display.add element_rect
-  display.add element_rect_2
+  element-rect := Div --x=11 --y=21 --w=28 --h=18 --background=SEVERAL-BLACK
+  element-rect-2 := Div --x=10 --y=110 --w=30 --h=20 --background=SEVERAL-GREEN
+  display.add element-rect
+  display.add element-rect-2
   display.draw
 
-  element_rect.move_to 21 21
+  element-rect.move-to 21 21
   display.draw
 
   display.draw
 
-  element_rect_2.move_to 20 110
+  element-rect-2.move-to 20 110
   display.draw
 
-  driver.write_png
+  driver.write-png

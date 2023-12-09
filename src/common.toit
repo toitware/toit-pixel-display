@@ -5,7 +5,7 @@
 // TODO: Absorb this into pixel_display.toit now that textures are gone.
 
 import font show Font
-import bitmap show ORIENTATION_0 ORIENTATION_90 ORIENTATION_180 ORIENTATION_270
+import bitmap show ORIENTATION-0 ORIENTATION-90 ORIENTATION-180 ORIENTATION-270
 
 import .element show Element
 import .style
@@ -36,7 +36,7 @@ interface Window:
   Remove all elements from a Window.
   See $remove.
   */
-  remove_all -> none
+  remove-all -> none
 
   /**
   Called by elements that have been added to this window, when they change
@@ -45,7 +45,7 @@ interface Window:
     is called on the display.
   The coordinates are in this instance's coordinate space.
   */
-  child_invalidated x/int y/int w/int h/int -> none
+  child-invalidated x/int y/int w/int h/int -> none
 
   /**
   Finds an Element in the tree with the given id.
@@ -53,7 +53,7 @@ interface Window:
   The return type is `any` because you want to be able to assign the result
     to a subtypes of $Element, for example to a variable of type Div.
   */
-  get_element_by_id id/string -> any
+  get-element-by-id id/string -> any
 
 /**
 A canvas to draw on.
@@ -77,12 +77,12 @@ abstract class Canvas:
   Returns a new canvas with the same dimensions and transform (coordinate
     system) as this one.
   */
-  abstract create_similar -> Canvas
+  abstract create-similar -> Canvas
 
-  abstract set_all_pixels color/int -> none
+  abstract set-all-pixels color/int -> none
 
-  abstract supports_8_bit -> bool
-  abstract gray_scale -> bool
+  abstract supports-8-bit -> bool
+  abstract gray-scale -> bool
 
   /**
   Returns a new canvas that is either gray-scale or 1-bit.
@@ -98,17 +98,17 @@ abstract class Canvas:
   The returned canvas is larger on all four edges of the canvas by the
     given $padding, defaulting to 0.
   */
-  abstract make_alpha_map --padding/int=0 -> Canvas
+  abstract make-alpha-map --padding/int=0 -> Canvas
 
-  /// Result from $bounds_analysis: The area and the canvas are disjoint.
+  /// Result from $bounds-analysis: The area and the canvas are disjoint.
   static DISJOINT           ::= 0
-  /// Result from $bounds_analysis: The area is a subset of the canvas.
-  static AREA_IN_CANVAS     ::= 1
-  /// Result from $bounds_analysis: The canvas is a subset of the area.
-  static CANVAS_IN_AREA     ::= 2
-  /// Result from $bounds_analysis: The area and the canvas are identical.
+  /// Result from $bounds-analysis: The area is a subset of the canvas.
+  static AREA-IN-CANVAS     ::= 1
+  /// Result from $bounds-analysis: The canvas is a subset of the area.
+  static CANVAS-IN-AREA     ::= 2
+  /// Result from $bounds-analysis: The area and the canvas are identical.
   static COINCIDENT         ::= 3
-  /// Result from $bounds_analysis: The areas overlap, but neither is a subset of the other.
+  /// Result from $bounds-analysis: The areas overlap, but neither is a subset of the other.
   static OVERLAP            ::= 4
 
   /**
@@ -121,7 +121,7 @@ abstract class Canvas:
   All the drawing operations are automatically clipped to the
     area of the canvas, and this is often sufficient clipping.
   */
-  bounds_analysis x/int y/int w/int h/int -> int:
+  bounds-analysis x/int y/int w/int h/int -> int:
     if h == 0 or w == 0 or width_ == 0 or height_ == 0: return DISJOINT
     transform.xywh x y w h: | x2 y2 w2 h2 |
       right := x2 + w2
@@ -129,30 +129,30 @@ abstract class Canvas:
       if right < 0 or bottom < 0 or x2 >= width_ or y2 >= height_: return DISJOINT
       if x2 >= 0 and y2 >= 0 and right <= width_ and bottom <= height_:
         if x2 == 0 and y2 == 0 and right == width_ and bottom == height_: return COINCIDENT
-        return AREA_IN_CANVAS
-      if x2 <= 0 and y2 <= 0 and right >= width_ and bottom >= height_: return CANVAS_IN_AREA
+        return AREA-IN-CANVAS
+      if x2 <= 0 and y2 <= 0 and right >= width_ and bottom >= height_: return CANVAS-IN-AREA
     return OVERLAP
 
   /**
   Constant to indicate that all pixels are transparent.
   For use with $composit.
   */
-  static ALL_TRANSPARENT ::= #[0]
+  static ALL-TRANSPARENT ::= #[0]
   /**
   Constant to indicate that all pixels are opaque.
   For use with $composit.
   */
-  static ALL_OPAQUE ::= #[0xff]
+  static ALL-OPAQUE ::= #[0xff]
 
   /**
-  Mixes the $frame_canvas and the $painting_canvas together and draws
+  Mixes the $frame-canvas and the $painting-canvas together and draws
     them on the reciever.
   The opacity arguments determine the transparency (alpha) of the two
     canvas arguments.  They can be either canvases returned from
-    $make_alpha_map, or they can be $ALL_OPAQUE or
-    $ALL_TRANSPARENT.
+    $make-alpha-map, or they can be $ALL-OPAQUE or
+    $ALL-TRANSPARENT.
   */
-  abstract composit frame_opacity frame_canvas/Canvas painting_opacity painting_canvas/Canvas
+  abstract composit frame-opacity frame-canvas/Canvas painting-opacity painting-canvas/Canvas
 
   /**
   Draws a solid rectangle on the canvas in the given color.
@@ -168,8 +168,8 @@ abstract class Canvas:
   The text is automatically clipped to the area of the canvas
     so it is not an error for the text to be outside the
     canvas.
-  The orientation is normally $ORIENTATION_0 (from "import bitmap"), but can be
-    $ORIENTATION_90, $ORIENTATION_180, or $ORIENTATION_270, representing
+  The orientation is normally $ORIENTATION-0 (from "import bitmap"), but can be
+    $ORIENTATION-90, $ORIENTATION-180, or $ORIENTATION-270, representing
     anti-clockwise rotation.
   The $x and $y represent the origin (bottom left corner) of the text.
     The text may extend below and to the left of this point if it contains
@@ -196,21 +196,21 @@ abstract class Canvas:
   The bitmap is automatically clipped to the area of the canvas
     so it is not an error for the bitmap to be outside the
     canvas.
-  Using $source_line_stride a number of bytes can be skipped at the
+  Using $source-line-stride a number of bytes can be skipped at the
     end of each line.  This is useful if the bitmap is padded, or
     the source is an uncompressed PNG which has a zero at the start
     of each line.
-  The $orientation argument can be $ORIENTATION_0, $ORIENTATION_90,
-    $ORIENTATION_180, or $ORIENTATION_270, from "import bitmap",
+  The $orientation argument can be $ORIENTATION-0, $ORIENTATION-90,
+    $ORIENTATION-180, or $ORIENTATION-270, from "import bitmap",
     representing anti-clockwise rotation of the drawn bitmap.
   */
   abstract bitmap x/int y/int -> none
       --pixels/ByteArray
       --alpha/ByteArray          // 2-element byte array.
       --palette/ByteArray        // 6-element byte array.
-      --source_width/int         // In pixels.
-      --source_line_stride/int   // In bytes.
-      --orientation/int=ORIENTATION_0
+      --source-width/int         // In pixels.
+      --source-line-stride/int   // In bytes.
+      --orientation/int=ORIENTATION-0
 
   /**
   Draws the given 8-bit pixmap on the canvas.
@@ -234,7 +234,7 @@ abstract class Canvas:
   The $orientation argument can be ORIENTATION_0, ORIENTATION_90,
     ORIENTATION_180, or ORIENTATION_270, from "import bitmap",
     representing anti-clockwise rotation of the drawn pixmap.
-  Using $source_line_stride a number of bytes can be skipped at the
+  Using $source-line-stride a number of bytes can be skipped at the
     end of each line.  This is useful if the pixmap is padded, or
     the source is an uncompressed PNG which has a zero at the start
     of each line.
@@ -243,9 +243,9 @@ abstract class Canvas:
       --pixels/ByteArray
       --alpha/ByteArray=#[]
       --palette/ByteArray=#[]
-      --source_width/int
-      --orientation/int=ORIENTATION_0
-      --source_line_stride/int=source_width:
+      --source-width/int
+      --orientation/int=ORIENTATION-0
+      --source-line-stride/int=source-width:
    throw "Unimplemented"
 
   /**
@@ -259,18 +259,18 @@ abstract class Canvas:
     representing anti-clockwise rotation of the drawn pixmap.
   This method is only available on true-color canvases.
   */
-  rgb_pixmap x/int y/int
+  rgb-pixmap x/int y/int
       --r/ByteArray
       --g/ByteArray
       --b/ByteArray
-      --source_width/int
-      --orientation/int=ORIENTATION_0:
+      --source-width/int
+      --orientation/int=ORIENTATION-0:
     throw "UNSUPPORTED"  // Only on true color canvas.
 
-TRANSFORM_IDENTITY_ ::= Transform.with_ --x1=1 --x2=0 --y1=0 --y2=1 --tx=0 --ty=0
-TRANSFORM_90_ ::= Transform.with_ --x1=0 --x2=-1 --y1=1 --y2=0 --tx=0 --ty=0
-TRANSFORM_180_ ::= Transform.with_ --x1=-1 --x2=0 --y1=0 --y2=-1 --tx=0 --ty=0
-TRANSFORM_270_ ::= Transform.with_ --x1=0 --x2=1 --y1=-1 --y2=0 --tx=0 --ty=0
+TRANSFORM-IDENTITY_ ::= Transform.with_ --x1=1 --x2=0 --y1=0 --y2=1 --tx=0 --ty=0
+TRANSFORM-90_ ::= Transform.with_ --x1=0 --x2=-1 --y1=1 --y2=0 --tx=0 --ty=0
+TRANSFORM-180_ ::= Transform.with_ --x1=-1 --x2=0 --y1=0 --y2=-1 --tx=0 --ty=0
+TRANSFORM-270_ ::= Transform.with_ --x1=0 --x2=1 --y1=-1 --y2=0 --tx=0 --ty=0
 
 /**
 Classic 3x3 matrix for 2D transformations.
@@ -289,7 +289,7 @@ class Transform:
   ty_/int ::= ?
 
   constructor.identity:
-    return TRANSFORM_IDENTITY_
+    return TRANSFORM-IDENTITY_
 
   constructor.with_ --x1/int --y1/int --x2/int --y2/int --tx/int --ty/int:
     x1_ = x1
@@ -356,49 +356,49 @@ class Transform:
 
   /**
   Finds the extent of a rectangle after it has been transformed with the transform.
-  - $x_in: The left edge before the transformation is applied.
-  - $y_in: The top edge before the transformation is applied.
-  - $w_in: The width before the transformation is applied.
-  - $h_in: The height before the transformation is applied.
+  - $x-in: The left edge before the transformation is applied.
+  - $y-in: The top edge before the transformation is applied.
+  - $w-in: The width before the transformation is applied.
+  - $h-in: The height before the transformation is applied.
   - $block: A block that is called with arguments left top width height in the transformed coordinate space.
   */
-  xywh x_in/int y_in/int w_in/int h_in/int [block]:
-    x_transformed := x x_in y_in
-    y_transformed := y x_in y_in
-    w_transformed := width w_in h_in
-    h_transformed := height w_in h_in
+  xywh x-in/int y-in/int w-in/int h-in/int [block]:
+    x-transformed := x x-in y-in
+    y-transformed := y x-in y-in
+    w-transformed := width w-in h-in
+    h-transformed := height w-in h-in
     x2 := min
-      x_transformed
-      x_transformed + w_transformed
+      x-transformed
+      x-transformed + w-transformed
     y2 := min
-      y_transformed
-      y_transformed + h_transformed
-    w2 := w_transformed.abs
-    h2 := h_transformed.abs
+      y-transformed
+      y-transformed + h-transformed
+    w2 := w-transformed.abs
+    h2 := h-transformed.abs
     block.call x2 y2 w2 h2
 
   /**
   Finds a point and an orientation after it has been transformed with the transform.
-  - $x_in: The x coordinate before the transformation is applied.
-  - $y_in: The y coordinate before the transformation is applied.
-  - $o_in: The orientation before the transformation is applied.
+  - $x-in: The x coordinate before the transformation is applied.
+  - $y-in: The y coordinate before the transformation is applied.
+  - $o-in: The orientation before the transformation is applied.
   - $block: A block that is called with arguments x y orientation in the transformed coordinate space.
   */
-  xyo x_in/int y_in/int o_in/int [block]:
-    x_transformed := x x_in y_in
-    y_transformed := y x_in y_in
-    o_transformed/int := ?
-    if      x1_ > 0: o_transformed = o_in + ORIENTATION_0
-    else if y1_ < 0: o_transformed = o_in + ORIENTATION_90
-    else if x1_ < 0: o_transformed = o_in + ORIENTATION_180
-    else:                  o_transformed = o_in + ORIENTATION_270
-    block.call x_transformed y_transformed (o_transformed & 3)
+  xyo x-in/int y-in/int o-in/int [block]:
+    x-transformed := x x-in y-in
+    y-transformed := y x-in y-in
+    o-transformed/int := ?
+    if      x1_ > 0: o-transformed = o-in + ORIENTATION-0
+    else if y1_ < 0: o-transformed = o-in + ORIENTATION-90
+    else if x1_ < 0: o-transformed = o-in + ORIENTATION-180
+    else:                  o-transformed = o-in + ORIENTATION-270
+    block.call x-transformed y-transformed (o-transformed & 3)
 
   /**
   Returns a new transform which represents this transform rotated left
     around the origin in the space of this transform.
   */
-  rotate_left -> Transform:
+  rotate-left -> Transform:
     return Transform.with_
         --x1 = -x2_
         --y1 = -y2_
@@ -411,7 +411,7 @@ class Transform:
   Returns a new transform which represents this transform rotated right
     around the origin in the space of this transform.
   */
-  rotate_right -> Transform:
+  rotate-right -> Transform:
     return Transform.with_
         --x1 = x2_
         --y1 = y2_
@@ -435,10 +435,10 @@ class Transform:
 
   // Used for font rendering.
   orientation_:
-    if x1_ > 0: return ORIENTATION_0
-    if y1_ < 0: return ORIENTATION_90
-    if x1_ < 0: return ORIENTATION_180
-    else: return ORIENTATION_270
+    if x1_ > 0: return ORIENTATION-0
+    if y1_ < 0: return ORIENTATION-90
+    if x1_ < 0: return ORIENTATION-180
+    else: return ORIENTATION-270
 
   /**
   Returns the transformed x coordinate of the given point ($x, $y).
@@ -480,62 +480,62 @@ class TextExtent_:
   // grows towards the bottom, whereas the y-axis of fonts grows towards the
   // top.
   constructor text font alignment:
-    box := font.text_extent text
-    if alignment != ALIGN_LEFT:
-      displacement = -(font.pixel_width text)
-      if alignment == ALIGN_CENTER: displacement >>= 1
+    box := font.text-extent text
+    if alignment != ALIGN-LEFT:
+      displacement = -(font.pixel-width text)
+      if alignment == ALIGN-CENTER: displacement >>= 1
     w = box[0]
     h = box[1]
     x = box[2] + displacement
     y = -box[1] - box[3]
 
-text_get_bounding_boxes_ old/string new/string alignment/int font/Font [block]:
-  left_doesnt_move  := alignment == ALIGN_LEFT
-  right_doesnt_move := alignment == ALIGN_RIGHT
+text-get-bounding-boxes_ old/string new/string alignment/int font/Font [block]:
+  left-doesnt-move  := alignment == ALIGN-LEFT
+  right-doesnt-move := alignment == ALIGN-RIGHT
   // If the rendered length does not change then both ends don't move.
-  pixel_width_old := font.pixel_width old
-  if pixel_width_old == (font.pixel_width new):
-    left_doesnt_move = true
-    right_doesnt_move = true
+  pixel-width-old := font.pixel-width old
+  if pixel-width-old == (font.pixel-width new):
+    left-doesnt-move = true
+    right-doesnt-move = true
   length := min old.size new.size
-  unchanged_left := 0
-  unchanged_right := 0
-  if left_doesnt_move:
+  unchanged-left := 0
+  unchanged-right := 0
+  if left-doesnt-move:
     // Find out how many bytes are unchanged at the start of the string.
-    unchanged_left = length
+    unchanged-left = length
     for i := 0; i < length; i++:
       if old[i] != new[i]:
-        unchanged_left = i
+        unchanged-left = i
         break
-  if right_doesnt_move:
+  if right-doesnt-move:
     // Find out how many bytes are unchanged at the end of the string.
-    unchanged_right = length
-    last_character_start := 0  // Location (counting from end) of the start of the last UTF-8 sequence.
+    unchanged-right = length
+    last-character-start := 0  // Location (counting from end) of the start of the last UTF-8 sequence.
     for i := 0; i < length; i++:
       if old[old.size - 1 - i] != new[new.size - 1 - i]:
-        unchanged_right = last_character_start
+        unchanged-right = last-character-start
         break
       else if old[old.size - 1 - i]:
-        last_character_start = i + 1
-  if unchanged_right != 0 or unchanged_left != 0:
-    changed_old := old.copy unchanged_left (old.size - unchanged_right)
-    changed_new := new.copy unchanged_left (new.size - unchanged_right)
-    changed_extent_old := TextExtent_ changed_old font alignment
-    changed_extent_new := TextExtent_ changed_new font alignment
-    if alignment == ALIGN_LEFT:
-      unchanged_width := font.pixel_width old[..unchanged_left]
-      changed_extent_old.x += unchanged_width
-      changed_extent_new.x += unchanged_width
-    else if alignment == ALIGN_RIGHT:
-      unchanged_width := font.pixel_width old[old.size - unchanged_right..]
+        last-character-start = i + 1
+  if unchanged-right != 0 or unchanged-left != 0:
+    changed-old := old.copy unchanged-left (old.size - unchanged-right)
+    changed-new := new.copy unchanged-left (new.size - unchanged-right)
+    changed-extent-old := TextExtent_ changed-old font alignment
+    changed-extent-new := TextExtent_ changed-new font alignment
+    if alignment == ALIGN-LEFT:
+      unchanged-width := font.pixel-width old[..unchanged-left]
+      changed-extent-old.x += unchanged-width
+      changed-extent-new.x += unchanged-width
+    else if alignment == ALIGN-RIGHT:
+      unchanged-width := font.pixel-width old[old.size - unchanged-right..]
       // Make x relative to the text origin, which is the right edge.
-      changed_extent_old.x -= unchanged_width
-      changed_extent_new.x -= unchanged_width
+      changed-extent-old.x -= unchanged-width
+      changed-extent-new.x -= unchanged-width
     else:
-      assert: alignment == ALIGN_CENTER
-      assert: pixel_width_old == (font.pixel_width new)
+      assert: alignment == ALIGN-CENTER
+      assert: pixel-width-old == (font.pixel-width new)
       // Make x relative to the text origin, which is the middle.
-      unchanged_width := ((pixel_width_old + 1) >> 1) - (font.pixel_width old[..unchanged_left])
-      changed_extent_old.x -= unchanged_width + changed_extent_old.displacement
-      changed_extent_new.x -= unchanged_width + changed_extent_new.displacement
-    block.call changed_extent_old changed_extent_new
+      unchanged-width := ((pixel-width-old + 1) >> 1) - (font.pixel-width old[..unchanged-left])
+      changed-extent-old.x -= unchanged-width + changed-extent-old.displacement
+      changed-extent-new.x -= unchanged-width + changed-extent-new.displacement
+    block.call changed-extent-old changed-extent-new

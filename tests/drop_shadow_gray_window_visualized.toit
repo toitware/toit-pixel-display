@@ -4,11 +4,11 @@
 
 import bitmap show *
 import font show Font
-import pixel_display show *
-import pixel_display.element show *
-import pixel_display.gradient show *
-import pixel_display.style show *
-import .png_visualizer
+import pixel-display show *
+import pixel-display.element show *
+import pixel-display.gradient show *
+import pixel-display.style show *
+import .png-visualizer
 
 main args:
   sans10 := Font.get "sans10"
@@ -17,16 +17,16 @@ main args:
     print "Usage: script.toit png-basename"
     exit 1
   driver := GrayScalePngVisualizer 160 240 args[0] --outline=0x10
-  display := PixelDisplay.gray_scale driver
+  display := PixelDisplay.gray-scale driver
   display.background = 160
 
-  background_gradient := GradientBackground --angle=180
+  background-gradient := GradientBackground --angle=180
       --specifiers=[
           GradientSpecifier --color=0x20 10,
           GradientSpecifier --color=0x60 90,
       ]
-  background_gradient_element := Div --x=0 --y=0 --w=240 --h=160 --background=background_gradient
-  display.add background_gradient_element
+  background-gradient-element := Div --x=0 --y=0 --w=240 --h=160 --background=background-gradient
+  display.add background-gradient-element
 
   win := Div.clipping --x=30 --y=30 --w=180 --h=100 --border=(ShadowRoundedCornerBorder --radius=15)
   display.add win
@@ -36,22 +36,22 @@ main args:
           GradientSpecifier --color=0x90 10,
           GradientSpecifier --color=0xe0 90,
       ]
-  gradient_element := Div --x=0 --y=0 --w=180 --h=100 --background=gradient
-  win.add gradient_element
+  gradient-element := Div --x=0 --y=0 --w=180 --h=100 --background=gradient
+  win.add gradient-element
 
   text := Label --x=90 --y=55 --label="Hello, World!" --font=sans10 --color=0x10
   win.add text
 
   display.draw
 
-  text.move_to 120 65
+  text.move-to 120 65
 
   display.draw
 
   // Window-relative coordinates.
-  text.move_to -10 7
-  win.border = ShadowRoundedCornerBorder --radius=15 --shadow_opacity_percent=50
+  text.move-to -10 7
+  win.border = ShadowRoundedCornerBorder --radius=15 --shadow-opacity-percent=50
 
   display.draw
 
-  driver.write_png
+  driver.write-png
