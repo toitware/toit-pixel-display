@@ -279,35 +279,40 @@ class RoundedCornerBorder extends InvisibleBorder:
     bottom := y2 + h2 - radius_
     if transparency-map is one-byte.OneByteCanvas_:
       palette := opacity == 0xff ? #[] : shadow-palette_
-      draw-corners_ x2 y2 right bottom radius_: | x y orientation |
-        transparency-map.pixmap x y
-            --pixels = opacities_.byte-opacity
-            --palette = palette
-            --source-width = radius_
-            --orientation = orientation
+      draw-corners_ x2 y2 right bottom radius_: | i j x y orientation |
+        byte-opacity := opacities_.byte-opacities_[(i << 16) + j]
+        if byte-opacity:
+          transparency-map.pixmap x y
+              --pixels = byte-opacity
+              --palette = palette
+              --source-width = 8
+              --orientation = orientation
     else:
-      draw-corners_ x2 y2 right bottom radius_: | x y orientation |
-        stride := (round-up radius_ 8) >> 3
-        transparency-map.bitmap x y
-            --pixels = opacities_.bit-opacity
-            --alpha = ONE-ZERO-ALPHA_
-            --palette = ONE-ZERO-PALETTE_
-            --source-width = radius_
-            --source-line-stride = stride
-            --orientation = orientation
+      draw-corners_ x2 y2 right bottom radius_: | i j x y orientation |
+        bit-opacity := opacities_.bit-opacities_[(i << 16) + j]
+        if bit-opacity:
+          transparency-map.bitmap x y
+              --pixels = bit-opacity
+              --alpha = ONE-ZERO-ALPHA_
+              --palette = ONE-ZERO-PALETTE_
+              --source-width = 8
+              --source-line-stride = 1
+              --orientation = orientation
 
   static ONE-ZERO-PALETTE_ ::= #[0, 0, 0, 1, 1, 1]
   static ONE-ZERO-ALPHA_ ::= #[0, 0xff]
 
   draw-corners_ left/int top/int right/int bottom/int corner-radius/int [block]:
-    // Top left corner:
-    block.call (left + corner-radius) (top + corner-radius) ORIENTATION-180
-    // Top right corner:
-    block.call right (top + corner-radius) ORIENTATION-90
-    // Bottom left corner:
-    block.call (left + corner-radius) bottom ORIENTATION-270
-    // Bottom right corner:
-    block.call right bottom ORIENTATION-0
+    for j := 0; j < corner-radius; j += 8:
+      for i := 0; i < corner-radius; i += 8:
+        // Top left corner:
+        block.call i j (left + corner-radius - i) (top + corner-radius - j) ORIENTATION-180
+        // Top right corner:
+        block.call i j (right + j) (top + corner-radius - i) ORIENTATION-90
+        // Bottom left corner:
+        block.call i j (left + corner-radius - j) (bottom + i) ORIENTATION-270
+        // Bottom right corner:
+        block.call i j (right + i) (bottom + j) ORIENTATION-0
 
 class ShadowRoundedCornerBorder extends RoundedCornerBorder:
   blur-radius_/int := ?
@@ -402,11 +407,12 @@ class ShadowRoundedCornerBorder extends RoundedCornerBorder:
     canvas.set-all-pixels 0
 
 class RoundedCornerOpacity_:
-  byte-opacity/ByteArray
-  bit-opacity/ByteArray
+  byte-opacities_ := {:}  // Map from x,y to an 8x8 opacity map.
+  bit-opacities_ := {:}  // Map from x,y to an 8x8 opacity map.
   radius/int
-  bitmap-width/int
   static cache_ := Map.weak
+
+  static OPAQUE-BYTES-8x8_/ByteArray ::= ByteArray 64: 0xff
 
   static get corner-radius/int -> RoundedCornerOpacity_:
     cached := cache_.get corner-radius
@@ -423,49 +429,76 @@ class RoundedCornerOpacity_:
     array := ByteArray size
     hypotenuse := (size - 1) * (size - 1)
     size.repeat:
+      // Pythagoras.
       array[it] = (hypotenuse - it * it).sqrt.to-int
     return array
 
   constructor.private_ .radius:
-    byte-opacity = ByteArray radius * radius
-    downsample := TABLE-SIZE_ / radius  // For example 81 for a radius of 3.
-    steps := List radius:
-      (it * TABLE-SIZE_) / radius
-    radius.repeat: | j |
-      b := steps[j]
-      radius.repeat: | i |
-        a := steps[i]
-        idx := j * radius + i
+    // We have a quarter circle in a 256x256 square that we downsample to the
+    //   radius.  The quarter circle is represented by QUARTER-CIRCLE, a
+    //   256-entry table of column heights.
+    // For example if the radius is 5 then the downsample is 256/5=51, which
+    //   means each 51x51 square within the 256x256 square is reduced to
+    //   a single pixel in the 5x5 map we are producing.
+    downsample := TABLE-SIZE_ / radius
+    // The steps are a list of the offsets of the pixels we are producing
+    //   in the original 256x256 square.  Eg for a radius of 5 the steps
+    //   are [0, 51, 102, 153, 204].  We pad it up by 8 to make the code
+    //   below simpler.
+    steps := List (radius + 8): (it * TABLE-SIZE_) / radius
+    for j := 0; j < radius; j += 8:
+      for i := 0; i < radius; i += 8:
+        max-b := steps[j + 8]
+        min-b := steps[j]
+        max-a := steps[i + 8]
+        min-a := steps[i]
+        column-height-index := max-b + downsample - 1
+        column-height := column-height-index >= QUARTER-CIRCLE_.size ? -1 : QUARTER-CIRCLE_[column-height-index]
         // Set the opacity according to whether the downsample x downsample
         // square is fully outside the circle, fully inside the circle or on
         // the edge.
-        if QUARTER-CIRCLE_[b + downsample - 1] >= a + downsample:
-          byte-opacity[idx] = 0xff  // Inside quarter circle.
-        else if QUARTER-CIRCLE_[b] < a:
-          byte-opacity[idx] = 0  // Outside quarter circle.
+        opacity-key := (i << 16) + j
+        if column-height >= max-a + downsample:
+          byte-opacities_[opacity-key] = OPAQUE-BYTES-8x8_
+        else if QUARTER-CIRCLE_[min-b] < min-a:
+          byte-opacities_[opacity-key] = null
         else:
-          // Edge of quarter circle.
-          total := 0
-          downsample.repeat: | small-y |
-            extent := QUARTER-CIRCLE_[b + small-y]
-            if extent >= a + downsample:
-              total += downsample
-            else if extent > a:
-              total += extent - a
-          byte-opacity[idx] = (0xff * total) / (downsample * downsample)
-    // Generate a bit version of the opacities in case we have to use it on a
+          // Edge of quarter circle, we have to make an 8x8 patch of
+          // opacity.
+          byte-opacity := ByteArray 64
+          (min 8 (radius - j)).repeat: | small-j |
+            b := steps[j + small-j]
+            (min 8 (radius - i)).repeat: | small-i |
+              idx := small-j * 8 + small-i
+              a := steps[i + small-i]
+              if QUARTER-CIRCLE_[b + downsample - 1] >= a + downsample:
+                byte-opacity[idx] = 0xff  // Inside quarter circle.
+              else if QUARTER-CIRCLE_[b] < a:
+                byte-opacity[idx] = 0  // Outside quarter circle.
+              else:
+                total := 0
+                downsample.repeat: | small-y |
+                  extent := QUARTER-CIRCLE_[b + small-y]
+                  if extent >= a + downsample:
+                    total += downsample
+                  else if extent > a:
+                    total += extent - a
+                byte-opacity[idx] = (0xff * total) / (downsample * downsample)
+          byte-opacities_[opacity-key] = byte-opacity
+    // Generate bit versions of the opacities in case we have to use it on a
     // 2-color or 3-color display.
-    bitmap-width = round-up radius 8
-    bit-opacity = ByteArray (byte-opacity.size / radius) * (bitmap-width >> 3)
-    destination-line-stride := bitmap-width >> 3
-    8.repeat: | bit |
-      bitmap.blit byte-opacity[bit..] bit-opacity ((radius + 7 - bit) >> 3)
-          --source-pixel-stride = 8
-          --source-line-stride = radius
-          --destination-line-stride = destination-line-stride
-          --shift = bit
-          --mask = (0x80 >> bit)
-          --operation = bitmap.OR
+    byte-opacities_.do: | key/int byte-opacity |
+      if byte-opacity == null:
+        bit-opacities_[key] = null
+      else:
+        bit-opacity := ByteArray 8: | line |
+          mask := 0
+          idx := line * 8
+          8.repeat: | bit |
+            mask = mask << 1
+            mask |= (byte-opacity[idx + bit] < 128 ? 0 : 1)
+          mask  // Initialize byte array with last value in block.
+        bit-opacities_[key] = bit-opacity
 
 /**
 A container (starting with a PixelDisplay) has a Style associated with it.
