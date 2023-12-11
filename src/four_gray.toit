@@ -10,8 +10,8 @@ For use with e-paper displays with four tones of gray.
 import bitmap show *
 import font show Font
 import icons show Icon
-import .common
-import .pixel-display show PixelDisplay  // For the doc comment.
+
+import .pixel-display
 import .two-bit-texture
 import .two-bit-texture as two-bit
 

@@ -2,16 +2,16 @@
 // Use of this source code is governed by an MIT-style license that can be
 // found in the LICENSE file.
 
-import .common
 import .element
 import .style show *
+import .pixel-display
 
 import png-tools.png-reader
 
 /**
 Element that draws a PNG image.
 The width and height of the element is determined by the image.
-The image is given by a byte array, $png-file, which must be a valid PNG file.
+The image is given by a byte array, png-file, which must be a valid PNG file.
 The PNG file can be converted to a Toit byte array using the
    xxxd tool (https://github.com/toitware/xxxd).
 The PNG file can be compressed (a normal PNG file) or uncompressed.

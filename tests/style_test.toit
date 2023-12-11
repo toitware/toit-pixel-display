@@ -4,7 +4,7 @@
 
 import expect show *
 
-import pixel-display.common show Canvas
+import pixel-display show Canvas
 import pixel-display.element show Element
 import pixel-display.style show *
 

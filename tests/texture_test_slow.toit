@@ -8,7 +8,7 @@ import bitmap show *
 import crypto.sha1 as crypto
 import font show *
 
-import pixel-display.common show Transform
+import pixel-display show Transform
 import pixel-display.four-gray
 import pixel-display.two-bit-texture as two-bit
 import pixel-display.three-color

@@ -10,9 +10,9 @@ import binary show BIG-ENDIAN
 import bitmap show *
 import font show Font
 import icons show Icon
-import .common
+
 import .gray-scale as gray-scale_
-import .pixel-display show PixelDisplay  // For the doc comment.
+import .pixel-display
 
 /**
 Create a 24 bit color from three components in the 0-255 range.

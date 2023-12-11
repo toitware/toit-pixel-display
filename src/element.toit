@@ -9,8 +9,7 @@ import .true-color as true-color
 import .gray-scale as gray-scale
 import .one-byte as one-byte
 import .style show *
-import .common
-import .pixel-display show PixelDisplay
+import .pixel-display
 import font show Font
 import math
 

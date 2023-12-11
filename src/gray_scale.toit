@@ -9,7 +9,7 @@ Constants useful for $PixelDisplay.gray-scale.
 import bitmap show *
 import font show Font
 import icons show Icon
-import .pixel-display show PixelDisplay  // For the doc comments.
+import .pixel-display
 import .one-byte
 
 /// Color value for use with $PixelDisplay.gray-scale.
