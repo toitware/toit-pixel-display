@@ -8,8 +8,8 @@
 
 import bitmap show *
 import font show Font
-import .common
-import .common as common
+
+import .pixel-display
 import .two-color as two-color
 
 // The canvas contains two bitmapped ByteArrays, for up to 4 colors or gray

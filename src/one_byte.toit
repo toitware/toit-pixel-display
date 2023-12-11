@@ -9,8 +9,9 @@
 import bitmap show *
 import font show Font
 import icons show Icon
-import .common
+
 import .gray-scale as gray-scale_
+import .pixel-display
 
 // The canvas contains a ByteArray.
 // Initially all pixels are 0.

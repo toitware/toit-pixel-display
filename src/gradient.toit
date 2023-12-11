@@ -5,7 +5,7 @@
 import bitmap show *
 import math
 
-import .common
+import .pixel-display
 import .style
 
 class GradientSpecifier:

@@ -4,8 +4,8 @@
 
 import font show Font
 
-import .common
 import .element show CustomElement Element
+import .pixel-display
 import .style
 
 EAN-13-QUIET-ZONE-WIDTH ::= 9

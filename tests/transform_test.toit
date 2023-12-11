@@ -4,7 +4,7 @@
 
 import expect show *
 
-import pixel-display.common show *
+import pixel-display show *
 
 main:
   simple-texture-test
