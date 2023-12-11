@@ -3,7 +3,7 @@
 # be found in the tests/LICENSE file.
 
 file(GLOB TESTS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*-test.toit" "*-test-slow.toit")
-file(GLOB VISUALIZED RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*-visualized.toit" "*_visualized_slow.toit")
+file(GLOB VISUALIZED RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*-visualized.toit" "*-visualized-slow.toit")
 
 set(TOITRUN toit.run${CMAKE_EXECUTABLE_SUFFIX} CACHE FILEPATH "The executable used to run the tests")
 set(TOITPKG toit.pkg${CMAKE_EXECUTABLE_SUFFIX} CACHE FILEPATH "The executable used to install the packages")
