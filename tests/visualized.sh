@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #Usage:
-# sh tests/visualized.sh toit.run tests/true_color_visualized.toit
+# sh tests/visualized.sh toit.run tests/true-color-visualized.toit
 
 set -e
 
