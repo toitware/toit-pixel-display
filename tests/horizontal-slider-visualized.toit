@@ -25,24 +25,24 @@ main args:
   display := PixelDisplay.true-color driver
   display.background = 0x808080
 
-  heat := GradientBackground --angle=0 --specifiers=[
+  heat := GradientBackground --angle=270 --specifiers=[
       GradientSpecifier --color=0xc0c000 0,
       GradientSpecifier --color=0xff8000 100,
       ]
 
-  cold := GradientBackground --angle=90 --specifiers=[
+  cold := GradientBackground --angle=0 --specifiers=[
       GradientSpecifier --color=0xa0a0a0 0,
       GradientSpecifier --color=0x404040 10,
       GradientSpecifier --color=0x404040 90,
       GradientSpecifier --color=0xa0a0a0 100,
       ]
 
-  sliders := List 5:
-      Slider --x=(20 + 40 * it) --y=10 --value=0
-  labels := List 5:
-      Label --x=(30 + 40 * it) --y=125 --alignment=ALIGN-CENTER
+  sliders := List 3:
+      Slider --x=30 --y=(10 + it * 40) --value=0
+  labels := List 3:
+    Label --x=26 --y=(25 + it * 40) --alignment=ALIGN-RIGHT
 
-  set [10, 30, 50, 70, 90] sliders labels
+  set [10, 30, 50] sliders labels
 
   content := Div --x=0 --y=0 --w=WIDTH --h=HEIGHT --background=0x202020 (sliders + labels)
 
@@ -55,22 +55,26 @@ main args:
           "slider": Style {
               "background-hi": heat,
               "background-lo": cold,
-              "width": 20,
-              "height": 100,
+              "width": 120,
+              "height": 20,
+              "horizontal": true,
           },
           "label": Style --font=sans10 --color=0xffffff,
       }
 
   content.set-styles [style]
+
   display.draw
 
-  set [50, 70, 10, 90, 30] sliders labels
+  i := 0
+  set [50, 70, 10] sliders labels
+
   display.draw
 
   content.set-styles [Style --type-map={"slider": Style {"inverted": true}}]
   display.draw
 
-  set [100, 0, 45, 90, 30] sliders labels
+  set [0, 40, 100] sliders labels
   display.draw
 
   driver.write-png
