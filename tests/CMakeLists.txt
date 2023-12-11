@@ -2,8 +2,8 @@
 # Use of this source code is governed by a Zero-Clause BSD license that can
 # be found in the tests/LICENSE file.
 
-file(GLOB TESTS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*_test.toit" "*_test_slow.toit")
-file(GLOB VISUALIZED RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*_visualized.toit" "*_visualized_slow.toit")
+file(GLOB TESTS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*-test.toit" "*-test-slow.toit")
+file(GLOB VISUALIZED RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*-visualized.toit" "*_visualized_slow.toit")
 
 set(TOITRUN toit.run${CMAKE_EXECUTABLE_SUFFIX} CACHE FILEPATH "The executable used to run the tests")
 set(TOITPKG toit.pkg${CMAKE_EXECUTABLE_SUFFIX} CACHE FILEPATH "The executable used to install the packages")
