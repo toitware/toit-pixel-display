@@ -277,42 +277,53 @@ class RoundedCornerBorder extends InvisibleBorder:
     right := x2 + w2 - radius_
     top := y2 + radius_ - 1
     bottom := y2 + h2 - radius_
-    if transparency-map is one-byte.OneByteCanvas_:
+    if transparency-map.supports-8-bit:
       palette := opacity == 0xff ? #[] : shadow-palette_
-      draw-corners_ x2 y2 right bottom radius_: | i j x y orientation |
-        byte-opacity := opacities_.byte-opacities_[(i << 16) + j]
-        if byte-opacity:
-          transparency-map.pixmap x y
-              --pixels = byte-opacity
-              --palette = palette
-              --source-width = 8
-              --orientation = orientation
+      draw-corners_ x2 y2 right bottom radius_: | byte-opacity _ x y orientation |
+        transparency-map.pixmap x y
+            --pixels = byte-opacity
+            --palette = palette
+            --source-width = 8
+            --orientation = orientation
     else:
-      draw-corners_ x2 y2 right bottom radius_: | i j x y orientation |
-        bit-opacity := opacities_.bit-opacities_[(i << 16) + j]
-        if bit-opacity:
-          transparency-map.bitmap x y
-              --pixels = bit-opacity
-              --alpha = ONE-ZERO-ALPHA_
-              --palette = ONE-ZERO-PALETTE_
-              --source-width = 8
-              --source-line-stride = 1
-              --orientation = orientation
+      draw-corners_ x2 y2 right bottom radius_: | _ bit-opacity x y orientation |
+        transparency-map.bitmap x y
+            --pixels = bit-opacity
+            --alpha = ONE-ZERO-ALPHA_
+            --palette = ONE-ZERO-PALETTE_
+            --source-width = 8
+            --source-line-stride = 1
+            --orientation = orientation
 
   static ONE-ZERO-PALETTE_ ::= #[0, 0, 0, 1, 1, 1]
   static ONE-ZERO-ALPHA_ ::= #[0, 0xff]
 
+  /**
+  Arguments:
+  - $left, $top, $right, $bottom:  The coordinates of the rectangle with the rounded corners.
+  - $corner-radius: The radius of the rounded corners.
+  - $block: A block to call to draw each corner.
+  Block arguments are:
+  - byte-opacity: a 64 entry byte array of 8x8 opacity values, or null if the patch is fully transparent.
+  - bit-opacity: an 8 entry byte array of 8x8 opacity values, or null if the patch is fully transparent.
+  - x: the x coordinate of the top left corner of the patch.
+  - y: the y coordinate of the top left corner of the patch.
+  - orientation: the orientation to draw the patch, one of $ORIENTATION-0, $ORIENTATION-90, $ORIENTATION-180, $ORIENTATION-270.
+  */
   draw-corners_ left/int top/int right/int bottom/int corner-radius/int [block]:
     for j := 0; j < corner-radius; j += 8:
       for i := 0; i < corner-radius; i += 8:
-        // Top left corner:
-        block.call i j (left + corner-radius - i) (top + corner-radius - j) ORIENTATION-180
-        // Top right corner:
-        block.call i j (right + j) (top + corner-radius - i) ORIENTATION-90
-        // Bottom left corner:
-        block.call i j (left + corner-radius - j) (bottom + i) ORIENTATION-270
-        // Bottom right corner:
-        block.call i j (right + i) (bottom + j) ORIENTATION-0
+        byte-opacity := opacities_.get-bytes-patch i j
+        if byte-opacity:
+          bit-opacity := opacities_.get-bits-patch i j
+          // Top left corner:
+          block.call byte-opacity bit-opacity (left + corner-radius - i) (top + corner-radius - j) ORIENTATION-180
+          // Top right corner:
+          block.call byte-opacity bit-opacity (right + j) (top + corner-radius - i) ORIENTATION-90
+          // Bottom left corner:
+          block.call byte-opacity bit-opacity (left + corner-radius - j) (bottom + i) ORIENTATION-270
+          // Bottom right corner:
+          block.call byte-opacity bit-opacity (right + i) (bottom + j) ORIENTATION-0
 
 class ShadowRoundedCornerBorder extends RoundedCornerBorder:
   blur-radius_/int := ?
@@ -433,6 +444,12 @@ class RoundedCornerOpacity_:
       array[it] = (hypotenuse - it * it).sqrt.to-int
     return array
 
+  get-bytes-patch i/int j/int -> ByteArray?:
+    return byte-opacities_[(i << 16) + j]
+
+  get-bits-patch i/int j/int -> ByteArray?:
+    return bit-opacities_[(i << 16) + j]
+
   constructor.private_ .radius:
     // We have a quarter circle in a 256x256 square that we downsample to the
     //   radius.  The quarter circle is represented by QUARTER-CIRCLE, a
@@ -442,8 +459,8 @@ class RoundedCornerOpacity_:
     //   a single pixel in the 5x5 map we are producing.
     downsample := TABLE-SIZE_ / radius
     // The steps are a list of the offsets of the pixels we are producing
-    //   in the original 256x256 square.  Eg for a radius of 5 the steps
-    //   are [0, 51, 102, 153, 204].  We pad it up by 8 to make the code
+    //   in the original 256x256 square.  For example, for a radius of 5 the
+    //   steps are [0, 51, 102, 153, 204].  We pad it up by 8 to make the code
     //   below simpler.
     steps := List (radius + 8): (it * TABLE-SIZE_) / radius
     for j := 0; j < radius; j += 8:
