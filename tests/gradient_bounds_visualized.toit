@@ -8,20 +8,20 @@
 import bitmap show *
 import expect show *
 import font show *
-import pixel_display show *
-import pixel_display.element show *
-import pixel_display.gradient show *
-import .png_visualizer
+import pixel-display show *
+import pixel-display.element show *
+import pixel-display.gradient show *
+import .png-visualizer
 
 main args:
   if args.size != 1:
     print "Usage: script.toit png-basename"
     exit 1
   driver := TrueColorPngVisualizer 240 220 args[0] --outline=0x4040ff
-  display := PixelDisplay.true_color driver
+  display := PixelDisplay.true-color driver
   display.background = 0x808080
 
-  gradient_elements := []
+  gradient-elements := []
 
   16.repeat:
     angle := it * 45
@@ -39,9 +39,9 @@ main args:
         GradientSpecifier --color=0xff0000 0,
         GradientSpecifier --color=0x00ff00 100,
         ]
-    gradient_element := Div --x=x --y=y --w=w --h=h --background=gradient
-    display.add gradient_element
-    gradient_elements.add gradient_element
+    gradient-element := Div --x=x --y=y --w=w --h=h --background=gradient
+    display.add gradient-element
+    gradient-elements.add gradient-element
     dot1 := Div --x=(x - 1) --y=(y - 1) --w=1 --h=1 --background=0xffffff
     display.add dot1
     dot2 := Div --x=(x + w) --y=(y + h) --w=1 --h=1 --background=0xffffff
@@ -55,10 +55,10 @@ main args:
 
   // Rotate all gradient_elements 30 degrees.
   angle := 30
-  gradient_elements.do:
+  gradient-elements.do:
     it.background = GradientBackground --angle=angle --specifiers=it.background.specifiers
     angle = (angle + 45) % 360
 
   display.draw
 
-  driver.write_png
+  driver.write-png

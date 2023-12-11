@@ -8,11 +8,11 @@
 import bitmap show *
 import expect show *
 import font show *
-import pixel_display show *
-import pixel_display.element show *
-import pixel_display.gradient show *
-import pixel_display.style show *
-import .png_visualizer
+import pixel-display show *
+import pixel-display.element show *
+import pixel-display.gradient show *
+import pixel-display.style show *
+import .png-visualizer
 
 main args:
   if args.size != 1:
@@ -21,7 +21,7 @@ main args:
   WIDTH ::= 192
   HEIGHT ::= 120
   driver := TrueColorPngVisualizer WIDTH HEIGHT args[0] --outline=0x4040ff
-  display := PixelDisplay.true_color driver
+  display := PixelDisplay.true-color driver
   display.background = 0x808080
 
   gradient1 := GradientBackground --angle=120 --specifiers=[
@@ -68,10 +68,10 @@ main args:
           "round": Style --border=(RoundedCornerBorder --radius=10),
       }
 
-  content.set_styles [style]
+  content.set-styles [style]
 
   display.draw
-  driver.write_png
+  driver.write-png
 
   content.background = GradientBackground --angle=0 --specifiers=[
       GradientSpecifier --color=0xffffff 0,
@@ -80,13 +80,13 @@ main args:
       ]
 
   display.draw
-  driver.write_png
+  driver.write-png
 
-  shadow_style := Style --class_map={
+  shadow-style := Style --class-map={
       "round": Style --border=(ShadowRoundedCornerBorder --radius=10)
   }
 
-  content.set_styles [shadow_style]
+  content.set-styles [shadow-style]
 
   display.draw
-  driver.write_png
+  driver.write-png

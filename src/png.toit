@@ -6,12 +6,12 @@ import .common
 import .element
 import .style show *
 
-import png_tools.png_reader
+import png-tools.png-reader
 
 /**
 Element that draws a PNG image.
 The width and height of the element is determined by the image.
-The image is given by a byte array, $png_file, which must be a valid PNG file.
+The image is given by a byte array, $png-file, which must be a valid PNG file.
 The PNG file can be converted to a Toit byte array using the
    xxxd tool (https://github.com/toitware/xxxd).
 The PNG file can be compressed (a normal PNG file) or uncompressed.
@@ -35,7 +35,7 @@ Only PNGs with up to 8 bits per pixel are supported.  They can be
   transparent, and the opaque colors fully opaque.
 */
 class Png extends CustomElement:
-  png_/png_reader.AbstractPng
+  png_/png-reader.AbstractPng
 
   /**
   Constructs an element that displays a PNG image, given a byte array
@@ -51,14 +51,14 @@ class Png extends CustomElement:
       --id/string?=null
       --background=null
       --border/Border?=null
-      --png_file/ByteArray:
-    info := png_reader.PngInfo png_file
-    if info.uncompressed_random_access:
-      png_ = png_reader.PngRandomAccess png_file
+      --png-file/ByteArray:
+    info := png-reader.PngInfo png-file
+    if info.uncompressed-random-access:
+      png_ = png-reader.PngRandomAccess png-file
     else:
-      png_ = png_reader.Png png_file
-    if png_.bit_depth > 8: throw "UNSUPPORTED"
-    if png_.color_type == png_reader.COLOR_TYPE_TRUECOLOR or png_.color_type == png_reader.COLOR_TYPE_TRUECOLOR_ALPHA: throw "UNSUPPORTED"
+      png_ = png-reader.Png png-file
+    if png_.bit-depth > 8: throw "UNSUPPORTED"
+    if png_.color-type == png-reader.COLOR-TYPE-TRUECOLOR or png_.color-type == png-reader.COLOR-TYPE-TRUECOLOR-ALPHA: throw "UNSUPPORTED"
     super
         --x = x
         --y = y
@@ -71,30 +71,30 @@ class Png extends CustomElement:
         --border = border
 
   // Redraw routine.
-  custom_draw canvas/Canvas:
+  custom-draw canvas/Canvas:
     y2 := 0
-    while y2 < h and (canvas.bounds_analysis 0 y2 w (h - y2)) != Canvas.DISJOINT:
-      png_.get_indexed_image_data y2 h
-          --accept_8_bit=canvas.supports_8_bit
-          --need_gray_palette=canvas.gray_scale: | y_from/int y_to/int bits_per_pixel/int pixels/ByteArray line_stride/int palette/ByteArray alpha_palette/ByteArray |
-        if bits_per_pixel == 1:
+    while y2 < h and (canvas.bounds-analysis 0 y2 w (h - y2)) != Canvas.DISJOINT:
+      png_.get-indexed-image-data y2 h
+          --accept-8-bit=canvas.supports-8-bit
+          --need-gray-palette=canvas.gray-scale: | y-from/int y-to/int bits-per-pixel/int pixels/ByteArray line-stride/int palette/ByteArray alpha-palette/ByteArray |
+        if bits-per-pixel == 1:
           // Last line a little shorter because it has no stride padding.
-          adjust := line_stride - ((round_up w 8) >> 3)
-          pixels = pixels[0 .. (y_to - y_from) * line_stride - adjust]
-          canvas.bitmap 0 y_from
+          adjust := line-stride - ((round-up w 8) >> 3)
+          pixels = pixels[0 .. (y-to - y-from) * line-stride - adjust]
+          canvas.bitmap 0 y-from
               --pixels=pixels
-              --alpha=alpha_palette
+              --alpha=alpha-palette
               --palette=palette
-              --source_width=w
-              --source_line_stride=line_stride
+              --source-width=w
+              --source-line-stride=line-stride
         else:
-          adjust := line_stride - w
-          pixels = pixels[0 .. (y_to - y_from) * line_stride - adjust]
-          canvas.pixmap 0 y_from --pixels=pixels
-              --alpha=alpha_palette
+          adjust := line-stride - w
+          pixels = pixels[0 .. (y-to - y-from) * line-stride - adjust]
+          canvas.pixmap 0 y-from --pixels=pixels
+              --alpha=alpha-palette
               --palette=palette
-              --source_width=w
-              --source_line_stride=line_stride
-        y2 = y_to
+              --source-width=w
+              --source-line-stride=line-stride
+        y2 = y-to
 
   type -> string: return "png"

@@ -8,44 +8,44 @@
 import bitmap show *
 import expect show *
 import font show *
-import pixel_display show *
-import pixel_display.element show *
-import pixel_display.style show *
-import .png_visualizer
+import pixel-display show *
+import pixel-display.element show *
+import pixel-display.style show *
+import .png-visualizer
 
 main args:
   if args.size != 1:
     print "Usage: script.toit png-basename"
     exit 1
-  driver := SeveralColorPngVisualizer 192 96 args[0] --outline=SEVERAL_WHITE
-  display := PixelDisplay.several_color driver
-  display.background = SEVERAL_DARK_GRAY
+  driver := SeveralColorPngVisualizer 192 96 args[0] --outline=SEVERAL-WHITE
+  display := PixelDisplay.several-color driver
+  display.background = SEVERAL-DARK-GRAY
 
   sans10 := Font.get "sans10"
 
-  element_text := Label --x=30 --y=20 --color=SEVERAL_ORANGE --label="Testing 123" --font=sans10
-  element_text_2 := Label --x=180 --y=50 --color=SEVERAL_ORANGE --label="123 Testing" --font=sans10 --alignment=ALIGN_RIGHT
-  element_text_3 := Label --x=96 --y=80 --color=SEVERAL_ORANGE --label="T 123 For the win" --font=sans10 --alignment=ALIGN_CENTER
-  display.add element_text
-  display.add element_text_2
-  display.add element_text_3
+  element-text := Label --x=30 --y=20 --color=SEVERAL-ORANGE --label="Testing 123" --font=sans10
+  element-text-2 := Label --x=180 --y=50 --color=SEVERAL-ORANGE --label="123 Testing" --font=sans10 --alignment=ALIGN-RIGHT
+  element-text-3 := Label --x=96 --y=80 --color=SEVERAL-ORANGE --label="T 123 For the win" --font=sans10 --alignment=ALIGN-CENTER
+  display.add element-text
+  display.add element-text-2
+  display.add element-text-3
   display.draw
 
-  element_text.label = "Testing 42"
-  element_text_2.label = "42 Testing"
+  element-text.label = "Testing 42"
+  element-text-2.label = "42 Testing"
   // The "MM" has the same pixel width as the "123" above, so we can test the
   // case where the ends are unchanged, but the middle changes.
-  element_text_3.label = "T MM For the win"
+  element-text-3.label = "T MM For the win"
   display.draw
 
-  element_text.label = "Test the West"
-  element_text_2.label = "Test the Folketing"
-  element_text_3.label = "Test * For the win"
+  element-text.label = "Test the West"
+  element-text-2.label = "Test the Folketing"
+  element-text-3.label = "Test * For the win"
   display.draw
 
-  element_text.label = "Test the West"
-  element_text_2.label = "Test the Folketlng"
-  element_text_3.label = "Test * For the win"  // Both ends move because its centered.
+  element-text.label = "Test the West"
+  element-text-2.label = "Test the Folketlng"
+  element-text-3.label = "Test * For the win"  // Both ends move because its centered.
   display.draw
 
-  driver.write_png
+  driver.write-png

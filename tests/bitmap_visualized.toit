@@ -9,11 +9,11 @@ import expect show *
 import font
 
 import host.file
-import pixel_display show *
-import pixel_display.element show *
-import pixel_display.gradient show *
-import pixel_display.png show Png
-import .png_visualizer
+import pixel-display show *
+import pixel-display.element show *
+import pixel-display.gradient show *
+import pixel-display.png show Png
+import .png-visualizer
 
 SANS := font.Font.get "sans10"
 
@@ -27,36 +27,36 @@ main args:
 
 do basename/string w/int h/int:
   driver := TrueColorPngVisualizer w h basename --outline=0xc0c0ff
-  display := PixelDisplay.true_color driver
+  display := PixelDisplay.true-color driver
   display.background = 0x808080
 
   // A 1-bit PNG file that is uncompressed, so we can use the PngRandomAccess
   // class to display it straight from flash.
-  purifier := file.read_content "tests/third_party/pictogrammers/air-purifier-bit-unzip.png"
+  purifier := file.read-content "tests/third_party/pictogrammers/air-purifier-bit-unzip.png"
   // A 1-bit PNG file that is compressed, so it takes less flash, but we have
   // to decompress it to display it.  This file also has an almost-transparent
   // background, so we test the code path where we display a 1-bit image with
   // a real alpha channel (and it has a gray background in the output).
-  purifier_compressed := file.read_content "tests/third_party/pictogrammers/air-purifier-bit.png"
+  purifier-compressed := file.read-content "tests/third_party/pictogrammers/air-purifier-bit.png"
 
   gradient := GradientBackground --angle=160 --specifiers=[
       GradientSpecifier --color=0xe0e0ff 10,
       GradientSpecifier --color=0x8080c0 90,
       ]
-  gradient_element := Div --x=0 --y=0 --w=340 --h=320 --background=gradient
-  display.add gradient_element
+  gradient-element := Div --x=0 --y=0 --w=340 --h=320 --background=gradient
+  display.add gradient-element
 
   display.draw
 
   label := Label --x=44 --y=44 --label="UP ^" --font=SANS --color=0
   display.add label
-  png_element := Png --x=36 --y=32 --png_file=purifier
-  display.add png_element
+  png-element := Png --x=36 --y=32 --png-file=purifier
+  display.add png-element
   display.draw
 
-  display.remove png_element
-  png_element = Png --x=36 --y=32 --png_file=purifier_compressed
-  display.add png_element
+  display.remove png-element
+  png-element = Png --x=36 --y=32 --png-file=purifier-compressed
+  display.add png-element
   display.draw
 
-  driver.write_png
+  driver.write-png

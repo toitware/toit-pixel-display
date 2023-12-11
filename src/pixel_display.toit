@@ -11,26 +11,26 @@ import bitmap show *
 import font show Font
 import icons show Icon
 
-import .bar_code
+import .bar-code
 import .common
 import .element
-import .two_color as two_color
-import .three_color as three_color
-import .two_bit_texture as two_bit
-import .four_gray as four_gray
-import .true_color as true_color
-import .gray_scale as gray_scale
-import .several_color as several_color
-import .one_byte as one_byte
+import .two-color as two-color
+import .three-color as three-color
+import .two-bit-texture as two-bit
+import .four-gray as four-gray
+import .true-color as true-color
+import .gray-scale as gray-scale
+import .several-color as several-color
+import .one-byte as one-byte
 import .style
 
-FLAG_2_COLOR ::=         0b1
-FLAG_3_COLOR ::=         0b10
-FLAG_4_COLOR ::=         0b100
-FLAG_GRAY_SCALE ::=      0b1000
-FLAG_SEVERAL_COLOR ::=   0b10000
-FLAG_TRUE_COLOR ::=      0b100000
-FLAG_PARTIAL_UPDATES ::= 0b1000000
+FLAG-2-COLOR ::=         0b1
+FLAG-3-COLOR ::=         0b10
+FLAG-4-COLOR ::=         0b100
+FLAG-GRAY-SCALE ::=      0b1000
+FLAG-SEVERAL-COLOR ::=   0b10000
+FLAG-TRUE-COLOR ::=      0b100000
+FLAG-PARTIAL-UPDATES ::= 0b1000000
 
 /**
 Abstract superclass for all pixel display drivers.
@@ -43,21 +43,21 @@ abstract class AbstractDriver:
   abstract width -> int
   abstract height -> int
   abstract flags -> int
-  x_rounding -> int: return 8
-  y_rounding -> int: return 8
-  start_partial_update speed/int -> none:
-  start_full_update speed/int -> none:
+  x-rounding -> int: return 8
+  y-rounding -> int: return 8
+  start-partial-update speed/int -> none:
+  start-full-update speed/int -> none:
   clean left/int top/int right/int bottom/int -> none:
   commit left/int top/int right/int bottom/int -> none:
-  draw_two_color l/int t/int r/int b/int pixels/ByteArray -> none:
+  draw-two-color l/int t/int r/int b/int pixels/ByteArray -> none:
     throw "Not a two-color driver"
-  draw_two_bit l/int t/int r/int b/int plane0/ByteArray plane1/ByteArray -> none:
+  draw-two-bit l/int t/int r/int b/int plane0/ByteArray plane1/ByteArray -> none:
     throw "Not a two-bit driver"
-  draw_gray_scale l/int t/int r/int b/int pixels/ByteArray -> none:
+  draw-gray-scale l/int t/int r/int b/int pixels/ByteArray -> none:
     throw "Not a gray-scale driver"
-  draw_several_color l/int t/int r/int b/int pixels/ByteArray -> none:
+  draw-several-color l/int t/int r/int b/int pixels/ByteArray -> none:
     throw "Not a several-color driver"
-  draw_true_color l/int t/int r/int b/int red/ByteArray green/ByteArray blue/ByteArray -> none:
+  draw-true-color l/int t/int r/int b/int red/ByteArray green/ByteArray blue/ByteArray -> none:
     throw "Not a true-color driver"
   close -> none:
 
@@ -75,25 +75,25 @@ abstract class PixelDisplay implements Window:
   background_ := null
   width: return driver_.width
   height: return driver_.width
-  inner_width: return driver_.width
-  inner_height: return driver_.width
+  inner-width: return driver_.width
+  inner-height: return driver_.width
 
   // Need-to-redraw is tracked as a bit array of dirty bits, arranged in
   // SSD1306 layout so we can use bitmap_rectangle to invalidate areas.
   // One bit in the dirty map covers an area of 8x8 pixels of the display.
   static CLEAN_ ::= 0
   static DIRTY_ ::= 1
-  dirty_bytes_per_line_ := 0
+  dirty-bytes-per-line_ := 0
   dirty_ := null
-  dirty_left_ := 0
-  dirty_top_ := 0
-  dirty_right_ := 0
-  dirty_bottom_ := 0
+  dirty-left_ := 0
+  dirty-top_ := 0
+  dirty-right_ := 0
+  dirty-bottom_ := 0
 
-  dirty_accumulator_ := ByteArray 1
+  dirty-accumulator_ := ByteArray 1
 
-  x_rounding_ := 1
-  y_rounding_ := 1
+  x-rounding_ := 1
+  y-rounding_ := 1
 
   driver_ /AbstractDriver := ?
   speed_ := 50  // Speed-quality of current screen update.
@@ -109,7 +109,7 @@ abstract class PixelDisplay implements Window:
      that the display driver is exactly square, a rotated orientation is used.
   The orientation is rotated by 180 degrees if $inverted is true.
   */
-  constructor.true_color driver/AbstractDriver
+  constructor.true-color driver/AbstractDriver
       --inverted/bool=false
       --portrait/bool=false
       --transform/Transform?=null:
@@ -124,7 +124,7 @@ abstract class PixelDisplay implements Window:
      that the display driver is exactly square, a rotated orientation is used.
   The orientation is rotated by 180 degrees if $inverted is true.
   */
-  constructor.gray_scale driver/AbstractDriver
+  constructor.gray-scale driver/AbstractDriver
       --inverted/bool=false
       --portrait/bool=false
       --transform/Transform?=null:
@@ -139,7 +139,7 @@ abstract class PixelDisplay implements Window:
      that the display driver is exactly square, a rotated orientation is used.
   The orientation is rotated by 180 degrees if $inverted is true.
   */
-  constructor.several_color driver/AbstractDriver
+  constructor.several-color driver/AbstractDriver
       --inverted/bool=false
       --portrait/bool=false
       --transform/Transform?=null:
@@ -154,7 +154,7 @@ abstract class PixelDisplay implements Window:
      that the display driver is exactly square, a rotated orientation is used.
   The orientation is rotated by 180 degrees if $inverted is true.
   */
-  constructor.four_gray driver/AbstractDriver
+  constructor.four-gray driver/AbstractDriver
       --inverted/bool=false
       --portrait/bool=false
       --transform/Transform?=null:
@@ -169,7 +169,7 @@ abstract class PixelDisplay implements Window:
      that the display driver is exactly square, a rotated orientation is used.
   The orientation is rotated by 180 degrees if $inverted is true.
   */
-  constructor.three_color driver/AbstractDriver
+  constructor.three-color driver/AbstractDriver
       --inverted/bool=false
       --portrait/bool=false
       --transform/Transform?=null:
@@ -184,7 +184,7 @@ abstract class PixelDisplay implements Window:
      that the display driver is exactly square, a rotated orientation is used.
   The orientation is rotated by 180 degrees if $inverted is true.
   */
-  constructor.two_color driver/AbstractDriver
+  constructor.two-color driver/AbstractDriver
       --inverted/bool=false
       --portrait/bool=false
       --transform/Transform?=null:
@@ -199,13 +199,13 @@ abstract class PixelDisplay implements Window:
   The orientation is rotated by 180 degrees if $inverted is true.
   */
   constructor .driver_ --inverted/bool?=false --transform/Transform?=null --portrait/bool?=null:
-    x_rounding_ = driver_.x_rounding
-    y_rounding_ = driver_.y_rounding
-    height := round_up driver_.height y_rounding_
-    if driver_.flags & FLAG_PARTIAL_UPDATES != 0:
-      dirty_bytes_per_line_ = (driver_.width >> 3) + 1
-      dirty_strips := (height >> 6) + 1  // 8-tall strips of dirty bits.
-      dirty_ = ByteArray dirty_bytes_per_line_ * dirty_strips
+    x-rounding_ = driver_.x-rounding
+    y-rounding_ = driver_.y-rounding
+    height := round-up driver_.height y-rounding_
+    if driver_.flags & FLAG-PARTIAL-UPDATES != 0:
+      dirty-bytes-per-line_ = (driver_.width >> 3) + 1
+      dirty-strips := (height >> 6) + 1  // 8-tall strips of dirty bits.
+      dirty_ = ByteArray dirty-bytes-per-line_ * dirty-strips
 
     if transform:
       if portrait != null or inverted: throw "INVALID_ARGUMENT"
@@ -222,25 +222,25 @@ abstract class PixelDisplay implements Window:
       if rotation == 0:
         transform_ = Transform.identity
       else if rotation == 90:
-        transform_ = (Transform.identity.translate 0 driver_.height).rotate_left
+        transform_ = (Transform.identity.translate 0 driver_.height).rotate-left
       else if rotation == 180:
-        transform_ = (Transform.identity.translate driver_.width driver_.height).rotate_left.rotate_left
+        transform_ = (Transform.identity.translate driver_.width driver_.height).rotate-left.rotate-left
       else:
-        transform_ = (Transform.identity.translate driver_.width 0).rotate_right
+        transform_ = (Transform.identity.translate driver_.width 0).rotate-right
 
-    if driver_.flags & FLAG_PARTIAL_UPDATES != 0:
-      all_is_dirty_
+    if driver_.flags & FLAG-PARTIAL-UPDATES != 0:
+      all-is-dirty_
 
   background= color/int -> none:
     if background_ != color:
       background_ = color
-      child_invalidated_ 0 0 driver_.width driver_.height
+      child-invalidated_ 0 0 driver_.width driver_.height
 
-  set_styles styles/List -> none:
+  set-styles styles/List -> none:
     elements_.do:
       if it is Element:
         element := it as Element
-        element.set_styles styles
+        element.set-styles styles
 
   /**
   Adds an element to a display.  The next time the display is refreshed, this
@@ -252,7 +252,7 @@ abstract class PixelDisplay implements Window:
   */
   add element/Element -> none:
     elements_.add element
-    element.change_tracker = this
+    element.change-tracker = this
     element.invalidate
 
   /**
@@ -261,30 +261,30 @@ abstract class PixelDisplay implements Window:
   remove element/Element -> none:
     elements_.remove element
     element.invalidate
-    element.change_tracker = null
+    element.change-tracker = null
 
   /** Removes all elements.  */
-  remove_all:
-    elements_.do: it.change_tracker = null
-    if elements_.size != 0: child_invalidated 0 0 driver_.width driver_.height
+  remove-all:
+    elements_.do: it.change-tracker = null
+    if elements_.size != 0: child-invalidated 0 0 driver_.width driver_.height
     elements_ = {}
 
-  get_element_by_id id/string -> any:
+  get-element-by-id id/string -> any:
     elements_.do: | child/Element |
-      found := child.get_element_by_id id
+      found := child.get-element-by-id id
       if found: return found
     return null
 
-  child_invalidated x/int y/int w/int h/int -> none:
+  child-invalidated x/int y/int w/int h/int -> none:
     transform_.xywh x y w h: | x2 y2 w2 h2 |
-      child_invalidated_ x2 y2 w2 h2
+      child-invalidated_ x2 y2 w2 h2
 
-  child_invalidated_ x/int y/int w/int h/int -> none:
+  child-invalidated_ x/int y/int w/int h/int -> none:
     if not dirty_: return  // Some devices don't use the dirty array to track changes.
-    dirty_left_ = min dirty_left_ x
-    dirty_right_ = max dirty_right_ (x + w)
-    dirty_top_ = min dirty_top_ y
-    dirty_bottom_ = max dirty_bottom_ (y + h)
+    dirty-left_ = min dirty-left_ x
+    dirty-right_ = max dirty-right_ (x + w)
+    dirty-top_ = min dirty-top_ y
+    dirty-bottom_ = max dirty-bottom_ (y + h)
 
     // Round up the invalidated area.
     rx := x & 7
@@ -295,36 +295,36 @@ abstract class PixelDisplay implements Window:
     h = (h + ry + 7) >> 3
 
     // x, y, w, h now measured in 8x8 blocks.
-    bitmap_rectangle x y DIRTY_ w h dirty_ dirty_bytes_per_line_
+    bitmap-rectangle x y DIRTY_ w h dirty_ dirty-bytes-per-line_
 
-  line_is_clean_ y:
-    idx := (y >> 6) * dirty_bytes_per_line_
+  line-is-clean_ y:
+    idx := (y >> 6) * dirty-bytes-per-line_
     mask := 1 << ((y >> 3) & 0b111)
-    dirty_accumulator_[0] = CLEAN_
-    blit dirty_[idx..idx+dirty_bytes_per_line_] dirty_accumulator_ dirty_bytes_per_line_ --destination_pixel_stride=0 --operation=OR
-    return dirty_accumulator_[0] & mask == CLEAN_  // Only works because CLEAN_ == 0
+    dirty-accumulator_[0] = CLEAN_
+    blit dirty_[idx..idx+dirty-bytes-per-line_] dirty-accumulator_ dirty-bytes-per-line_ --destination-pixel-stride=0 --operation=OR
+    return dirty-accumulator_[0] & mask == CLEAN_  // Only works because CLEAN_ == 0
 
-  is_dirty_ x y:
-    idx := (y >> 6) * dirty_bytes_per_line_
+  is-dirty_ x y:
+    idx := (y >> 6) * dirty-bytes-per-line_
     mask := 1 << ((y >> 3) & 0b111)
     byte := x >> 3
     return dirty_[idx + byte] & mask != CLEAN_  // Only works because CLEAN_ == 0
 
   /// For displays that don't support any form of partial update.
-  draw_entire_display_:
-    driver_.start_full_update speed_
+  draw-entire-display_:
+    driver_.start-full-update speed_
     w := driver_.width
-    step := round_up
-        max_canvas_height_ driver_.width
-        y_rounding_
-    canvas := create_canvas_ w step
-    List.chunk_up 0 (round_up driver_.height y_rounding_) step: | top bottom |
+    step := round-up
+        max-canvas-height_ driver_.width
+        y-rounding_
+    canvas := create-canvas_ w step
+    List.chunk-up 0 (round-up driver_.height y-rounding_) step: | top bottom |
       // For the Elements.
       // To get the translation for this tile in the driver coordinates instead
       // of the display coordinates, we invert the 2d transform, then translate
       // it, then invert it again.
       canvas.transform = (transform_.invert.translate 0 top).invert
-      canvas.set_all_pixels background_
+      canvas.set-all-pixels background_
       elements_.do:
         it.draw canvas
       draw_ 0 top driver_.width bottom canvas
@@ -339,72 +339,72 @@ abstract class PixelDisplay implements Window:
   */
   draw --speed/int=50 -> none:
     speed_ = speed
-    if speed < 10 or driver_.flags & FLAG_PARTIAL_UPDATES == 0:
-      draw_entire_display_
-      if dirty_: bitmap_zap dirty_ CLEAN_
+    if speed < 10 or driver_.flags & FLAG-PARTIAL-UPDATES == 0:
+      draw-entire-display_
+      if dirty_: bitmap-zap dirty_ CLEAN_
       return
 
     // Send data for the whole screen, even if only part of it changed.
-    if speed < 50: all_is_dirty_
+    if speed < 50: all-is-dirty_
 
-    driver_.start_partial_update speed
+    driver_.start-partial-update speed
     refreshed := false
     try:
-      refresh_dimensions ::= [driver_.width, 0, driver_.height, 0]
-      update_frame_buffer false refresh_dimensions
-      refresh_ refresh_dimensions[0] refresh_dimensions[2] refresh_dimensions[1] refresh_dimensions[3]
+      refresh-dimensions ::= [driver_.width, 0, driver_.height, 0]
+      update-frame-buffer false refresh-dimensions
+      refresh_ refresh-dimensions[0] refresh-dimensions[2] refresh-dimensions[1] refresh-dimensions[3]
       refreshed = true
     finally:
       if not refreshed: refresh_ 0 0 0 0
 
-    all_is_clean_
+    all-is-clean_
 
-  all_is_clean_ -> none:
-    bitmap_zap dirty_ CLEAN_
-    dirty_left_ = driver_.width
-    dirty_right_ = 0
-    dirty_top_ = driver_.height
-    dirty_bottom_ = 0
+  all-is-clean_ -> none:
+    bitmap-zap dirty_ CLEAN_
+    dirty-left_ = driver_.width
+    dirty-right_ = 0
+    dirty-top_ = driver_.height
+    dirty-bottom_ = 0
 
-  all_is_dirty_ -> none:
-    bitmap_zap dirty_ DIRTY_
-    dirty_left_ = 0
-    dirty_right_ = driver_.width
-    dirty_top_ = 0
-    dirty_bottom_ = driver_.height
+  all-is-dirty_ -> none:
+    bitmap-zap dirty_ DIRTY_
+    dirty-left_ = 0
+    dirty-right_ = driver_.width
+    dirty-top_ = 0
+    dirty-bottom_ = driver_.height
 
   // Clean determines if we should clean or draw the dirty area.
-  update_frame_buffer clean/bool refresh_dimensions -> none:
+  update-frame-buffer clean/bool refresh-dimensions -> none:
     redraw := : | l t r b |
       if clean:
-        clean_rect_ l t r b
+        clean-rect_ l t r b
       else:
-        redraw_rect_ l t r b
+        redraw-rect_ l t r b
 
     // Perhaps we can do it all with one canvas.
-    l := round_down (max 0 dirty_left_) x_rounding_
-    r := round_up (min driver_.width dirty_right_) x_rounding_
-    t := round_down (max 0 dirty_top_) y_rounding_
-    b := round_up (min driver_.height dirty_bottom_) y_rounding_
+    l := round-down (max 0 dirty-left_) x-rounding_
+    r := round-up (min driver_.width dirty-right_) x-rounding_
+    t := round-down (max 0 dirty-top_) y-rounding_
+    b := round-up (min driver_.height dirty-bottom_) y-rounding_
 
     if l >= r or t >= b: return
 
-    if (max_canvas_height_ (r - l)) >= b - t:
+    if (max-canvas-height_ (r - l)) >= b - t:
       redraw.call l t r b
       return
 
     // Perhaps we can do it in two canvases, split to be as square as
     // possible.
-    if r - l > b - t and r - l >= x_rounding_ * 2:
-      w := round_up ((r - l) >> 1) x_rounding_
-      if (max_canvas_height_ w) >= b - t:
+    if r - l > b - t and r - l >= x-rounding_ * 2:
+      w := round-up ((r - l) >> 1) x-rounding_
+      if (max-canvas-height_ w) >= b - t:
         redraw.call l t (l + w) b
         redraw.call (l + w) t r b
         return
     // Perhaps we can do it in two canvases, split vertically.
-    else if b - t >= y_rounding_ * 2:
-      h := round_up ((b - t) >> 1) y_rounding_
-      if (max_canvas_height_ (r - l)) >= h:
+    else if b - t >= y-rounding_ * 2:
+      h := round-up ((b - t) >> 1) y-rounding_
+      if (max-canvas-height_ (r - l)) >= h:
         redraw.call l t r (t + h)
         redraw.call l (t + h) r b
         return
@@ -412,100 +412,100 @@ abstract class PixelDisplay implements Window:
     // Start with a width target of (slightly less than) 64 pixels, but ask
     // the canvas how tall the patches can be. It will normally try pick a
     // height that keeps things inside a 4k page.
-    width_target := 64
+    width-target := 64
     width := ?
-    max_height := ?
+    max-height := ?
     while true:
       // Canvas sizes must often be slightly less than 4k in order to fit into
       // a 4k page with object header overhead. By subtracting 8 here we get nice
       // heights like 8, 16, 24, 32 that almost fill the max canvas size.
-      width = min driver_.width (width_target - 8)
-      max_height = max
-          round_down (max_canvas_height_ width) y_rounding_
-          y_rounding_
+      width = min driver_.width (width-target - 8)
+      max-height = max
+          round-down (max-canvas-height_ width) y-rounding_
+          y-rounding_
       // Don't widen any more if the patches are already too flat to fill the full height.
-      if max_height < driver_.height: break
+      if max-height < driver_.height: break
       // Don't widen any more if the patches already cover the whole width.
       if width >= driver_.width: break
-      width_target += width_target
+      width-target += width-target
 
     // The algorithm below requires that x aligns with 8 pixels, the resolution
     // of the dirty map.
-    start_x := round_down (max 0 dirty_left_) 8
+    start-x := round-down (max 0 dirty-left_) 8
 
     // Outer loop - the coarse rectangles that are the max size of
     // update patches.
-    for y:= 0; y < driver_.height; y += max_height:
-      while line_is_clean_ y:
+    for y:= 0; y < driver_.height; y += max-height:
+      while line-is-clean_ y:
         y = (y + 8) & ~7  // Move on to next factor of 8.
         if y >= driver_.height: break
       if y >= driver_.height: break
-      for x := start_x; x < driver_.width; x += width:
+      for x := start-x; x < driver_.width; x += width:
         left := x
         right := min (x + width) driver_.width
         top := y
-        bottom := min (y + max_height) driver_.height
+        bottom := min (y + max-height) driver_.height
 
         // Quick check if the whole rectangle is clean.  This is a little
         // imprecise because the same mask is used for all lines.
         mask := 0
         for iy := top; iy < bottom; iy += 8:
           mask |= 1 << ((iy >> 3) & 0b111)
-        idx := (top >> 6) * dirty_bytes_per_line_ + (left >> 3)
-        end_idx := ((round_up bottom 64) >> 6) * dirty_bytes_per_line_
-        dirty_accumulator_[0] = CLEAN_
-        blit dirty_[idx..end_idx] dirty_accumulator_ ((right - left + 7) >> 3) --source_line_stride=dirty_bytes_per_line_ --destination_pixel_stride=0 --destination_line_stride=0 --operation=OR
-        if dirty_accumulator_[0] & mask == CLEAN_:
+        idx := (top >> 6) * dirty-bytes-per-line_ + (left >> 3)
+        end-idx := ((round-up bottom 64) >> 6) * dirty-bytes-per-line_
+        dirty-accumulator_[0] = CLEAN_
+        blit dirty_[idx..end-idx] dirty-accumulator_ ((right - left + 7) >> 3) --source-line-stride=dirty-bytes-per-line_ --destination-pixel-stride=0 --destination-line-stride=0 --operation=OR
+        if dirty-accumulator_[0] & mask == CLEAN_:
           continue
 
         // Inner loop.  For each coarse rectangle, find the smallest rectangle
         // that covers all the dirty bits.
-        dirty_left := right
-        dirty_right := left
-        dirty_top := bottom
-        dirty_bottom := top
+        dirty-left := right
+        dirty-right := left
+        dirty-top := bottom
+        dirty-bottom := top
         for iy := top; iy < bottom; iy += 8:
-          line_mask := 1 << ((iy >> 3) & 0b111)
-          if dirty_accumulator_[0] & line_mask == CLEAN_:
+          line-mask := 1 << ((iy >> 3) & 0b111)
+          if dirty-accumulator_[0] & line-mask == CLEAN_:
             continue
           for ix := left; ix < right; ix += 8:
-            if is_dirty_ ix iy:
-              dirty_left = min dirty_left ix
-              dirty_right = max dirty_right (ix + 8)
-              dirty_top = min dirty_top iy
-              dirty_bottom = max dirty_bottom (iy + 8)
-        dirty_left = max dirty_left (round_down (max 0 dirty_left_) x_rounding_)
-        dirty_right = min dirty_right (round_up (min driver_.width dirty_right_) x_rounding_)
-        dirty_top = max dirty_top (round_down (max 0 dirty_top_) y_rounding_)
-        dirty_bottom = min dirty_bottom (round_up (min driver_.height dirty_bottom_) y_rounding_)
-        if dirty_left <= dirty_right and dirty_top <= dirty_bottom:
-          if dirty_top < refresh_dimensions[2]: refresh_dimensions[2] = dirty_top
-          if dirty_bottom > refresh_dimensions[3]: refresh_dimensions[3] = dirty_bottom
-          if dirty_left < refresh_dimensions[0]: refresh_dimensions[0] = dirty_left
-          if dirty_right > refresh_dimensions[1]: refresh_dimensions[1] = dirty_right
-          redraw.call dirty_left dirty_top dirty_right dirty_bottom
+            if is-dirty_ ix iy:
+              dirty-left = min dirty-left ix
+              dirty-right = max dirty-right (ix + 8)
+              dirty-top = min dirty-top iy
+              dirty-bottom = max dirty-bottom (iy + 8)
+        dirty-left = max dirty-left (round-down (max 0 dirty-left_) x-rounding_)
+        dirty-right = min dirty-right (round-up (min driver_.width dirty-right_) x-rounding_)
+        dirty-top = max dirty-top (round-down (max 0 dirty-top_) y-rounding_)
+        dirty-bottom = min dirty-bottom (round-up (min driver_.height dirty-bottom_) y-rounding_)
+        if dirty-left <= dirty-right and dirty-top <= dirty-bottom:
+          if dirty-top < refresh-dimensions[2]: refresh-dimensions[2] = dirty-top
+          if dirty-bottom > refresh-dimensions[3]: refresh-dimensions[3] = dirty-bottom
+          if dirty-left < refresh-dimensions[0]: refresh-dimensions[0] = dirty-left
+          if dirty-right > refresh-dimensions[1]: refresh-dimensions[1] = dirty-right
+          redraw.call dirty-left dirty-top dirty-right dirty-bottom
 
-  redraw_rect_ left/int top/int right/int bottom/int -> none:
-    canvas := create_canvas_ (right - left) (bottom - top)
+  redraw-rect_ left/int top/int right/int bottom/int -> none:
+    canvas := create-canvas_ (right - left) (bottom - top)
     // For the Elements:
     // To get the translation for this tile in the driver coordinates instead
     // of the display coordinates, we invert the 2d transform, then translate
     // it, then invert it again.
     canvas.transform = (transform_.invert.translate left top).invert
 
-    canvas.set_all_pixels background_
+    canvas.set-all-pixels background_
     elements_.do:
       it.draw canvas
 
     draw_ left top right bottom canvas
 
-  abstract max_canvas_height_ width/int -> int
+  abstract max-canvas-height_ width/int -> int
 
-  abstract create_canvas_ w/int h/int -> Canvas
+  abstract create-canvas_ w/int h/int -> Canvas
 
   abstract draw_ x y w h canvas/Canvas -> none
 
-  clean_rect_ left/int top/int right/int bottom/int -> none:
+  clean-rect_ left/int top/int right/int bottom/int -> none:
     driver_.clean left top right bottom
 
   refresh_ left/int top/int right/int bottom/int -> none:
@@ -527,26 +527,26 @@ See https://docs.toit.io/language/sdk/display
 class TwoColorPixelDisplay_ extends PixelDisplay:
   constructor driver/AbstractDriver --inverted/bool=false --portrait/bool=false --transform/Transform?=null:
     super driver --inverted=inverted --portrait=portrait --transform=transform
-    background_ = two_color.WHITE
+    background_ = two-color.WHITE
 
-  max_canvas_height_ width/int -> int:
+  max-canvas-height_ width/int -> int:
     height := 0
-    width_rounded := round_up width 8
-    height_rounded := round_up driver_.height 8
-    if width_rounded * height_rounded >> 3 < 4000:
+    width-rounded := round-up width 8
+    height-rounded := round-up driver_.height 8
+    if width-rounded * height-rounded >> 3 < 4000:
       // If we can fit both the red and black plane in < 8k then do that.
-      height = height_rounded
+      height = height-rounded
     else:
       // Some multiple of 8 where each plane fits in one page.
-      height = (4000 / width_rounded) << 3
+      height = (4000 / width-rounded) << 3
     // We can't work well with canvases that are less than 8 pixels tall.
     return max 8 height
 
-  create_canvas_ w/int h/int -> Canvas:
-    return two_color.Canvas_ w h
+  create-canvas_ w/int h/int -> Canvas:
+    return two-color.Canvas_ w h
 
-  draw_ x/int y/int w/int h/int canvas/two_color.Canvas_ -> none:
-      driver_.draw_two_color x y w h canvas.pixels_
+  draw_ x/int y/int w/int h/int canvas/two-color.Canvas_ -> none:
+      driver_.draw-two-color x y w h canvas.pixels_
 
 /**
 Pixel-based display with four shades of gray, connected to a device.
@@ -559,10 +559,10 @@ See https://docs.toit.io/language/sdk/display
 class FourGrayPixelDisplay_ extends TwoBitPixelDisplay_:
   constructor driver/AbstractDriver --inverted/bool=false --portrait/bool=false --transform/Transform?=null:
     super driver --inverted=inverted --portrait=portrait --transform=transform
-    background_ = four_gray.WHITE
+    background_ = four-gray.WHITE
 
-  create_canvas_ w/int h/int -> Canvas:
-    return four_gray.Canvas_ w h
+  create-canvas_ w/int h/int -> Canvas:
+    return four-gray.Canvas_ w h
 
 /**
 Pixel-based display with black, white, and red, connected to a device.
@@ -575,32 +575,32 @@ See https://docs.toit.io/language/sdk/display
 class ThreeColorPixelDisplay_ extends TwoBitPixelDisplay_:
   constructor driver/AbstractDriver --inverted/bool=false --portrait/bool=false --transform/Transform?=null:
     super driver --inverted=inverted --portrait=portrait --transform=transform
-    background_ = three_color.WHITE
+    background_ = three-color.WHITE
 
-  create_canvas_ w/int h/int -> Canvas:
-    return three_color.Canvas_ w h
+  create-canvas_ w/int h/int -> Canvas:
+    return three-color.Canvas_ w h
 
 abstract class TwoBitPixelDisplay_ extends PixelDisplay:
-  background_ := three_color.WHITE
+  background_ := three-color.WHITE
 
   constructor driver/AbstractDriver --inverted/bool=false --portrait/bool=false --transform/Transform?=null:
     super driver --inverted=inverted --portrait=portrait --transform=transform
 
-  max_canvas_height_ width:
-    width_rounded := round_up width 8
-    height_rounded := round_up driver_.height 8
+  max-canvas-height_ width:
+    width-rounded := round-up width 8
+    height-rounded := round-up driver_.height 8
     height := ?
-    if width_rounded * height_rounded >> 3 < 4000:
+    if width-rounded * height-rounded >> 3 < 4000:
       // If we can fit both the red and black plane in < 8k then do that.
-      height = height_rounded
+      height = height-rounded
     else:
       // Some multiple of 8 where each plane fits in one page.
-      height = (4000 / width_rounded) << 3
+      height = (4000 / width-rounded) << 3
     // We can't work well with canvases that are less than 8 pixels tall.
     return max 8 height
 
-  draw_ x/int y/int w/int h/int canvas/two_bit.Canvas_ -> none:
-    driver_.draw_two_bit x y w h canvas.plane_0_ canvas.plane_1_
+  draw_ x/int y/int w/int h/int canvas/two-bit.Canvas_ -> none:
+    driver_.draw-two-bit x y w h canvas.plane-0_ canvas.plane-1_
 
 /**
 Pixel-based display with up to 256 shades of gray, connected to a device.
@@ -613,20 +613,20 @@ See https://docs.toit.io/language/sdk/display
 class GrayScalePixelDisplay_ extends PixelDisplay:
   constructor driver/AbstractDriver --inverted/bool=false --portrait/bool=false --transform/Transform?=null:
     super driver --inverted=inverted --portrait=portrait --transform=transform
-    background_ = gray_scale.WHITE
+    background_ = gray-scale.WHITE
 
-  max_canvas_height_ width:
+  max-canvas-height_ width:
     height := 0
     // Keep each color component under 2k so you can fit two on a page.
-    height = round_down (2000 / width) 8
+    height = round-down (2000 / width) 8
     // We can't work well with canvases that are less than 4 pixels tall.
     return height < 8 ? 4 : height
 
-  create_canvas_ w/int h/int -> Canvas:
-    return gray_scale.Canvas_ w h
+  create-canvas_ w/int h/int -> Canvas:
+    return gray-scale.Canvas_ w h
 
-  draw_ x/int y/int w/int h/int canvas/gray_scale.Canvas_ -> none:
-    driver_.draw_gray_scale x y w h canvas.pixels_
+  draw_ x/int y/int w/int h/int canvas/gray-scale.Canvas_ -> none:
+    driver_.draw-gray-scale x y w h canvas.pixels_
 
 /**
 Pixel-based display with up to 256 colors, connected to a device.
@@ -641,18 +641,18 @@ class SeveralColorPixelDisplay_ extends PixelDisplay:
     super driver --inverted=inverted --portrait=portrait --transform=transform
     background_ = 0
 
-  max_canvas_height_ width:
+  max-canvas-height_ width:
     height := 0
     // Keep each color component under 2k so you can fit two on a page.
-    height = round_down (2000 / width) 8
+    height = round-down (2000 / width) 8
     // We can't work well with canvases that are less than 4 pixels tall.
     return height < 8 ? 4 : height
 
-  create_canvas_ w/int h/int -> Canvas:
-    return several_color.Canvas_ w h
+  create-canvas_ w/int h/int -> Canvas:
+    return several-color.Canvas_ w h
 
-  draw_ x/int y/int w/int h/int canvas/several_color.Canvas_ -> none:
-    driver_.draw_several_color x y w h canvas.pixels_
+  draw_ x/int y/int w/int h/int canvas/several-color.Canvas_ -> none:
+    driver_.draw-several-color x y w h canvas.pixels_
 
 /**
 Pixel-based display with up to 16 million colors, connected to a device.
@@ -665,18 +665,18 @@ See https://docs.toit.io/language/sdk/display
 class TrueColorPixelDisplay_ extends PixelDisplay:
   constructor driver/AbstractDriver --inverted/bool=false --portrait/bool=false --transform/Transform?=null:
     super driver --inverted=inverted --portrait=portrait --transform=transform
-    background_ = true_color.WHITE
+    background_ = true-color.WHITE
 
-  max_canvas_height_ width:
+  max-canvas-height_ width:
     height := 0
     // Keep each color component under 2k then the packed 3-colors-in-2-bytes
     // format is still less than a page.
-    height = round_down (2000 / width) 8
+    height = round-down (2000 / width) 8
     // We can't work well with canvases that are less than 4 pixels tall.
     return max 4 height
 
-  create_canvas_ w/int h/int -> Canvas:
-    return true_color.Canvas_ w h
+  create-canvas_ w/int h/int -> Canvas:
+    return true-color.Canvas_ w h
 
-  draw_ x/int y/int w/int h/int canvas/true_color.Canvas_ -> none:
-    driver_.draw_true_color x y w h canvas.red_ canvas.green_ canvas.blue_
+  draw_ x/int y/int w/int h/int canvas/true-color.Canvas_ -> none:
+    driver_.draw-true-color x y w h canvas.red_ canvas.green_ canvas.blue_

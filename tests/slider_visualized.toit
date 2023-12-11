@@ -8,12 +8,12 @@
 import bitmap show *
 import expect show *
 import font show *
-import pixel_display show *
-import pixel_display.element show *
-import pixel_display.gradient show *
-import pixel_display.slider show *
-import pixel_display.style show *
-import .png_visualizer
+import pixel-display show *
+import pixel-display.element show *
+import pixel-display.gradient show *
+import pixel-display.slider show *
+import pixel-display.style show *
+import .png-visualizer
 
 main args:
   if args.size != 1:
@@ -22,7 +22,7 @@ main args:
   WIDTH ::= 220
   HEIGHT ::= 140
   driver := TrueColorPngVisualizer WIDTH HEIGHT args[0] --outline=0x4040ff
-  display := PixelDisplay.true_color driver
+  display := PixelDisplay.true-color driver
   display.background = 0x808080
 
   heat := GradientBackground --angle=0 --specifiers=[
@@ -40,7 +40,7 @@ main args:
   sliders := List 5:
       Slider --x=(20 + 40 * it) --y=10 --value=(10 + it * 20)
   labels := List 5:
-      Label --x=(30 + 40 * it) --y=125 --label="$(%c 'A' + it)" --alignment=ALIGN_CENTER
+      Label --x=(30 + 40 * it) --y=125 --label="$(%c 'A' + it)" --alignment=ALIGN-CENTER
 
   content := Div --x=0 --y=0 --w=WIDTH --h=HEIGHT --background=0x202020 (sliders + labels)
 
@@ -59,10 +59,10 @@ main args:
           "label": Style --font=sans10 --color=0xffffff,
       }
 
-  content.set_styles [style]
+  content.set-styles [style]
 
   display.draw
-  driver.write_png
+  driver.write-png
 
   sliders[0].value = 50
   sliders[1].value = 70
@@ -71,4 +71,4 @@ main args:
   sliders[4].value = 30
 
   display.draw
-  driver.write_png
+  driver.write-png

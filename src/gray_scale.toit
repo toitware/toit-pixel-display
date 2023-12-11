@@ -3,22 +3,22 @@
 // found in the LICENSE file.
 
 /**
-Constants useful for $PixelDisplay.gray_scale.
+Constants useful for $PixelDisplay.gray-scale.
 */
 
 import bitmap show *
 import font show Font
 import icons show Icon
-import .pixel_display show PixelDisplay  // For the doc comments.
-import .one_byte
+import .pixel-display show PixelDisplay  // For the doc comments.
+import .one-byte
 
-/// Color value for use with $PixelDisplay.gray_scale.
+/// Color value for use with $PixelDisplay.gray-scale.
 WHITE ::= 255
-/// Color value for use with $PixelDisplay.gray_scale.
-LIGHT_GRAY ::= 170
-/// Color value for use with $PixelDisplay.gray_scale.
-DARK_GRAY ::= 85
-/// Color value for use with $PixelDisplay.gray_scale.
+/// Color value for use with $PixelDisplay.gray-scale.
+LIGHT-GRAY ::= 170
+/// Color value for use with $PixelDisplay.gray-scale.
+DARK-GRAY ::= 85
+/// Color value for use with $PixelDisplay.gray-scale.
 BLACK ::= 0
 
 // The canvas contains a ByteArray.
@@ -27,13 +27,13 @@ class Canvas_ extends OneByteCanvas_:
   constructor width/int height/int:
     super width height
 
-  supports_8_bit -> bool: return true
-  gray_scale -> bool: return true
+  supports-8-bit -> bool: return true
+  gray-scale -> bool: return true
 
   /**
   Creates a blank canvas with the same dimensions as this one.
   */
-  create_similar:
+  create-similar:
     result := Canvas_ width_ height_
     result.transform=transform
     return result

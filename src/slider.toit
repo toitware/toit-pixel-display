@@ -20,12 +20,12 @@ class Slider extends CustomElement:
   value_/num? := ?
   min_/num? := ?
   max_/num? := ?
-  background_lo_ := ?
-  background_hi_ := ?
+  background-lo_ := ?
+  background-hi_ := ?
   horizontal_ := ?
 
-  thumb_min_/int
-  thumb_max_/int?
+  thumb-min_/int
+  thumb-max_/int?
   boundary_/int := 0
 
   type -> string: return "slider"
@@ -33,13 +33,13 @@ class Slider extends CustomElement:
   /**
   Constructs a new slider element.
   You can provide a background to draw when the slider is above a certain level
-    ($background_hi), and a different one for when the slider is below that
-    level ($background_lo).  If either background is omitted the slider is
+    ($background-hi), and a different one for when the slider is below that
+    level ($background-lo).  If either background is omitted the slider is
     transparent in that section.
   The initial level of the slider is given by $value, and it should be between
     the values of $min and $max, which default to 0 and 100, respectively.
   The boundary between the two backgrounds is drawn in a linear position
-    between $thumb_min and $thumb_max, which default to 0, and height or width
+    between $thumb-min and $thumb-max, which default to 0, and height or width
     of the element, respectively.
   The slider supports the extra $Style keys "background-lo", "background-hi",
     "horizontal", "min", "max", and "value".
@@ -54,21 +54,21 @@ class Slider extends CustomElement:
       --classes/List?=null
       --id/string?=null
       --border/Border?=null
-      --background_hi=null
-      --background_lo=null
+      --background-hi=null
+      --background-lo=null
       --value/num?=null
       --min/num?=0
       --max/num?=100
-      --thumb_min/int=0
-      --thumb_max/int?=null
+      --thumb-min/int=0
+      --thumb-max/int?=null
       --horizontal/bool=false:
     value_ = value
     min_ = min
     max_ = max
-    background_lo_ = background_lo
-    background_hi_ = background_hi
-    thumb_min_ = thumb_min
-    thumb_max_ = thumb_max
+    background-lo_ = background-lo
+    background-hi_ = background-hi
+    thumb-min_ = thumb-min
+    thumb-max_ = thumb-max
     horizontal_ = horizontal
     super
         --x=x
@@ -81,18 +81,18 @@ class Slider extends CustomElement:
         --border = border
     recalculate_
 
-  thumb_max: return thumb_max_ or (horizontal_ ? w : h)
+  thumb-max: return thumb-max_ or (horizontal_ ? w : h)
 
   recalculate_ -> none:
     if not (min_ and max_ and value_ and h): return
     if (min_ == max_): return
     value_ = max value_ min_
     value_ = min value_ max_
-    old_boundary := boundary_
-    boundary_ = ((value_ - min_).to_float / (max_ - min_) * (thumb_max - thumb_min_) + 0.1).to_int + thumb_min_
-    if boundary_ != old_boundary:
-      top := max old_boundary boundary_
-      bottom := min old_boundary boundary_
+    old-boundary := boundary_
+    boundary_ = ((value_ - min_).to-float / (max_ - min_) * (thumb-max - thumb-min_) + 0.1).to-int + thumb-min_
+    if boundary_ != old-boundary:
+      top := max old-boundary boundary_
+      bottom := min old-boundary boundary_
       if horizontal_:
         invalidate
             --x = x + w - top
@@ -116,53 +116,53 @@ class Slider extends CustomElement:
       recalculate_
       invalidate
 
-  custom_draw canvas/Canvas -> none:
+  custom-draw canvas/Canvas -> none:
     blend := false
-    if background_lo_ and boundary_ > thumb_min_:
+    if background-lo_ and boundary_ > thumb-min_:
       analysis := ?
       if horizontal_:
-        analysis = canvas.bounds_analysis 0 0 (w - boundary_) h
+        analysis = canvas.bounds-analysis 0 0 (w - boundary_) h
       else:
-        analysis = canvas.bounds_analysis 0 0 w (h - boundary_)
+        analysis = canvas.bounds-analysis 0 0 w (h - boundary_)
       if analysis != Canvas.DISJOINT:
-        if analysis == Canvas.CANVAS_IN_AREA or analysis == Canvas.COINCIDENT:
-          background_lo_.draw canvas 0 0 w h --autoclipped
+        if analysis == Canvas.CANVAS-IN-AREA or analysis == Canvas.COINCIDENT:
+          background-lo_.draw canvas 0 0 w h --autoclipped
         else:
           blend = true
-    if background_hi_ and boundary_ < thumb_max:
+    if background-hi_ and boundary_ < thumb-max:
       analysis := ?
       if horizontal_:
-        analysis = canvas.bounds_analysis (w - boundary_) 0 w h
+        analysis = canvas.bounds-analysis (w - boundary_) 0 w h
       else:
-        analysis = canvas.bounds_analysis 0 (h - boundary_) w h
+        analysis = canvas.bounds-analysis 0 (h - boundary_) w h
       if analysis != Canvas.DISJOINT:
-        if analysis == Canvas.CANVAS_IN_AREA or analysis == Canvas.COINCIDENT:
-          background_hi_.draw canvas 0 0 w h --autoclipped
+        if analysis == Canvas.CANVAS-IN-AREA or analysis == Canvas.COINCIDENT:
+          background-hi_.draw canvas 0 0 w h --autoclipped
         else:
           blend = true
     if not blend: return
 
-    lo_alpha := background_lo_ ? canvas.make_alpha_map : Canvas.ALL_TRANSPARENT
-    hi_alpha := background_hi_ ? canvas.make_alpha_map : Canvas.ALL_TRANSPARENT
-    lo := canvas.create_similar
-    hi := canvas.create_similar
+    lo-alpha := background-lo_ ? canvas.make-alpha-map : Canvas.ALL-TRANSPARENT
+    hi-alpha := background-hi_ ? canvas.make-alpha-map : Canvas.ALL-TRANSPARENT
+    lo := canvas.create-similar
+    hi := canvas.create-similar
 
-    if background_lo_:
+    if background-lo_:
       if horizontal_:
-        lo_alpha.rectangle 0 0 --w=(w - boundary_) --h=h --color=0xff
+        lo-alpha.rectangle 0 0 --w=(w - boundary_) --h=h --color=0xff
       else:
-        lo_alpha.rectangle 0 0 --w=w --h=(h - boundary_) --color=0xff
-      Background.draw background_lo_ lo 0 0 w h --autoclipped
-    if background_hi_:
+        lo-alpha.rectangle 0 0 --w=w --h=(h - boundary_) --color=0xff
+      Background.draw background-lo_ lo 0 0 w h --autoclipped
+    if background-hi_:
       if horizontal_:
-        hi_alpha.rectangle (w - boundary_) 0 --w=boundary_ --h=h --color=0xff
+        hi-alpha.rectangle (w - boundary_) 0 --w=boundary_ --h=h --color=0xff
       else:
-        hi_alpha.rectangle 0 (h - boundary_) --w=w --h=boundary_ --color=0xff
-      Background.draw background_hi_ hi 0 0 w h --autoclipped
+        hi-alpha.rectangle 0 (h - boundary_) --w=w --h=boundary_ --color=0xff
+      Background.draw background-hi_ hi 0 0 w h --autoclipped
 
-    canvas.composit hi_alpha hi lo_alpha lo
+    canvas.composit hi-alpha hi lo-alpha lo
 
-  set_attribute_ key/string value -> none:
+  set-attribute_ key/string value -> none:
     if key == "value":
       value_ = value
       recalculate_
@@ -173,10 +173,10 @@ class Slider extends CustomElement:
       max_ = value
       recalculate_
     else if key == "background-lo":
-      background_lo_ = value
+      background-lo_ = value
       invalidate
     else if key == "background-hi":
-      background_hi_ = value
+      background-hi_ = value
       invalidate
     else if key == "horizontal":
       invalidate

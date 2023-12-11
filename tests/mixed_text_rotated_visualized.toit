@@ -8,49 +8,49 @@
 import bitmap show *
 import expect show *
 import font show *
-import pixel_display show *
-import pixel_display.element show *
-import pixel_display.style show *
-import .png_visualizer
+import pixel-display show *
+import pixel-display.element show *
+import pixel-display.style show *
+import .png-visualizer
 
 main args:
   if args.size != 1:
     print "Usage: script.toit png-basename"
     exit 1
-  driver := SeveralColorPngVisualizer 160 96 args[0] --outline=SEVERAL_WHITE
-  display := PixelDisplay.several_color driver --portrait
-  display.background = SEVERAL_DARK_GRAY
+  driver := SeveralColorPngVisualizer 160 96 args[0] --outline=SEVERAL-WHITE
+  display := PixelDisplay.several-color driver --portrait
+  display.background = SEVERAL-DARK-GRAY
 
   sans10 := Font.get "sans10"
 
   // Element-based text.
-  element_text := Label --x=10 --y=30 --color=SEVERAL_GREEN --font=sans10 --label="Element 1"
-  element_text_2 := Label --x=10 --y=110 --color=SEVERAL_GREEN --font=sans10 --label="Element 2"
-  display.add element_text
-  display.add element_text_2
+  element-text := Label --x=10 --y=30 --color=SEVERAL-GREEN --font=sans10 --label="Element 1"
+  element-text-2 := Label --x=10 --y=110 --color=SEVERAL-GREEN --font=sans10 --label="Element 2"
+  display.add element-text
+  display.add element-text-2
   display.draw
 
-  element_text.move_to 20 30
+  element-text.move-to 20 30
   display.draw
 
   display.draw
 
-  element_text_2.move_to 20 110
+  element-text-2.move-to 20 110
   display.draw
 
-  element_text.alignment = ALIGN_RIGHT
+  element-text.alignment = ALIGN-RIGHT
   display.draw
 
-  element_text.orientation = ORIENTATION_90
-  element_text_2.orientation = ORIENTATION_90
+  element-text.orientation = ORIENTATION-90
+  element-text-2.orientation = ORIENTATION-90
   display.draw
 
-  element_text.orientation = ORIENTATION_180
-  element_text_2.orientation = ORIENTATION_180
+  element-text.orientation = ORIENTATION-180
+  element-text-2.orientation = ORIENTATION-180
   display.draw
 
-  element_text.orientation = ORIENTATION_270
-  element_text_2.orientation = ORIENTATION_270
+  element-text.orientation = ORIENTATION-270
+  element-text-2.orientation = ORIENTATION-270
   display.draw
 
-  driver.write_png
+  driver.write-png
