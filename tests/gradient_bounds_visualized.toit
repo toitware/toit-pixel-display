@@ -53,7 +53,7 @@ main args:
 
   display.draw
 
-  // Rotate all gradient_elements 30 degrees.
+  // Rotate all gradient-elements 30 degrees.
   angle := 30
   gradient-elements.do:
     it.background = GradientBackground --angle=angle --specifiers=it.background.specifiers
