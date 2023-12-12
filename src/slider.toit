@@ -23,6 +23,7 @@ class Slider extends CustomElement:
   background-lo_ := ?
   background-hi_ := ?
   horizontal_ := ?
+  inverted_/bool := false
 
   thumb-min_/int
   thumb-max_/int?
@@ -42,7 +43,10 @@ class Slider extends CustomElement:
     between $thumb-min and $thumb-max, which default to 0, and height or width
     of the element, respectively.
   The slider supports the extra $Style keys "background-lo", "background-hi",
-    "horizontal", "min", "max", and "value".
+    "horizontal", "inverted", "min", "max", and "value".
+  If $horizontal is true, the slider is horizontal, otherwise it is vertical.
+  If $inverted is true, the slider grows from top to bottom or from
+    right to left, depending on $horizontal.
   See also $Element.constructor.
   */
   constructor
@@ -61,7 +65,8 @@ class Slider extends CustomElement:
       --max/num?=100
       --thumb-min/int=0
       --thumb-max/int?=null
-      --horizontal/bool=false:
+      --horizontal/bool=false
+      --inverted/bool=false:
     value_ = value
     min_ = min
     max_ = max
@@ -70,6 +75,7 @@ class Slider extends CustomElement:
     thumb-min_ = thumb-min
     thumb-max_ = thumb-max
     horizontal_ = horizontal
+    inverted_ = inverted
     super
         --x=x
         --y=y
@@ -95,11 +101,11 @@ class Slider extends CustomElement:
       bottom := min old-boundary boundary_
       if horizontal_:
         invalidate
-            --x = x + w - top
+            --x = x + (inverted_ ? w - top : bottom)
             --w = top - bottom
       else:
         invalidate
-            --y = y + h - top
+            --y = y + (inverted_ ? bottom : h - top)
             --h = top - bottom
 
   h= value/int -> none:
@@ -118,23 +124,41 @@ class Slider extends CustomElement:
 
   custom-draw canvas/Canvas -> none:
     blend := false
-    if background-lo_ and boundary_ > thumb-min_:
-      analysis := ?
-      if horizontal_:
-        analysis = canvas.bounds-analysis 0 0 (w - boundary_) h
-      else:
-        analysis = canvas.bounds-analysis 0 0 w (h - boundary_)
+    lo-left := 0
+    lo-top := 0
+    lo-width := ?
+    lo-height := ?
+    hi-left := 0
+    hi-top := 0
+    hi-width := ?
+    hi-height := ?
+    if horizontal_:
+      lo-height = h
+      hi-height = h
+      lo-width = w - boundary_
+      hi-width = boundary_
+      if inverted_:  // Grows from right to left.
+        hi-left = w - boundary_
+      else:  // Grows from left to right.
+        lo-left = boundary_
+    else:
+      lo-width = w
+      hi-width = w
+      lo-height = h - boundary_
+      hi-height = boundary_
+      if inverted_:  // Grows from bottom to top.
+        lo-top = boundary_
+      else:  // Grows from top to bottom.
+        hi-top = h - boundary_
+    if background-lo_ and boundary_ < thumb-max:
+      analysis := canvas.bounds-analysis lo-left lo-top lo-width lo-height
       if analysis != Canvas.DISJOINT:
         if analysis == Canvas.CANVAS-IN-AREA or analysis == Canvas.COINCIDENT:
           background-lo_.draw canvas 0 0 w h --autoclipped
         else:
           blend = true
-    if background-hi_ and boundary_ < thumb-max:
-      analysis := ?
-      if horizontal_:
-        analysis = canvas.bounds-analysis (w - boundary_) 0 w h
-      else:
-        analysis = canvas.bounds-analysis 0 (h - boundary_) w h
+    if background-hi_ and boundary_ > thumb-min_:
+      analysis := canvas.bounds-analysis hi-left hi-top hi-width hi-height
       if analysis != Canvas.DISJOINT:
         if analysis == Canvas.CANVAS-IN-AREA or analysis == Canvas.COINCIDENT:
           background-hi_.draw canvas 0 0 w h --autoclipped
@@ -148,17 +172,11 @@ class Slider extends CustomElement:
     hi := canvas.create-similar
 
     if background-lo_:
-      if horizontal_:
-        lo-alpha.rectangle 0 0 --w=(w - boundary_) --h=h --color=0xff
-      else:
-        lo-alpha.rectangle 0 0 --w=w --h=(h - boundary_) --color=0xff
       Background.draw background-lo_ lo 0 0 w h --autoclipped
+      lo-alpha.rectangle lo-left lo-top --w=lo-width --h=lo-height --color=0xff
     if background-hi_:
-      if horizontal_:
-        hi-alpha.rectangle (w - boundary_) 0 --w=boundary_ --h=h --color=0xff
-      else:
-        hi-alpha.rectangle 0 (h - boundary_) --w=w --h=boundary_ --color=0xff
       Background.draw background-hi_ hi 0 0 w h --autoclipped
+      hi-alpha.rectangle hi-left hi-top --w=hi-width --h=hi-height --color=0xff
 
     canvas.composit hi-alpha hi lo-alpha lo
 
@@ -181,6 +199,11 @@ class Slider extends CustomElement:
     else if key == "horizontal":
       invalidate
       horizontal_ = value
+      recalculate_
+      invalidate
+    else if key == "inverted":
+      invalidate
+      inverted_ = value
       recalculate_
       invalidate
     else:
