@@ -624,6 +624,10 @@ class Style:
   constructor.empty: return EMPTY-STYLE_
 
   constructor
+      --x/int?=null
+      --y/int?=null
+      --w/int?=null
+      --h/int?=null
       --color/int?=null
       --font/Font?=null
       --background=null
@@ -632,6 +636,10 @@ class Style:
       --id-map/Map?=null
       --type-map/Map?=null
       .map_={:}:
+    if x != null: map_["x"] = x
+    if y != null: map_["y"] = y
+    if w != null: map_["w"] = w
+    if h != null: map_["h"] = h
     if color != null: map_["color"] = color
     if font != null: map_["font"] = font
     if border != null: map_["border"] = border
