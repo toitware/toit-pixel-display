@@ -49,6 +49,11 @@ class Canvas_ extends Canvas:
     result.transform = transform
     return result
 
+  subcanvas x/int y/int w/int h/int --ignore-x/bool=false --ignore-y/bool=false -> Canvas_?:
+    // This would rarely succeed since we have a vertical granularity of 8
+    // pixels.
+    return null
+
   make-alpha-map --padding/int=0 -> Canvas:
     result := Canvas_ (width_ + padding) (height_ + padding)
     result.transform = transform

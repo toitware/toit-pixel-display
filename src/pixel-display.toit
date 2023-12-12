@@ -756,6 +756,58 @@ abstract class Canvas:
   abstract gray-scale -> bool
 
   /**
+  Returns a sub-canvas of this canvas.  Drawing on the sub-canvas
+    automatically clips all drawing operations to the sub-canvas area.
+  May return null in case the given dimensions are not easy to produce
+    a sub-canvas for.  In that case the caller must use compositing.
+  Coordinates are in the same frame as the drawing operations on this
+    canvas.  They may be partially outside the canvas.
+  If $ignore-x is true, the caller does not worry about clipping in
+    the x direction ($x, and $w).  Likewise for $ignore-y.
+  */
+  abstract subcanvas x/int y/int w/int h/int --ignore-x/bool=false --ignore-y/bool=false-> Canvas?
+
+  /**
+  Helper for the $subcanvas method.  See that method for details.
+  The block, $create-block takes the arguments y and height, and it is
+    expected to return a Canvas that is a view into the current canvas,
+    but only for the lines between y and y + height.  It can return null
+    if that is not possible.
+  */
+  subcanvas-helper_ x/int y/int w/int h/int ignore-x/bool ignore-y/bool [create-canvas] -> Canvas?:
+    transform.xywh x y w h: | x2 y2 w2 h2 |
+      if x2 < 0:
+        w2 += x2
+        x2 = 0
+      if y2 < 0:
+        h2 += y2
+        y2 = 0
+      if x2 + w2 > width_:
+        w2 = width_ - x2
+      if y2 + h2 > height_:
+        h2 = height_ - y2
+      if w2 <= 0 or h2 <= 0:
+        return NULL-CANVAS_
+      if w2 != width_ or x2 != 0:
+        transform.xyo 0 0 0: | _ _ orientation |
+          if orientation == ORIENTATION-90 or orientation == ORIENTATION-270:
+            ignore-x = ignore-y
+        if ignore-x:
+          w2 = width_
+          x2 = 0
+        else:
+          return null  // Can't do this yet.
+
+      if y2 == 0 and h2 == height_:
+        return this
+
+      result := create-canvas.call y2 h2
+      if result: result.transform = (transform.invert.translate x2 y2).invert
+      return result
+
+    unreachable
+
+  /**
   Returns a new canvas that is either gray-scale or 1-bit.
   The returned canvas is intended for use with masking and
     compositing operations.
@@ -797,7 +849,7 @@ abstract class Canvas:
     transform.xywh x y w h: | x2 y2 w2 h2 |
       right := x2 + w2
       bottom := y2 + h2
-      if right < 0 or bottom < 0 or x2 >= width_ or y2 >= height_: return DISJOINT
+      if right <= 0 or bottom <= 0 or x2 >= width_ or y2 >= height_: return DISJOINT
       if x2 >= 0 and y2 >= 0 and right <= width_ and bottom <= height_:
         if x2 == 0 and y2 == 0 and right == width_ and bottom == height_: return COINCIDENT
         return AREA-IN-CANVAS
@@ -1210,3 +1262,48 @@ text-get-bounding-boxes_ old/string new/string alignment/int font/Font [block]:
       changed-extent-old.x -= unchanged-width + changed-extent-old.displacement
       changed-extent-new.x -= unchanged-width + changed-extent-new.displacement
     block.call changed-extent-old changed-extent-new
+
+NULL-CANVAS_ ::= NullCanvas_
+
+class NullCanvas_ extends Canvas:
+  supports-8-bit -> bool: return true
+  gray-scale -> bool: return false
+
+  constructor:
+    super 0 0
+
+  stringify:
+    return "true-color.NullCanvas_ $(width_)x$height_"
+
+  set-all-pixels color/int -> none:
+
+  get-pixel_ x y:
+    throw "OUT_OF_BOUNDS"
+
+  create-similar: return this
+
+  make-alpha-map --padding/int=0 -> Canvas: return this
+
+  subcanvas x/int y/int w/int h/int --ignore-x/bool=false --ignore-y/bool=false -> Canvas?: return this
+
+  composit frame-opacity frame-canvas/Canvas? painting-opacity painting-canvas/Canvas -> none:
+
+  rectangle x/int y/int --w/int --h/int --color/int:
+
+  text x/int y/int --text/string --color/int --font/Font --orientation/int=ORIENTATION-0 -> none:
+
+  bitmap x/int y/int -> none
+      --pixels/ByteArray
+      --alpha/ByteArray         // 2-element byte array.
+      --palette/ByteArray       // 6-element byte array.
+      --source-width/int        // In pixels.
+      --source-line-stride/int  // In bytes.
+      --orientation/int=ORIENTATION-0:
+
+  pixmap x/int y/int -> none
+      --pixels/ByteArray
+      --alpha/ByteArray=#[]
+      --palette/ByteArray=#[]
+      --source-width/int
+      --orientation/int=ORIENTATION-0
+      --source-line-stride/int=source-width:

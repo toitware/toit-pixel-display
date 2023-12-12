@@ -123,7 +123,6 @@ class Slider extends CustomElement:
       invalidate
 
   custom-draw canvas/Canvas -> none:
-    blend := false
     lo-left := 0
     lo-top := 0
     lo-width := ?
@@ -150,21 +149,18 @@ class Slider extends CustomElement:
         lo-top = boundary_
       else:  // Grows from top to bottom.
         hi-top = h - boundary_
-    if background-lo_ and boundary_ < thumb-max:
-      analysis := canvas.bounds-analysis lo-left lo-top lo-width lo-height
-      if analysis != Canvas.DISJOINT:
-        if analysis == Canvas.CANVAS-IN-AREA or analysis == Canvas.COINCIDENT:
-          background-lo_.draw canvas 0 0 w h --autoclipped
-        else:
-          blend = true
-    if background-hi_ and boundary_ > thumb-min_:
-      analysis := canvas.bounds-analysis hi-left hi-top hi-width hi-height
-      if analysis != Canvas.DISJOINT:
-        if analysis == Canvas.CANVAS-IN-AREA or analysis == Canvas.COINCIDENT:
-          background-hi_.draw canvas 0 0 w h --autoclipped
-        else:
-          blend = true
-    if not blend: return
+
+    // We can ignore the clipping of either the left-right edges or the
+    // top-bottom edges because this is a subclass of Div.clipping, so
+    // that clipping is already handled.
+    lo-canvas := canvas.subcanvas lo-left lo-top lo-width lo-height --ignore-x=(not horizontal_) --ignore-y=horizontal_
+    hi-canvas := canvas.subcanvas hi-left hi-top hi-width hi-height --ignore-x=(not horizontal_) --ignore-y=horizontal_
+
+    if lo-canvas and hi-canvas:
+      // We have two canvases that autoclip, so we don't need to composit.
+      if background-lo_: background-lo_.draw lo-canvas 0 0 w h --autoclipped
+      if background-hi_: background-hi_.draw hi-canvas 0 0 w h --autoclipped
+      return
 
     lo-alpha := background-lo_ ? canvas.make-alpha-map : Canvas.ALL-TRANSPARENT
     hi-alpha := background-hi_ ? canvas.make-alpha-map : Canvas.ALL-TRANSPARENT

@@ -10,7 +10,6 @@ import binary show BIG-ENDIAN
 import bitmap show *
 import font show Font
 import icons show Icon
-
 import .gray-scale as gray-scale_
 import .pixel-display
 
@@ -61,6 +60,10 @@ class Canvas_ extends Canvas:
     components_ = [red_, green_, blue_]
     super width height
 
+  constructor.private_ width/int height/int .red_ .green_ .blue_:
+    components_ = [red_, green_, blue_]
+    super width height
+
   stringify:
     return "true-color.Canvas_ $(width_)x$height_"
 
@@ -85,6 +88,15 @@ class Canvas_ extends Canvas:
     result := gray-scale_.Canvas_ (width_ + padding) (height_ + padding)
     result.transform = transform
     return result
+
+  subcanvas x/int y/int w/int h/int --ignore-x/bool=false --ignore-y/bool=false -> Canvas?:
+    return subcanvas-helper_ x y w h ignore-x ignore-y: | y2 h2 |
+      from := y2 * width_
+      to := (y2 + h2) * width_
+      Canvas_.private_ width_ h2
+          red_[from..to]
+          green_[from..to]
+          blue_[from..to]
 
   composit frame-opacity frame-canvas/Canvas_? painting-opacity painting-canvas/Canvas_:
     fo := frame-opacity is ByteArray ? frame-opacity : frame-opacity.pixels_
