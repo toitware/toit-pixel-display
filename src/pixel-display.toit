@@ -768,7 +768,11 @@ abstract class Canvas:
   abstract subcanvas x/int y/int w/int h/int --ignore-x/bool=false --ignore-y/bool=false-> Canvas?
 
   /**
-  Helper for the Canvas.subcanvas method.
+  Helper for the $subcanvas method.  See that method for details.
+  The block, $create-block takes the arguments y and height, and it is
+    expected to return a Canvas that is a view into the current canvas,
+    but only for the lines between y and y + height.  It can return null
+    if that is not possible.
   */
   subcanvas-helper_ x/int y/int w/int h/int ignore-x/bool ignore-y/bool [create-canvas] -> Canvas?:
     transform.xywh x y w h: | x2 y2 w2 h2 |

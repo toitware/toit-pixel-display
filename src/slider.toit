@@ -150,6 +150,9 @@ class Slider extends CustomElement:
       else:  // Grows from top to bottom.
         hi-top = h - boundary_
 
+    // We can ignore the clipping of either the left-right edges or the
+    // top-bottom edges because this is a subclass of Div.clipping, so
+    // that clipping is already handled.
     lo-canvas := canvas.subcanvas lo-left lo-top lo-width lo-height --ignore-x=(not horizontal_) --ignore-y=horizontal_
     hi-canvas := canvas.subcanvas hi-left hi-top hi-width hi-height --ignore-x=(not horizontal_) --ignore-y=horizontal_
 
