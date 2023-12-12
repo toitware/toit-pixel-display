@@ -23,6 +23,9 @@ abstract class OneByteCanvas_ extends Canvas:
     pixels_ = ByteArray size
     super width height
 
+  constructor.private_ width/int height/int .pixels_:
+    super width height
+
   set-all-pixels color/int -> none:
     bytemap-zap pixels_ color
 

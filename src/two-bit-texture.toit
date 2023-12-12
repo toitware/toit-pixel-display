@@ -37,6 +37,11 @@ abstract class Canvas_ extends Canvas:
     bit1 := (plane-1_[idx] & bit) == 0 ? 0 : 1
     return bit0 + (bit1 << 1)
 
+  subcanvas x/int y/int w/int h/int --ignore-x/bool=false --ignore-y/bool=false -> Canvas_?:
+    // This would rarely succeed since we have a vertical granularity of 8
+    // pixels.
+    return null
+
   make-alpha-map --padding/int=0 -> Canvas:
     result := two-color.Canvas_ (width_ + padding) (height_ + padding)
     result.transform = transform
