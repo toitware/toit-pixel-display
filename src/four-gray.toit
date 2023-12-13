@@ -9,7 +9,6 @@ For use with e-paper displays with four tones of gray.
 
 import bitmap show *
 import font show Font
-import icons show Icon
 
 import .pixel-display
 import .two-bit-texture

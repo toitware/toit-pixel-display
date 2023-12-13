@@ -10,7 +10,6 @@ For use with e-paper displays and the SSD1306 128x64 display
 
 import bitmap show *
 import font show Font
-import icons show Icon
 
 import .pixel-display
 

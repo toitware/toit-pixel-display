@@ -11,6 +11,7 @@ import .one-byte as one-byte
 import .style show *
 import .pixel-display
 import font show Font
+import icons show Icon
 import math
 
 /**
@@ -106,20 +107,23 @@ abstract class Element implements Window:
     children = null
 
   x= value/int -> none:
-    invalidate
-    x_ = value
-    invalidate
+    if x_ != value:
+      invalidate
+      x_ = value
+      invalidate
 
   y= value/int -> none:
-    invalidate
-    y_ = value
-    invalidate
+    if y_ != value:
+      invalidate
+      y_ = value
+      invalidate
 
   move-to x/int y/int:
-    invalidate
-    x_ = x
-    y_ = y
-    invalidate
+    if x_ != x or y_ != y:
+      invalidate
+      x_ = x
+      y_ = y
+      invalidate
 
   border= value/Border?:
     if value != border_:
@@ -342,6 +346,8 @@ class Label extends Element implements ColoredElement:
       alignment = value
     else if key == "label":
       label = value
+    else if key == "icon":
+      icon = value
     else:
       super key value
 
@@ -360,6 +366,9 @@ class Label extends Element implements ColoredElement:
       left_ = null  // Trigger recalculation.
       invalidate
 
+  icon= value/Icon -> none:
+    font = value.font_
+    label = value.stringify
 
   /**
   Constructs a Label.
@@ -385,6 +394,7 @@ class Label extends Element implements ColoredElement:
       --color/int=0
       --label/string=""
       --font/Font?=null
+      --icon/Icon?=null
       --orientation/int=ORIENTATION-0
       --alignment/int=ALIGN-LEFT:
     color_ = color
@@ -398,6 +408,9 @@ class Label extends Element implements ColoredElement:
         --style = style
         --classes = classes
         --id = id
+    if icon:
+      if font: throw "INVALID_ARGUMENT"
+      this.icon = icon
 
   /**
   Calls the block with the left, top, width, and height.
@@ -577,7 +590,7 @@ class ClippingDiv_ extends Div:
   Invalidates the whole window including the decoration.
   */
   invalidate --x=x_ --y=y_ --w=w_ --h=h_ -> none:
-    if change-tracker:
+    if change-tracker and x and y and w and h:
       extent --x=x --y=y --w=w --h=h: | outer-x outer-y outer-w outer-h |
         change-tracker.child-invalidated outer-x outer-y outer-w outer-h
 

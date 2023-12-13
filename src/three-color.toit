@@ -8,7 +8,6 @@ For use with e-paper black, white, and red displays.
 */
 
 import font show Font
-import icons show Icon
 
 import .pixel-display
 import .two-bit-texture

@@ -9,7 +9,6 @@ Functions and constants useful for the RGB $PixelDisplay.true-color display.
 import binary show BIG-ENDIAN
 import bitmap show *
 import font show Font
-import icons show Icon
 import .gray-scale as gray-scale_
 import .pixel-display
 

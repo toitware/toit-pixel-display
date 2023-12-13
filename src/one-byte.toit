@@ -8,7 +8,6 @@
 
 import bitmap show *
 import font show Font
-import icons show Icon
 
 import .gray-scale as gray-scale_
 import .pixel-display
