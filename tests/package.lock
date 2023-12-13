@@ -1,6 +1,7 @@
 sdk: ^2.0.0-alpha.121
 prefixes:
   host: pkg-host
+  pictogrammers_icons: toit-icons-pictogrammers
   pixel-display: ..
   png-tools: toit-png-tools
 packages:
@@ -13,6 +14,11 @@ packages:
     name: host
     version: 1.10.0
     hash: e1c11a0e0bf65fe810520e8d893e554a8fe33b78
+  toit-icons-pictogrammers:
+    url: github.com/toitware/toit-icons-pictogrammers
+    name: pictogrammers_icons
+    version: 1.0.0
+    hash: 5ac660cc480d5da1fec72e1b24d425ce978419b7
   toit-png-tools:
     url: github.com/toitware/toit-png-tools
     name: png-tools

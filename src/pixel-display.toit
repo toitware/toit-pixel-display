@@ -10,7 +10,6 @@ See https://docs.toit.io/language/sdk/display
 import bitmap show *
 import bitmap show ORIENTATION-0 ORIENTATION-90 ORIENTATION-180 ORIENTATION-270
 import font show Font
-import icons show Icon
 
 import .bar-code
 import .element
@@ -769,7 +768,7 @@ abstract class Canvas:
 
   /**
   Helper for the $subcanvas method.  See that method for details.
-  The block, $create-block takes the arguments y and height, and it is
+  The block, $create-canvas takes the arguments y and height, and it is
     expected to return a Canvas that is a view into the current canvas,
     but only for the lines between y and y + height.  It can return null
     if that is not possible.
