@@ -855,6 +855,18 @@ abstract class Canvas:
       if x2 <= 0 and y2 <= 0 and right >= width_ and bottom >= height_: return CANVAS-IN-AREA
     return OVERLAP
 
+  visible-x-range x/int w/int [block] -> none:
+    transform.invert.xywh 0 0 width_ + 1 height_ + 1: | x2 _ w2 _ |
+      block.call
+        max x x2
+        min (x + w) (x2 + w2)
+
+  visible-y-range y/int h/int [block] -> none:
+    transform.invert.xywh 0 0 (width_ + 1) (height_ + 1): | _ y2 _ h2 |
+      block.call
+        max y y2
+        min (y + h) (y2 + h2)
+
   /**
   Constant to indicate that all pixels are transparent.
   For use with $composit.
