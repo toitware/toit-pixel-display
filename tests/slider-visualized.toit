@@ -55,8 +55,8 @@ main args:
           "slider": Style {
               "background-hi": heat,
               "background-lo": cold,
-              "width": 20,
-              "height": 100,
+              "w": 20,
+              "h": 100,
           },
           "label": Style --font=sans10 --color=0xffffff,
       }

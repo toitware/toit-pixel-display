@@ -179,6 +179,12 @@ abstract class Element implements Window:
         invalidate
         border_ = value
         invalidate
+    else if key == "x":
+      x = value
+    else if key == "y":
+      y = value
+    else:
+      print "Unknown style key: '$key'"
 
   abstract type -> string
 
@@ -289,9 +295,9 @@ class Div extends Element:
       invalidate
 
   set-attribute_ key/string value -> none:
-    if key == "width":
+    if key == "w":
       w = value
-    else if key == "height":
+    else if key == "h":
       h = value
     else:
       super key value
@@ -334,6 +340,8 @@ class Label extends Element implements ColoredElement:
       orientation = value
     else if key == "alignment":
       alignment = value
+    else if key == "label":
+      label = value
     else:
       super key value
 
