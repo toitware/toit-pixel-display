@@ -3,15 +3,15 @@
 // found in the LICENSE file.
 
 /**
-Constants useful for $PixelDisplay.three-color.
+Constants useful for $pixel-display.PixelDisplay.three-color.
 For use with e-paper black, white, and red displays.
 */
 
 import font show Font
 
 import .pixel-display
-import .two-bit-texture
-import .two-bit-texture as two-bit
+import .pixel-display as pixel-display
+import .two-bit_ as two-bit
 
 WHITE ::= 0
 BLACK ::= 1

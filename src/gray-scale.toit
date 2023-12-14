@@ -3,13 +3,17 @@
 // found in the LICENSE file.
 
 /**
-Constants useful for $PixelDisplay.gray-scale.
+Constants useful for $pixel-display.PixelDisplay.gray-scale.
+These are displays with 8-bit pixels, where each pixel is a gray-scale value
+  from 0 (black) to 255 (white).
 */
 
 import bitmap show *
 import font show Font
+
 import .pixel-display
-import .one-byte
+import .pixel-display as pixel-display
+import .one-byte_
 
 /// Color value for use with $PixelDisplay.gray-scale.
 WHITE ::= 255

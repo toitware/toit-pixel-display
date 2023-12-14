@@ -7,7 +7,7 @@ import bitmap show ORIENTATION-0 ORIENTATION-90 ORIENTATION-180 ORIENTATION-270
 import font show Font
 
 import .element as element
-import .one-byte as one-byte
+import .one-byte_ as one-byte
 import .pixel-display
 
 ALIGN-LEFT ::= 0

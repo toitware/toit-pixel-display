@@ -15,12 +15,12 @@ import .bar-code
 import .element
 import .two-color as two-color
 import .three-color as three-color
-import .two-bit-texture as two-bit
+import .two-bit_ as two-bit
 import .four-gray as four-gray
 import .true-color as true-color
 import .gray-scale as gray-scale
 import .several-color as several-color
-import .one-byte as one-byte
+import .one-byte_ as one-byte
 import .style
 
 FLAG-2-COLOR ::=         0b1
@@ -749,9 +749,24 @@ abstract class Canvas:
   */
   abstract create-similar -> Canvas
 
+  /**
+  Sets all pixels in the canvas to the given color.
+  For true-color canvases, the color has the form 0xRRGGBB.
+  For gray-scale canvases, the color has the form 0xGG.
+  For other canvases types, constants are defined in their respective import
+    files.
+  */
   abstract set-all-pixels color/int -> none
 
+  /**
+  Returns true for true-color and gray-scale canvases that support
+    8-bit drawing methods.
+  */
   abstract supports-8-bit -> bool
+
+  /**
+  Returns true for gray-scale canvases and two-color black/white canvases.
+  */
   abstract gray-scale -> bool
 
   /**
@@ -924,8 +939,7 @@ abstract class Canvas:
     descenders or starts with a character like "J" or "/", which in many fonts
     extend to the left of their origin.
   */
-  abstract text x/int y/int --text/string --color/int --font/Font --orientation/int
-  abstract text x/int y/int --text/string --color/int --font/Font
+  abstract text x/int y/int --text/string --color/int --font/Font --orientation/int=0
 
   /**
   Draws the given bitmap on the canvas.

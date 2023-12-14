@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 /**
-Constants useful for black-and-white $PixelDisplay.two-color.
+Constants useful for black-and-white $pixel-display.PixelDisplay.two-color.
 For use with e-paper displays and the SSD1306 128x64 display
   (driver at https://pkg.toit.io/package/ssd1306&url=github.com%2Ftoitware%2Ftoit-ssd1306&index=latest)
 */
@@ -12,10 +12,10 @@ import bitmap show *
 import font show Font
 
 import .pixel-display
+import .pixel-display as pixel-display
 
 WHITE ::= 0
 BLACK ::= 1
-TRANSPARENT ::= 3
 
 // The canvas contains a bitmapped ByteArray.
 // Starts off with/ all pixels white.

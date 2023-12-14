@@ -3,14 +3,18 @@
 // found in the LICENSE file.
 
 /**
-Functions and constants useful for the RGB $PixelDisplay.true-color display.
+Functions and constants useful for the RGB
+  $pixel-display.PixelDisplay.true-color display.
+See for example https://pkg.toit.io/search?query=color-tft
 */
 
 import binary show BIG-ENDIAN
 import bitmap show *
 import font show Font
+
 import .gray-scale as gray-scale_
 import .pixel-display
+import .pixel-display as pixel-display
 
 /**
 Create a 24 bit color from three components in the 0-255 range.

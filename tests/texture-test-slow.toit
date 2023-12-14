@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Toitware ApS.
+// Copyright (C) 2023 Toitware ApS.
 // Use of this source code is governed by a Zero-Clause BSD license that can
 // be found in the TESTS_LICENSE file.
 
@@ -10,7 +10,7 @@ import font show *
 
 import pixel-display show Transform
 import pixel-display.four-gray
-import pixel-display.two-bit-texture as two-bit
+import pixel-display.two-bit_ as two-bit
 import pixel-display.three-color
 import pixel-display.true-color
 import pixel-display.two-color
