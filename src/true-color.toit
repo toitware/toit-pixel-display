@@ -5,7 +5,7 @@
 /**
 Functions and constants useful for the RGB
   $pixel-display.PixelDisplay.true-color display.
-See for example https://pkg.toit.io/search?query=color-tft
+See for example https://pkg.toit.io/package/github.com%2Ftoitware%2Ftoit-color-tft
 */
 
 import binary show BIG-ENDIAN
