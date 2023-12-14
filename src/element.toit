@@ -67,6 +67,8 @@ abstract class Element implements Window:
     if children: children.do: | child/Element |
       child.change-tracker = this
 
+    if style: set-styles [style]
+
   static HASH-CODE-COUNTER_ := 0
   static generate-hash-code_ -> int:
     HASH-CODE-COUNTER_ += 13
