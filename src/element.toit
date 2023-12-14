@@ -549,7 +549,7 @@ abstract class CustomElement extends ClippingDiv_:
       change-tracker.child-invalidated x y w h
 
   draw canvas/Canvas -> none:
-    if not (x and y): return
+    if not (x and y and w and h): return
     analysis := canvas.bounds-analysis x y w h
     if analysis == Canvas.DISJOINT: return
     autoclipped := analysis == Canvas.CANVAS-IN-AREA or analysis == Canvas.COINCIDENT
