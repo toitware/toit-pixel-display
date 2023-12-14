@@ -1111,19 +1111,20 @@ class Transform:
   - $block: A block that is called with arguments left top width height in the transformed coordinate space.
   */
   xywh x-in/int y-in/int w-in/int h-in/int [block]:
-    x-transformed := x x-in y-in
-    y-transformed := y x-in y-in
-    w-transformed := width w-in h-in
-    h-transformed := height w-in h-in
-    x2 := min
-      x-transformed
-      x-transformed + w-transformed
-    y2 := min
-      y-transformed
-      y-transformed + h-transformed
-    w2 := w-transformed.abs
-    h2 := h-transformed.abs
-    block.call x2 y2 w2 h2
+    x-transformed := x-in * x1_ + y-in * x2_ + tx_
+    y-transformed := x-in * y1_ + y-in * y2_ + ty_
+    w-transformed := w-in * x1_ + h-in * x2_
+    h-transformed := w-in * y1_ + h-in * y2_
+    if w-transformed >= 0:
+      if h-transformed >= 0:
+        block.call x-transformed y-transformed w-transformed h-transformed
+      else:
+        block.call x-transformed (y-transformed + h-transformed) w-transformed -h-transformed
+    else:
+      if h-transformed >= 0:
+        block.call (x-transformed + w-transformed) y-transformed -w-transformed h-transformed
+      else:
+        block.call (x-transformed + w-transformed) (y-transformed + h-transformed) -w-transformed -h-transformed
 
   /**
   Finds a point and an orientation after it has been transformed with the transform.
@@ -1133,14 +1134,14 @@ class Transform:
   - $block: A block that is called with arguments x y orientation in the transformed coordinate space.
   */
   xyo x-in/int y-in/int o-in/int [block]:
-    x-transformed := x x-in y-in
-    y-transformed := y x-in y-in
-    o-transformed/int := ?
-    if      x1_ > 0: o-transformed = o-in + ORIENTATION-0
-    else if y1_ < 0: o-transformed = o-in + ORIENTATION-90
-    else if x1_ < 0: o-transformed = o-in + ORIENTATION-180
-    else:                  o-transformed = o-in + ORIENTATION-270
-    block.call x-transformed y-transformed (o-transformed & 3)
+    if x1_ == 0:
+      o-in += (y1_ < 0 ? ORIENTATION-90 : ORIENTATION-270)
+    else:
+      o-in += (x1_ > 0 ? ORIENTATION-0 : ORIENTATION-180)
+    block.call
+        x-in * x1_ + y-in * x2_ + tx_
+        x-in * y1_ + y-in * y2_ + ty_
+        (o-in & 3)
 
   /**
   Returns a new transform which represents this transform rotated left
