@@ -4,7 +4,7 @@
 
 import bitmap show *
 import font show Font
-import .one-byte
+import .one-byte_
 import .two-color as two-color
 import .pixel-display
 

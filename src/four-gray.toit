@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 /**
-Constants useful for $PixelDisplay.four-gray.
+Constants useful for $pixel-display.PixelDisplay.four-gray.
 For use with e-paper displays with four tones of gray.
 */
 
@@ -11,8 +11,8 @@ import bitmap show *
 import font show Font
 
 import .pixel-display
-import .two-bit-texture
-import .two-bit-texture as two-bit
+import .pixel-display as pixel-display
+import .two-bit_ as two-bit
 
 /// Color value for use with $PixelDisplay.four-gray.
 WHITE ::= 0

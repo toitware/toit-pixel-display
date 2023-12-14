@@ -7,7 +7,7 @@ import bitmap show *
 import .four-gray as four-gray
 import .true-color as true-color
 import .gray-scale as gray-scale
-import .one-byte as one-byte
+import .one-byte_ as one-byte
 import .style show *
 import .pixel-display
 import font show Font
