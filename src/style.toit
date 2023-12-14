@@ -283,7 +283,7 @@ class RoundedCornerBorder extends InvisibleBorder:
         transparency-map.pixmap x y
             --pixels = byte-opacity
             --palette = palette
-            --source-width = 16
+            --source-width = RoundedCornerOpacity_.PATCH-SIZE_
             --orientation = orientation
     else:
       draw-corners_ x2 y2 right bottom radius_: | _ bit-opacity x y orientation |
@@ -291,8 +291,8 @@ class RoundedCornerBorder extends InvisibleBorder:
             --pixels = bit-opacity
             --alpha = ONE-ZERO-ALPHA_
             --palette = ONE-ZERO-PALETTE_
-            --source-width = 16
-            --source-line-stride = 2
+            --source-width = RoundedCornerOpacity_.PATCH-SIZE_
+            --source-line-stride = (RoundedCornerOpacity_.PATCH-SIZE_ >> 3)
             --orientation = orientation
 
   static ONE-ZERO-PALETTE_ ::= #[0, 0, 0, 1, 1, 1]
@@ -305,14 +305,14 @@ class RoundedCornerBorder extends InvisibleBorder:
   - $block: A block to call to draw each corner.
   Block arguments are:
   - byte-opacity: a 256 entry byte array of 16x16 opacity values, or null if the patch is fully transparent.
-  - bit-opacity: an 32 entry byte array of 16x16 opacity values, or null if the patch is fully transparent.
+  - bit-opacity: a 32 entry byte array of 16x16 opacity values, or null if the patch is fully transparent.
   - x: the x coordinate of the top left corner of the patch.
   - y: the y coordinate of the top left corner of the patch.
   - orientation: the orientation to draw the patch, one of $ORIENTATION-0, $ORIENTATION-90, $ORIENTATION-180, $ORIENTATION-270.
   */
   draw-corners_ left/int top/int right/int bottom/int corner-radius/int [block]:
-    for j := 0; j < corner-radius; j += 16:
-      for i := 0; i < corner-radius; i += 16:
+    for j := 0; j < corner-radius; j += RoundedCornerOpacity_.PATCH-SIZE_:
+      for i := 0; i < corner-radius; i += RoundedCornerOpacity_.PATCH-SIZE_:
         byte-opacity := opacities_.get-bytes-patch i j
         if byte-opacity:
           bit-opacity := opacities_.get-bits-patch i j
@@ -423,7 +423,8 @@ class RoundedCornerOpacity_:
   radius/int
   static cache_ := Map.weak
 
-  static OPAQUE-BYTES-16x16_/ByteArray ::= ByteArray 256: 0xff
+  static OPAQUE-CORNER-PATCH_/ByteArray ::=
+      ByteArray (PATCH-SIZE_ * PATCH-SIZE_): 0xff
 
   static get corner-radius/int -> RoundedCornerOpacity_:
     cached := cache_.get corner-radius
@@ -450,6 +451,8 @@ class RoundedCornerOpacity_:
   get-bits-patch i/int j/int -> ByteArray?:
     return bit-opacities_[(i << 16) + j]
 
+  static PATCH-SIZE_ ::= 16
+
   constructor.private_ .radius:
     // We have a quarter circle in a 256x256 square that we downsample to the
     //   radius.  The quarter circle is represented by QUARTER-CIRCLE, a
@@ -460,14 +463,14 @@ class RoundedCornerOpacity_:
     downsample := TABLE-SIZE_ / radius
     // The steps are a list of the offsets of the pixels we are producing
     //   in the original 256x256 square.  For example, for a radius of 5 the
-    //   steps are [0, 51, 102, 153, 204].  We pad it up by 16 to make the code
-    //   below simpler.
-    steps := List (radius + 16): (it * TABLE-SIZE_) / radius
-    for j := 0; j < radius; j += 16:
-      for i := 0; i < radius; i += 16:
-        max-b := steps[j + 16]
+    //   steps are [0, 51, 102, 153, 204].  We pad it up by PATCH-SIZE_ to make
+    //   the code below simpler.
+    steps := List (radius + PATCH-SIZE_): (it * TABLE-SIZE_) / radius
+    for j := 0; j < radius; j += PATCH-SIZE_:
+      for i := 0; i < radius; i += PATCH-SIZE_:
+        max-b := steps[j + PATCH-SIZE_]
         min-b := steps[j]
-        max-a := steps[i + 16]
+        max-a := steps[i + PATCH-SIZE_]
         min-a := steps[i]
         column-height-index := max-b + downsample - 1
         column-height := column-height-index >= QUARTER-CIRCLE_.size ? -1 : QUARTER-CIRCLE_[column-height-index]
@@ -476,17 +479,17 @@ class RoundedCornerOpacity_:
         // the edge.
         opacity-key := (i << 16) + j
         if column-height >= max-a + downsample:
-          byte-opacities_[opacity-key] = OPAQUE-BYTES-16x16_
+          byte-opacities_[opacity-key] = OPAQUE-CORNER-PATCH_
         else if QUARTER-CIRCLE_[min-b] < min-a:
           byte-opacities_[opacity-key] = null
         else:
           // Edge of quarter circle, we have to make an 8x8 patch of
           // opacity.
-          byte-opacity := ByteArray 256
-          (min 16 (radius - j)).repeat: | small-j |
+          byte-opacity := ByteArray (PATCH-SIZE_ * PATCH-SIZE_)
+          (min PATCH-SIZE_ (radius - j)).repeat: | small-j |
             b := steps[j + small-j]
-            (min 16 (radius - i)).repeat: | small-i |
-              idx := small-j * 16 + small-i
+            (min PATCH-SIZE_ (radius - i)).repeat: | small-i |
+              idx := small-j * PATCH-SIZE_ + small-i
               a := steps[i + small-i]
               if QUARTER-CIRCLE_[b + downsample - 1] >= a + downsample:
                 byte-opacity[idx] = 0xff  // Inside quarter circle.
@@ -508,7 +511,7 @@ class RoundedCornerOpacity_:
       if byte-opacity == null:
         bit-opacities_[key] = null
       else:
-        bit-opacity := ByteArray 32: | part |
+        bit-opacity := ByteArray (byte-opacity.size >> 3): | part |
           mask := 0
           idx := part * 8
           8.repeat: | bit |
