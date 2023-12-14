@@ -856,6 +856,32 @@ abstract class Canvas:
     return OVERLAP
 
   /**
+  Given an x position and a width in the coordinate system of the
+    canvas, calculates the leftmost and rightmost pixels that are visible, so
+    that superflous drawing operations can be optimized away
+  The block is called with the left and right pixel positions.
+    The function may conservatively add a pixel on one side.
+  */
+  visible-x-range x/int w/int [block] -> none:
+    transform.invert.xywh 0 0 (width_ + 1) (height_ + 1): | x2 _ w2 _ |
+      block.call
+        max x x2
+        min (x + w) (x2 + w2)
+
+  /**
+  Given a y position and a height in the coordinate system of the
+    canvas, calculates the top and bottom pixels that are visible, so
+    that superflous drawing operations can be optimized away
+  The block is called with the top and bottom pixel positions.
+    The function may conservatively add a pixel on one side.
+  */
+  visible-y-range y/int h/int [block] -> none:
+    transform.invert.xywh 0 0 (width_ + 1) (height_ + 1): | _ y2 _ h2 |
+      block.call
+        max y y2
+        min (y + h) (y2 + h2)
+
+  /**
   Constant to indicate that all pixels are transparent.
   For use with $composit.
   */

@@ -243,14 +243,16 @@ class GradientRendering_:
       // Use fixed point with 16 bits after the decimal point.
       step := ((texture-length_ - h) << 16) / w
       offset := 0
-      for i := 0; i < w; i += repeats:
-        lines := min repeats (w - i)
-        skew-adjusted-y := update-r-g-b-block.call y2 h lines orientation offset
-        if canvas.gray-scale:
-          canvas.pixmap     (i + x2) skew-adjusted-y --pixels=b        --source-width=source-width --orientation=orientation
-        else:
-          canvas.rgb-pixmap (i + x2) skew-adjusted-y --r=r --g=g --b=b --source-width=source-width --orientation=orientation
-        offset += step
+      canvas.visible-x-range x2 w: | x3 r3 |
+        offset += step * (x3 - x2)
+        for i := x3; i < r3; i += repeats:
+          lines := min repeats (r3 - i)
+          skew-adjusted-y := update-r-g-b-block.call y2 h lines orientation offset
+          if canvas.gray-scale:
+            canvas.pixmap     i skew-adjusted-y --pixels=b        --source-width=source-width --orientation=orientation
+          else:
+            canvas.rgb-pixmap i skew-adjusted-y --r=r --g=g --b=b --source-width=source-width --orientation=orientation
+          offset += step
     else:
       // The gradient goes broadly horizontally, and we draw in horizontal
       // strips.
@@ -260,15 +262,20 @@ class GradientRendering_:
       loop-body := : | i lines |
         skew-adjusted-x := update-r-g-b-block.call x w lines ORIENTATION-0 offset
         if canvas.gray-scale:
-          canvas.pixmap     skew-adjusted-x (i + y) --pixels=b        --source-width=source-width
+          canvas.pixmap     skew-adjusted-x i --pixels=b        --source-width=source-width
         else:
-          canvas.rgb-pixmap skew-adjusted-x (i + y) --r=r --g=g --b=b --source-width=source-width
+          canvas.rgb-pixmap skew-adjusted-x i --r=r --g=g --b=b --source-width=source-width
         offset += step
       if up:
-        for i := 0; i < h; i += repeats: loop-body.call i (min repeats (h - i))
+        canvas.visible-y-range y (y + h): | y3 b3 |
+          offset += step * (y3 - y)
+          for i := y3; i < b3; i += repeats: loop-body.call i (min repeats (b3 - i))
       else:
         assert: repeats == 1
-        for i := h - 1; i >= 0; i--: loop-body.call i 1
+        b2 := y + h - 1
+        canvas.visible-y-range y b2: | y3 b3 |
+          offset += step * (b2 - b3)
+          for i := b3; i >= y3; i--: loop-body.call i 1
 
   /// Returns a list of quadruples of the form starting-percent ending-percent start-color end-color.
   static extract-ranges_ specifiers/List -> List:
