@@ -129,6 +129,19 @@ extra-properties-test:
   expect-equals "bar"
       (elements.get-element-by-id "first-foo-haver").foo
 
+no-global-style-test:
+  style := Style
+      --type-map={
+          "foo-haver": Style { "foo": "bar" },
+      }
+
+  elements := Div [
+      FooHaver --id="first-foo-haver" --style=style,
+  ]
+
+  expect-equals "bar"
+      (elements.get-element-by-id "first-foo-haver").foo
+
 /// A class that stubs out the display methods we don't need
 ///   for test purposes.
 abstract class TestElement extends Element:
@@ -194,3 +207,4 @@ main:
   combine-test
   single-element-style-test
   extra-properties-test
+  no-global-style-test
