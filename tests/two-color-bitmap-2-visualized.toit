@@ -10,7 +10,6 @@ import font
 
 import host.file
 import pixel-display show *
-import pixel-display.element show *
 import pixel-display.png show Png
 import pixel-display.two-color show WHITE BLACK
 import .png-visualizer

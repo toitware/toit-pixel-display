@@ -9,7 +9,6 @@ import bitmap show *
 import expect show *
 import font show *
 import pixel-display show *
-import pixel-display.element show *
 import pixel-display.gradient show *
 import .png-visualizer
 

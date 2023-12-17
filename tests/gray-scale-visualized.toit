@@ -6,7 +6,6 @@ import expect show *
 import font show Font
 import pixel-display show *
 import pixel-display.gray-scale show *
-import pixel-display.element show *
 import .png-visualizer
 
 main args:
