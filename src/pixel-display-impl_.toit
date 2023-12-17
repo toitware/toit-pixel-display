@@ -23,7 +23,6 @@ import .several-color as several-color
 import .one-byte_ as one-byte
 import .style
 
-
 FLAG-2-COLOR ::=         0b1
 FLAG-3-COLOR ::=         0b10
 FLAG-4-COLOR ::=         0b100
