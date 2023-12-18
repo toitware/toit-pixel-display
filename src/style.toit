@@ -638,6 +638,8 @@ class Style:
       --class-map/Map?=null
       --id-map/Map?=null
       --type-map/Map?=null
+      --align-right/bool=false
+      --align-center/bool=false
       .map_={:}:
     if x != null: map_["x"] = x
     if y != null: map_["y"] = y
@@ -646,6 +648,9 @@ class Style:
     if color != null: map_["color"] = color
     if font != null: map_["font"] = font
     if border != null: map_["border"] = border
+    if align-right and align-center: throw "INVALID_ARGUMENT"
+    if align-right: map_["alignment"] = ALIGN-RIGHT
+    if align-center: map_["alignment"] = ALIGN-CENTER
     Background.check-valid background
     if background: map_["background"] = background
     class-map_ = class-map

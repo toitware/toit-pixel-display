@@ -57,7 +57,7 @@ main args:
   // Also includes the initial style parameters.
   off-style := Style
       --type-map={
-          "label": Style --x=30 --y=47 --color=0xc0c0c0 {"alignment": ALIGN_CENTER},
+          "label": Style --x=30 --y=47 --color=0xc0c0c0 --align-center,
       }
       --class-map={
           "button-outer": Style --y=20 --w=70 --h=70      --border=rounded-35 --background=outer-background,
