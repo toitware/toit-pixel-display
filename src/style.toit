@@ -648,6 +648,7 @@ class Style:
     if color != null: map_["color"] = color
     if font != null: map_["font"] = font
     if border != null: map_["border"] = border
+    if align-right and align-center: throw "INVALID_ARGUMENT"
     if align-right: map_["alignment"] = ALIGN-RIGHT
     if align-center: map_["alignment"] = ALIGN-CENTER
     Background.check-valid background
