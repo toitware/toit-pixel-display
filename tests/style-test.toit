@@ -4,9 +4,7 @@
 
 import expect show *
 
-import pixel-display show Canvas
-import pixel-display.element show Element
-import pixel-display.style show *
+import pixel-display show Canvas Element SolidBorder Style
 
 /// Test that the examples from style.toit are well-formed.
 toit-doc-examples-test:

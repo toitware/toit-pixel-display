@@ -8,7 +8,6 @@
 
 import expect show *
 import pixel-display show *
-import pixel-display.element show *
 import .png-visualizer
 
 main args:

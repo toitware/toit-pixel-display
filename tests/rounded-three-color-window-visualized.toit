@@ -5,8 +5,6 @@
 import bitmap show *
 import font show Font
 import pixel-display show *
-import pixel-display.element show *
-import pixel-display.style show *
 import pixel-display.three-color show BLACK WHITE RED
 import .png-visualizer
 

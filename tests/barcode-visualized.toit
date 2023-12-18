@@ -7,8 +7,6 @@
 import expect show *
 import pixel-display show *
 import pixel-display.bar-code show *
-import pixel-display.element show *
-import pixel-display.style show Style
 import .png-visualizer
 
 main args:

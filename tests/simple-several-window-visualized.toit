@@ -5,7 +5,6 @@
 import bitmap show *
 import font show Font
 import pixel-display show *
-import pixel-display.element show *
 import .png-visualizer
 
 main args:

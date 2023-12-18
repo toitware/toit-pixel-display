@@ -8,9 +8,7 @@ import icons show Icon
 
 import pictogrammers-icons.size-40 show *
 import pixel-display show *
-import pixel-display.element show *
 import pixel-display.gradient show *
-import pixel-display.style show *
 
 import .png-visualizer
 
