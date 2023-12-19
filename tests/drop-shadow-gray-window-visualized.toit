@@ -37,7 +37,7 @@ main args:
   gradient-element := Div --x=0 --y=0 --w=180 --h=100 --background=gradient
   win.add gradient-element
 
-  text := Label --x=90 --y=55 --label="Hello, World!" --font=sans10 --color=0x10
+  text := Label --x=90 --y=55 --text="Hello, World!" --font=sans10 --color=0x10
   win.add text
 
   display.draw

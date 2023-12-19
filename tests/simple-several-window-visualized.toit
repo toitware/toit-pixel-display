@@ -20,7 +20,7 @@ main args:
   win := Div.clipping --x=30 --y=30 --w=180 --h=100 --background=SEVERAL-LIGHT-GRAY
   display.add win
 
-  text := Label --x=90 --y=55 --label="Hello, World!" --font=sans10 --color=SEVERAL-BLACK
+  text := Label --x=90 --y=55 --text="Hello, World!" --font=sans10 --color=SEVERAL-BLACK
   win.add text
 
   display.draw

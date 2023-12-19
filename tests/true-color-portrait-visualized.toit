@@ -25,13 +25,13 @@ main args:
   display.add
       Div --x=20 --y=70 --w=30 --h=40 --background=0x4040ff
   display.add
-      Label --x=5 --y=80 --label="Testing" --font=sans10 --color=foreground
-  middle-line := Label --x=5 --y=100 --label="the display" --font=sans10 --color=foreground
+      Label --x=5 --y=80 --text="Testing" --font=sans10 --color=foreground
+  middle-line := Label --x=5 --y=100 --text="the display" --font=sans10 --color=foreground
   display.add middle-line
   display.draw
 
   display.add
-      Label --x=5 --y=120 --label="for the win" --font=sans10 --color=foreground
+      Label --x=5 --y=120 --text="for the win" --font=sans10 --color=foreground
 
   display.draw
 

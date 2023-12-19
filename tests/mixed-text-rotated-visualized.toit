@@ -22,8 +22,8 @@ main args:
   sans10 := Font.get "sans10"
 
   // Element-based text.
-  element-text := Label --x=10 --y=30 --color=SEVERAL-GREEN --font=sans10 --label="Element 1"
-  element-text-2 := Label --x=10 --y=110 --color=SEVERAL-GREEN --font=sans10 --label="Element 2"
+  element-text := Label --x=10 --y=30 --color=SEVERAL-GREEN --font=sans10 --text="Element 1"
+  element-text-2 := Label --x=10 --y=110 --color=SEVERAL-GREEN --font=sans10 --text="Element 2"
   display.add element-text
   display.add element-text-2
   display.draw

@@ -21,9 +21,9 @@ main args:
 
   sans10 := Font.get "sans10"
 
-  element-text := Label --x=30 --y=20 --color=SEVERAL-ORANGE --label="Testing 123" --font=sans10
-  element-text-2 := Label --x=180 --y=50 --color=SEVERAL-ORANGE --label="123 Testing" --font=sans10 --alignment=ALIGN-RIGHT
-  element-text-3 := Label --x=96 --y=80 --color=SEVERAL-ORANGE --label="T 123 For the win" --font=sans10 --alignment=ALIGN-CENTER
+  element-text := Label --x=30 --y=20 --color=SEVERAL-ORANGE --text="Testing 123" --font=sans10
+  element-text-2 := Label --x=180 --y=50 --color=SEVERAL-ORANGE --text="123 Testing" --font=sans10 --alignment=ALIGN-RIGHT
+  element-text-3 := Label --x=96 --y=80 --color=SEVERAL-ORANGE --text="T 123 For the win" --font=sans10 --alignment=ALIGN-CENTER
   display.add element-text
   display.add element-text-2
   display.add element-text-3

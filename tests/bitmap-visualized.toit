@@ -47,7 +47,7 @@ do basename/string w/int h/int:
 
   display.draw
 
-  label := Label --x=44 --y=44 --label="UP ^" --font=SANS --color=0
+  label := Label --x=44 --y=44 --text="UP ^" --font=SANS --color=0
   display.add label
   png-element := Png --x=36 --y=32 --png-file=purifier
   display.add png-element

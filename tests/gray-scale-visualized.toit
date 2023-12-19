@@ -21,14 +21,14 @@ main args:
   display.add
       Div --x=10 --y=20 --w=30 --h=40 --background=0x80
   display.add
-      Label --x=50 --y=20 --label="Testing" --font=sans10 --color=0xc0
+      Label --x=50 --y=20 --text="Testing" --font=sans10 --color=0xc0
 
-  middle-line := Label --x=50 --y=40 --label="the display" --font=sans10 --color=0xc0
+  middle-line := Label --x=50 --y=40 --text="the display" --font=sans10 --color=0xc0
   display.add middle-line
   display.draw
 
   display.add
-      Label --x=50 --y=60 --label="for the win" --font=sans10 --color=0xc0
+      Label --x=50 --y=60 --text="for the win" --font=sans10 --color=0xc0
 
   display.draw
 
