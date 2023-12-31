@@ -4,10 +4,6 @@
 
 import binary show LITTLE-ENDIAN
 import bitmap show *
-import .four-gray as four-gray
-import .true-color as true-color
-import .gray-scale as gray-scale
-import .one-byte_ as one-byte
 import .style show *
 import .pixel-display
 import font show Font
@@ -326,7 +322,7 @@ Like other elements it can have a background, but it is not intended to have
 */
 class Label extends Element implements ColoredElement:
   color_/int := ?
-  label_/string := ?
+  text_/string := ?
   alignment_/int := ?
   orientation_/int := ?
   font_/Font? := ?
@@ -346,8 +342,8 @@ class Label extends Element implements ColoredElement:
       orientation = value
     else if key == "alignment":
       alignment = value
-    else if key == "label":
-      label = value
+    else if key == "text" or key == "label":
+      text = value
     else if key == "icon":
       icon = value
     else:
@@ -370,7 +366,7 @@ class Label extends Element implements ColoredElement:
 
   icon= value/Icon -> none:
     font = value.font_
-    label = value.stringify
+    text = value.stringify
 
   /**
   Constructs a Label.
@@ -380,9 +376,11 @@ class Label extends Element implements ColoredElement:
   The $alignment is one of $ALIGN-LEFT, $ALIGN-CENTER, or $ALIGN-RIGHT.
   The $orientation is one of $ORIENTATION-0, $ORIENTATION-90, $ORIENTATION-180,
     or $ORIENTATION-270.
+  The $label argument is equivalent to the $text argument.  The $text
+    argument is preferred.
   The $color, $font, $orientation, and $alignment can be set using styles
-    instead of here in the constructor.  The label (text) can be set and
-    changed later with the label setter.  Like any change of appearance
+    instead of here in the constructor.  The $text can be set and
+    changed later with the text setter.  Like any change of appearance
     in an element, it doesn't become visible until the $PixelDisplay.draw
     method is called.
   See $Element.constructor for the other arguments.
@@ -394,13 +392,15 @@ class Label extends Element implements ColoredElement:
       --classes/List?=null
       --id/string?=null
       --color/int=0
-      --label/string=""
+      --label/string?=null
+      --text/string?=null
       --font/Font?=null
       --icon/Icon?=null
       --orientation/int=ORIENTATION-0
       --alignment/int=ALIGN-LEFT:
     color_ = color
-    label_ = label
+    if label and text: throw "INVALID_ARGUMENT"
+    text_ = text or label or ""
     alignment_ = alignment
     orientation_ = orientation
     font_ = font
@@ -419,10 +419,10 @@ class Label extends Element implements ColoredElement:
   */
   xywh_ [block]:
     if not left_:
-      extent/List := font_.text-extent label_
+      extent/List := font_.text-extent text_
       displacement := 0
       if alignment_ != ALIGN-LEFT:
-        displacement = (font_.pixel-width label_)
+        displacement = (font_.pixel-width text_)
         if alignment_ == ALIGN-CENTER: displacement >>= 1
       l := extent[2] - displacement
       r := extent[2] - displacement + extent[0]
@@ -462,21 +462,24 @@ class Label extends Element implements ColoredElement:
     return height_
 
   invalidate:
-    if change-tracker and x and y and font_ and label_:
+    if change-tracker and x and y and font_ and text_:
       xywh_: | x y w h |
         change-tracker.child-invalidated x y w h
 
   label= value/string -> none:
-    if value == label_: return
+    text = value
+
+  text= value/string -> none:
+    if value == text_: return
     if orientation_ == ORIENTATION-0 and change-tracker and x and y:
-      text-get-bounding-boxes_ label_ value alignment_ font_: | old/TextExtent_ new/TextExtent_ |
+      text-get-bounding-boxes_ text_ value alignment_ font_: | old/TextExtent_ new/TextExtent_ |
         change-tracker.child-invalidated (x_ + old.x) (y_ + old.y) old.w old.h
         change-tracker.child-invalidated (x_ + new.x) (y_ + new.y) new.w new.h
-        label_ = value
+        text_ = value
         left_ = null  // Trigger recalculation.
         return
     invalidate
-    label_ = value
+    text_ = value
     left_ = null  // Trigger recalculation.
     invalidate
 
@@ -499,7 +502,7 @@ class Label extends Element implements ColoredElement:
     y := y_
     if not (x and y): return
     if alignment_ != ALIGN-LEFT:
-      text-width := font_.pixel-width label_
+      text-width := font_.pixel-width text_
       if alignment_ == ALIGN-CENTER: text-width >>= 1
       if orientation_ == ORIENTATION-0:
         x -= text-width
@@ -510,7 +513,7 @@ class Label extends Element implements ColoredElement:
       else:
         assert: orientation_ == ORIENTATION-270
         y -= text-width
-    canvas.text x y --text=label_ --color=color_ --font=font_ --orientation=orientation_
+    canvas.text x y --text=text_ --color=color_ --font=font_ --orientation=orientation_
 
 /**
 A superclass for elements that can draw themselves.  Override the

@@ -21,8 +21,8 @@ main args:
   sans10 := Font.get "sans10"
 
   // Element-based rectangles.
-  element-text := Label --x=30 --y=30 --color=SEVERAL-ORANGE --label="joo%" --font=sans10
-  element-text-2 := Label --x=130 --y=20 --color=SEVERAL-ORANGE --label="joo%" --font=sans10
+  element-text := Label --x=30 --y=30 --color=SEVERAL-ORANGE --text="joo%" --font=sans10
+  element-text-2 := Label --x=130 --y=20 --color=SEVERAL-ORANGE --text="joo%" --font=sans10
   display.add element-text
   display.add element-text-2
   display.draw
