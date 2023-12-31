@@ -4,10 +4,6 @@
 
 import binary show LITTLE-ENDIAN
 import bitmap show *
-import .four-gray as four-gray
-import .true-color as true-color
-import .gray-scale as gray-scale
-import .one-byte_ as one-byte
 import .style show *
 import .pixel-display
 import font show Font
@@ -346,9 +342,7 @@ class Label extends Element implements ColoredElement:
       orientation = value
     else if key == "alignment":
       alignment = value
-    else if key == "label":
-      text = value
-    else if key == "text":
+    else if key == "text" or key == "label":
       text = value
     else if key == "icon":
       icon = value
