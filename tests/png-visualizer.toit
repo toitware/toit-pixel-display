@@ -407,9 +407,6 @@ byte-swap_ ba/ByteArray -> ByteArray:
 
 class SwapRedAndBlack implements png.PaletteTransformer:
   transform palette/ByteArray -> none:
-    if palette[0] >= 0x80:
-      palette[0] = 0
-    else:
-      palette[0] = 0xff
+    palette[0] = (palette[0] >= 0x80) ? 0 : 0xff
     palette[1] = 0
     palette[2] = 0

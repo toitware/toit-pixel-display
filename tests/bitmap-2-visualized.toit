@@ -39,12 +39,6 @@ main args:
   heater-translucent := file.read-content "tests/third_party/pictogrammers/heater-translucent.png"
   heater-translucent-uncompressed := file.read-content "tests/third_party/pictogrammers/heater-translucent-uncompressed.png"
 
-  swap-red-and-black := :: | r/int g/int b/int a/int |
-    if r > 0x80:
-      #[0, 0, 0, a]
-    else:
-      #[0xff, 0, 0, a]
-
   display.add (Png --x=16 --y=32 --png-file=heater)
   display.add (Png --x=100 --y=32 --png-file=heater-4-bit)
   display.add (Png --x=184 --y=32 --png-file=heater-2-bit)
