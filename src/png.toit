@@ -36,6 +36,12 @@ Only PNGs with up to 8 bits per pixel are supported.  They can be
 */
 class Png extends CustomElement:
   png_/png-reader.AbstractPng
+  last-palette_/ByteArray? := null
+  last-alpha-palette_/ByteArray? := null
+  last-transformed-palette_/ByteArray? := null
+  last-transformed-alpha-palette_/ByteArray? := null
+  palette-transformer_/PaletteTransformer? := null
+  palette-transformer-buffer_/ByteArray? := null
 
   /**
   Constructs an element that displays a PNG image, given a byte array
@@ -51,7 +57,10 @@ class Png extends CustomElement:
       --id/string?=null
       --background=null
       --border/Border?=null
-      --png-file/ByteArray:
+      --png-file/ByteArray
+      --color/int?=null
+      --palette-transformer/PaletteTransformer?=null:
+    palette-transformer_ = palette-transformer
     info := png-reader.PngInfo png-file
     if info.uncompressed-random-access:
       png_ = png-reader.PngRandomAccess png-file
@@ -69,6 +78,46 @@ class Png extends CustomElement:
         --id = id
         --background = background
         --border = border
+    if color: this.color = color
+
+  /**
+  Causes the PNG to be redrawn with new values from the palette transformer.
+  */
+  invalidate-palette-transformer -> none:
+    invalidate
+    last-transformed-palette_ = null
+    last-transformed-alpha-palette_ = null
+
+  /**
+  Causes the palette of the PNG to be ignored, and all pixels will
+    be drawn with the given color.  Alpha (transparency) will be
+    unchanged.
+  */
+  color= value/int -> none:
+    invalidate-palette-transformer
+    palette-transformer_ = SingleColorPaletteTransformer_ value
+
+  set-attribute_ key/string value -> none:
+    if key == "color":
+      color = value
+    else:
+      super key value
+  /**
+  The $palette-transformer is an optional PaletteTransformer that transforms
+    the colors in the PNG.  This can be used for example if you have a PNG
+    that is black-and-transparent, and you want to display it as an
+    image that is red-and-transparent.
+  The palette transformer is not called eagerly, so if it is
+    going to return new values (eg. to change the color of the PNG)
+    you must call $invalidate-palette-transformer.
+  A simpler way to use palette transformation is to simply set the
+    color on this element. This will cause all PNG pixels to be
+    drawn with the same color, but alpha (transparency) will still
+    be taken from the PNG file.
+  */
+  palette-transformer= value/PaletteTransformer?:
+    invalidate-palette-transformer
+    palette-transformer_ = value
 
   // Redraw routine.
   custom-draw canvas/Canvas:
@@ -77,6 +126,26 @@ class Png extends CustomElement:
       png_.get-indexed-image-data y2 h
           --accept-8-bit=canvas.supports-8-bit
           --need-gray-palette=canvas.gray-scale: | y-from/int y-to/int bits-per-pixel/int pixels/ByteArray line-stride/int palette/ByteArray alpha-palette/ByteArray |
+        if palette-transformer_:
+          if palette != last-palette_ or alpha-palette != last-alpha-palette_:
+            if last-transformed-alpha-palette_ == null or
+                last-transformed-palette_.size != palette.size:
+              last-transformed-palette_ = ByteArray palette.size
+            if last-transformed-alpha-palette_ == null or
+                last-transformed-alpha-palette_.size != palette.size:
+              last-transformed-alpha-palette_ = ByteArray palette.size
+          if palette-transformer-buffer_ == null:
+            palette-transformer-buffer_ = ByteArray 4
+          (palette.size / 3).repeat: | i |
+            3.repeat:
+              palette-transformer-buffer_[it] = palette[i * 3 + it]
+            palette-transformer-buffer_[3] = alpha-palette[i]
+            palette-transformer_.transform palette-transformer-buffer_
+            3.repeat:
+              last-transformed-palette_[i * 3 + it] = palette-transformer-buffer_[it]
+            last-transformed-alpha-palette_[i] = palette-transformer-buffer_[3]
+          palette = last-transformed-palette_
+          alpha-palette = last-transformed-alpha-palette_
         if bits-per-pixel == 1:
           // Last line a little shorter because it has no stride padding.
           adjust := line-stride - ((round-up w 8) >> 3)
@@ -98,3 +167,20 @@ class Png extends CustomElement:
         y2 = y-to
 
   type -> string: return "png"
+
+interface PaletteTransformer:
+  /**
+  Takes a 4-element byte array in rgba order and modifies the
+    byte array to indicate which color and transparency should
+    be used instead.
+  */
+  transform rgba/ByteArray -> none
+
+class SingleColorPaletteTransformer_ implements PaletteTransformer:
+  color_/int
+  constructor .color_:
+
+  transform rgba/ByteArray -> none:
+    rgba[0] = color_ >> 16
+    rgba[1] = color_ >> 8
+    rgba[2] = color_

@@ -23,7 +23,7 @@ main args:
 
   basename := args[0]
 
-  driver := ThreeColorPngVisualizer 440 240 basename --outline=BLACK
+  driver := ThreeColorPngVisualizer 610 240 basename --outline=BLACK
   display := PixelDisplay.three-color driver
   display.background = WHITE
 
@@ -40,11 +40,15 @@ main args:
   display.add (Png --x=184 --y=32 --png-file=heater-2-bit)
   display.add (Png --x=268 --y=32 --png-file=heater-bw)
   display.add (Png --x=352 --y=32 --png-file=heater-white-bg)
+  display.add (Png --x=436 --y=32 --png-file=heater-bw --color=0xff0000)
+  display.add (Png --x=520 --y=32 --png-file=heater-2-bit --palette-transformer=SwapRedAndBlack)
 
   display.add (Png --x=100 --y=120 --png-file=heater-red-uncompressed)
   display.add (Png --x=184 --y=120 --png-file=heater-2-bit-uncompressed)
   display.add (Png --x=268 --y=120 --png-file=heater-bw-uncompressed)
   display.add (Png --x=352 --y=120 --png-file=heater-white-bg-uncompressed)
+  display.add (Png --x=436 --y=120 --png-file=heater-bw-uncompressed --color=0xff0000)
+  display.add (Png --x=520 --y=120 --png-file=heater-2-bit-uncompressed --palette-transformer=SwapRedAndBlack)
 
   display.draw
 

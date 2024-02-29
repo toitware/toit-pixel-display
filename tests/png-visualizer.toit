@@ -9,6 +9,7 @@ import crypto.crc show *
 import host.file
 import monitor show Latch
 import pixel-display show *
+import pixel-display.png
 import png-tools.png-writer
 import png-tools.png-reader show *
 import zlib
@@ -403,3 +404,9 @@ byte-swap_ ba/ByteArray -> ByteArray:
   result := ba.copy
   byte-swap-32 result
   return result
+
+class SwapRedAndBlack implements png.PaletteTransformer:
+  transform palette/ByteArray -> none:
+    palette[0] = (palette[0] >= 0x80) ? 0 : 0xff
+    palette[1] = 0
+    palette[2] = 0
