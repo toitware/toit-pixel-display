@@ -40,7 +40,8 @@ class Png extends CustomElement:
   last-alpha-palette_/ByteArray? := null
   last-transformed-palette_/ByteArray? := null
   last-transformed-alpha-palette_/ByteArray? := null
-  palette-transformer_/Lambda? := null
+  palette-transformer_/PaletteTransformer? := null
+  palette-transformer-buffer_/ByteArray? := null
 
   /**
   Constructs an element that displays a PNG image, given a byte array
@@ -58,7 +59,7 @@ class Png extends CustomElement:
       --border/Border?=null
       --png-file/ByteArray
       --color/int?=null
-      --palette-transformer/Lambda?=null:
+      --palette-transformer/PaletteTransformer?=null:
     palette-transformer_ = palette-transformer
     info := png-reader.PngInfo png-file
     if info.uncompressed-random-access:
@@ -94,8 +95,7 @@ class Png extends CustomElement:
   */
   color= value/int -> none:
     invalidate-palette-transformer
-    palette-transformer_ = :: | r g b a |
-      #[value >> 16, value >> 8, value, a]
+    palette-transformer_ = SingleColorPaletteTransformer_ value
 
   set-attribute_ key/string value -> none:
     if key == "color":
@@ -103,14 +103,10 @@ class Png extends CustomElement:
     else:
       super key value
   /**
-  The $palette-transformer is an optional Lambda that transforms
-    the colors in the PNG. The arguments are red, green, blue, and
-    alpha, all integers from 0-255.  It is expected to return a
-    4-element ByteArray with the transformed red, green, blue, and
-    alpha values.  This can be used for example if you have a PNG
+  The $palette-transformer is an optional PaletteTransformer that transforms
+    the colors in the PNG.  This can be used for example if you have a PNG
     that is black-and-transparent, and you want to display it as an
-    image that is red-and-transparent.  The returned ByteArray does
-    not have to be fresh on each invocation.
+    image that is red-and-transparent.
   The palette transformer is not called eagerly, so if it is
     going to return new values (eg. to change the color of the PNG)
     you must call $invalidate-palette-transformer.
@@ -119,7 +115,7 @@ class Png extends CustomElement:
     drawn with the same color, but alpha (transparency) will still
     be taken from the PNG file.
   */
-  palette-transformer= value/Lambda?:
+  palette-transformer= value/PaletteTransformer?:
     invalidate-palette-transformer
     palette-transformer_ = value
 
@@ -138,16 +134,16 @@ class Png extends CustomElement:
             if last-transformed-alpha-palette_ == null or
                 last-transformed-alpha-palette_.size != palette.size:
               last-transformed-alpha-palette_ = ByteArray palette.size
+          if palette-transformer-buffer_ == null:
+            palette-transformer-buffer_ = ByteArray 4
           (palette.size / 3).repeat: | i |
-            transformed := palette-transformer_.call
-              palette[i * 3]
-              palette[i * 3 + 1]
-              palette[i * 3 + 2]
-              i >= alpha-palette.size ? 0xff : alpha-palette[i]
-            last-transformed-palette_[i * 3] = transformed[0]
-            last-transformed-palette_[i * 3 + 1] = transformed[1]
-            last-transformed-palette_[i * 3 + 2] = transformed[2]
-            last-transformed-alpha-palette_[i] = transformed[3]
+            3.repeat:
+              palette-transformer-buffer_[it] = palette[i * 3 + it]
+            palette-transformer-buffer_[3] = alpha-palette[i]
+            palette-transformer_.transform palette-transformer-buffer_
+            3.repeat:
+              last-transformed-palette_[i * 3 + it] = palette-transformer-buffer_[it]
+            last-transformed-alpha-palette_[i] = palette-transformer-buffer_[3]
           palette = last-transformed-palette_
           alpha-palette = last-transformed-alpha-palette_
         if bits-per-pixel == 1:
@@ -171,3 +167,20 @@ class Png extends CustomElement:
         y2 = y-to
 
   type -> string: return "png"
+
+interface PaletteTransformer:
+  /**
+  Takes a 4-element byte array in rgba order and modifies the
+    byte array to indicate which color and transparency should
+    be used instead.
+  */
+  transform rgba/ByteArray -> none
+
+class SingleColorPaletteTransformer_ implements PaletteTransformer:
+  color_/int
+  constructor .color_:
+
+  transform rgba/ByteArray -> none:
+    rgba[0] = color_ >> 16
+    rgba[1] = color_ >> 8
+    rgba[2] = color_

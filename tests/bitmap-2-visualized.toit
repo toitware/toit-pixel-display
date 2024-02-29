@@ -52,7 +52,7 @@ main args:
   display.add (Png --x=352 --y=32 --png-file=heater-white-bg)
   display.add (Png --x=436 --y=32 --png-file=heater-translucent)
   display.add (Png --x=520 --y=32 --png-file=heater-4-bit --color=0x4080ff)
-  display.add (Png --x=604 --y=32 --png-file=heater-4-bit --palette-transformer=swap-red-and-black)
+  display.add (Png --x=604 --y=32 --png-file=heater-4-bit --palette-transformer=SwapRedAndBlack)
   display.add (Png --x=688 --y=32 --png-file=heater-bw --color=0x20ffe0)
 
   display.add (Png --x=16 --y=120 --png-file=heater-uncompressed)
@@ -62,7 +62,7 @@ main args:
   display.add (Png --x=352 --y=120 --png-file=heater-white-bg-uncompressed)
   display.add (Png --x=436 --y=120 --png-file=heater-translucent-uncompressed)
   display.add (Png --x=520 --y=120 --png-file=heater-4-bit-uncompressed --color=0x4080ff)
-  display.add (Png --x=604 --y=120 --png-file=heater-4-bit-uncompressed --palette-transformer=swap-red-and-black)
+  display.add (Png --x=604 --y=120 --png-file=heater-4-bit-uncompressed --palette-transformer=SwapRedAndBlack)
   display.add (Png --x=688 --y=120 --png-file=heater-bw-uncompressed --color=0x20ffe0)
 
   display.draw
