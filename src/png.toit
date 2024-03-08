@@ -109,6 +109,7 @@ class Png extends CustomElement:
 
   png-file= value/ByteArray? -> none:
     invalidate
+    png_ = null  // Reduce peak memory use.
     png_ = create-png_ value
     if png_:
       set-size png_.width png_.height  // Also invalidates if the size changes.
