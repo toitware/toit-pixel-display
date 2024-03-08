@@ -37,11 +37,19 @@ main args:
   heater-white-bg-uncompressed := file.read-content "tests/third_party/pictogrammers/heater-white-bg-uncompressed.png"
 
   display.add (Png --x=100 --y=32 --png-file=heater-red)
-  display.add (Png --x=184 --y=32 --png-file=heater-2-bit)
+  display.add (Png --x=184 --y=32 --png-file=heater-red --id="2-bit")
   display.add (Png --x=268 --y=32 --png-file=heater-bw)
   display.add (Png --x=352 --y=32 --png-file=heater-white-bg)
-  display.add (Png --x=436 --y=32 --png-file=heater-bw --color=0xff0000)
+  display.add (Png --x=436 --y=32 --id="updated-later")
   display.add (Png --x=520 --y=32 --png-file=heater-2-bit --palette-transformer=SwapRedAndBlack)
+
+  display.draw
+
+  updated-later := display.get-element-by-id "updated-later"
+  updated-later.png-file = heater-bw
+  updated-later.color = 0xff0000
+
+  (display.get-element-by-id "2-bit").png-file = heater-2-bit
 
   display.add (Png --x=100 --y=120 --png-file=heater-red-uncompressed)
   display.add (Png --x=184 --y=120 --png-file=heater-2-bit-uncompressed)

@@ -35,7 +35,7 @@ Only PNGs with up to 8 bits per pixel are supported.  They can be
   transparent, and the opaque colors fully opaque.
 */
 class Png extends CustomElement:
-  png_/png-reader.AbstractPng
+  png_/png-reader.AbstractPng? := null
   last-palette_/ByteArray? := null
   last-alpha-palette_/ByteArray? := null
   last-transformed-palette_/ByteArray? := null
@@ -57,28 +57,35 @@ class Png extends CustomElement:
       --id/string?=null
       --background=null
       --border/Border?=null
-      --png-file/ByteArray
+      --png-file/ByteArray?=null
       --color/int?=null
       --palette-transformer/PaletteTransformer?=null:
     palette-transformer_ = palette-transformer
-    info := png-reader.PngInfo png-file
-    if info.uncompressed-random-access:
-      png_ = png-reader.PngRandomAccess png-file
-    else:
-      png_ = png-reader.Png png-file
-    if png_.bit-depth > 8: throw "UNSUPPORTED"
-    if png_.color-type == png-reader.COLOR-TYPE-TRUECOLOR or png_.color-type == png-reader.COLOR-TYPE-TRUECOLOR-ALPHA: throw "UNSUPPORTED"
+    png/png-reader.AbstractPng? := create-png_ png-file
     super
         --x = x
         --y = y
-        --w = png_.width
-        --h = png_.height
+        --w = png ? png.width : 0
+        --h = png ? png.height : 0
         --style = style
         --classes = classes
         --id = id
         --background = background
         --border = border
+    png_ = png
     if color: this.color = color
+
+  static create-png_ png-file/ByteArray? -> png-reader.AbstractPng?:
+    if not png-file: return null
+    info := png-reader.PngInfo png-file
+    png/png-reader.AbstractPng := ?
+    if info.uncompressed-random-access:
+      png = png-reader.PngRandomAccess png-file
+    else:
+      png = png-reader.Png png-file
+    if png.bit-depth > 8: throw "UNSUPPORTED"
+    if png.color-type == png-reader.COLOR-TYPE-TRUECOLOR or png.color-type == png-reader.COLOR-TYPE-TRUECOLOR-ALPHA: throw "UNSUPPORTED"
+    return png
 
   /**
   Causes the PNG to be redrawn with new values from the palette transformer.
@@ -97,11 +104,19 @@ class Png extends CustomElement:
     invalidate-palette-transformer
     palette-transformer_ = SingleColorPaletteTransformer_ value
 
+  png-file= value/ByteArray? -> none:
+    invalidate
+    png_ = create-png_ value
+    set-size png_.width png_.height  // Also invalidates if the size changes.
+
   set-attribute_ key/string value -> none:
     if key == "color":
       color = value
+    else if key == "png-file":
+      png-file = value
     else:
       super key value
+
   /**
   The $palette-transformer is an optional PaletteTransformer that transforms
     the colors in the PNG.  This can be used for example if you have a PNG
@@ -121,6 +136,7 @@ class Png extends CustomElement:
 
   // Redraw routine.
   custom-draw canvas/Canvas:
+    if not png_: return
     y2 := 0
     while y2 < h and (canvas.bounds-analysis 0 y2 w (h - y2)) != Canvas.DISJOINT:
       png_.get-indexed-image-data y2 h
