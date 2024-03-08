@@ -100,14 +100,20 @@ class Png extends CustomElement:
     be drawn with the given color.  Alpha (transparency) will be
     unchanged.
   */
-  color= value/int -> none:
+  color= value/int? -> none:
     invalidate-palette-transformer
-    palette-transformer_ = SingleColorPaletteTransformer_ value
+    if value:
+      palette-transformer_ = SingleColorPaletteTransformer_ value
+    else:
+      palette-transformer_ = null
 
   png-file= value/ByteArray? -> none:
     invalidate
     png_ = create-png_ value
-    set-size png_.width png_.height  // Also invalidates if the size changes.
+    if png_:
+      set-size png_.width png_.height  // Also invalidates if the size changes.
+    else:
+      set-size 0 0
 
   set-attribute_ key/string value -> none:
     if key == "color":
