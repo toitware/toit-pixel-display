@@ -29,14 +29,14 @@ interface Background:
     either just draw the plain color background, or call the draw method
     on a real Background object.
   */
-  static draw background canvas/Canvas x/int y/int w/int h/int --autoclipped/bool -> none:
+  static draw background canvas/Canvas x/int y/int w/int h/int --autoclipped/bool --foo=false -> none:
     if background is int:
       if autoclipped:
         canvas.set-all-pixels background
       else:
         canvas.rectangle x y --w=w --h=h --color=background
     else if background != null:
-      (background as Background).draw canvas x y w h --autoclipped=autoclipped
+      (background as any).draw canvas x y w h --autoclipped=autoclipped --foo=foo
 
   static check-valid background -> none:
     if background != null and background is not int and background is not Background:

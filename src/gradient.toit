@@ -61,9 +61,10 @@ class GradientBackground implements Background:
         hash_ = hash
     return hash_
 
-  draw canvas/Canvas x/int y/int w/int h/int --autoclipped/bool -> none:
+  draw canvas/Canvas x/int y/int w/int h/int --autoclipped/bool --foo=false -> none:
+    print "  foo: $foo"
     if not rendering_: rendering_ = GradientRendering_.get w h this
-    rendering_.draw canvas x y --autoclipped=autoclipped
+    rendering_.draw canvas x y --autoclipped=autoclipped --foo=foo
 
   static normalize-angle_ angle/int -> int:
     angle %= 360
@@ -183,13 +184,15 @@ class GradientRendering_:
           green-pixels_.replace ((it + 1) * texture-length) green-pixels_[0..texture-length]
           blue-pixels_.replace ((it + 1) * texture-length) blue-pixels_[0..texture-length]
 
-  draw canvas/Canvas x/int y/int --autoclipped/bool -> none:
+  draw canvas/Canvas x/int y/int --autoclipped/bool --foo/bool -> none:
     if not canvas.supports-8-bit: throw "UNSUPPORTED"
     angle := angle_
     w := w_
     h := h_
     analysis := canvas.bounds-analysis x y w h
-    if analysis == Canvas.DISJOINT: return
+    if analysis == Canvas.DISJOINT:
+      if foo: print "  DISJOINT"
+      return
     // Determine whether the draw operations will be automatically clipped for
     // us, or whether we need to do it ourselves by using slices for drawing
     // operations.  We could also check whether we are inside a window that will

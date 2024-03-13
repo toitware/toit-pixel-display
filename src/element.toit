@@ -632,9 +632,16 @@ class ClippingDiv_ extends Div:
 
   // After the textures under us have drawn themselves, we draw on top.
   draw canvas/Canvas -> none:
+    pr/bool := false
+    if x == 180 and y == 10 and canvas.transform.ty_ == -104:
+      print "Canvas $canvas.transform.tx_,$canvas.transform.ty_, $(canvas.width_)x$canvas.height_"
+      print "Div $x,$y, $(w)x$h"
+      pr = true
     // If we are outside the window and the decorations, there is nothing to do.
     extent: | x2 y2 w2 h2 |
-      if (canvas.bounds-analysis x2 y2 w2 h2) == Canvas.DISJOINT: return
+      if (canvas.bounds-analysis x2 y2 w2 h2) == Canvas.DISJOINT:
+        if pr: print "  Disjoint"
+        return
 
     old-transform := canvas.transform
     canvas.transform = old-transform.translate x_ y_
@@ -644,16 +651,20 @@ class ClippingDiv_ extends Div:
     // If the window is 100% painting at these coordinates then we can draw the
     // elements of the window and no compositing is required.
     if is-all-opaque content-opacity:
+      if pr: print "  All opaque"
       canvas.transform = old-transform
       super canvas  // Use the unclipped drawing method from Div.
       return
+    if pr: print "  Not all opaque"
 
     frame-opacity := frame-map canvas
 
     if is-all-transparent frame-opacity and is-all-transparent content-opacity:
       canvas.transform = old-transform
+      if pr: print "  All transparent"
       return
 
+    if pr: print "  Complicated"
     // The complicated case where we have to composit the tile with the border and decorations.
     border-canvas := null
     if not is-all-transparent frame-opacity:
@@ -661,7 +672,9 @@ class ClippingDiv_ extends Div:
       if border_: border_.draw border-canvas 0 0 w h
 
     painting-canvas := canvas.create-similar
-    Background.draw background_ painting-canvas 0 0 w h --autoclipped
+    if pr: print "  Doing BG"
+    if pr: painting-canvas.set-all-pixels 0xe0e040
+    Background.draw background_ painting-canvas 0 0 w h --autoclipped --foo=pr
     custom-draw painting-canvas
 
     canvas.composit frame-opacity border-canvas content-opacity painting-canvas
