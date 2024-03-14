@@ -62,7 +62,8 @@ class GradientBackground implements Background:
     return hash_
 
   draw canvas/Canvas x/int y/int w/int h/int --autoclipped/bool -> none:
-    if not rendering_: rendering_ = GradientRendering_.get w h this
+    if not rendering_ or rendering_.w_ != w or rendering_.h_ != h:
+      rendering_ = GradientRendering_.get w h this
     rendering_.draw canvas x y --autoclipped=autoclipped
 
   static normalize-angle_ angle/int -> int:
