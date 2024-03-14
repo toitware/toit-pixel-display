@@ -129,10 +129,10 @@ abstract class Element implements Window:
       border_ = value
       invalidate
 
-  background -> Background?:
+  background -> any:
     return background_
 
-  background= value/Background?:
+  background= value:
     if value != background_:
       invalidate
       background_ = value
