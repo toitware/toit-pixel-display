@@ -86,7 +86,7 @@ abstract class PixelDisplay implements Window:
       multiple color components, transparency, and clipping, so the
       effective memory use may be higher than this number.
   */
-  max-patch-size/int := 2000
+  max-patch-size/int := ?
 
   // Need-to-redraw is tracked as a bit array of dirty bits, arranged in
   // SSD1306 layout so we can use bitmap-rectangle to invalidate areas.
@@ -208,7 +208,7 @@ abstract class PixelDisplay implements Window:
      that the display driver is exactly square, a rotated orientation is used.
   The orientation is rotated by 180 degrees if $inverted is true.
   */
-  constructor .driver_ --inverted/bool?=false --transform/Transform?=null --portrait/bool?=null:
+  constructor .driver_ --inverted/bool?=false --transform/Transform?=null --portrait/bool?=null --.max-patch-size=2000:
     x-rounding_ = driver_.x-rounding
     y-rounding_ = driver_.y-rounding
     height := round-up driver_.height y-rounding_
@@ -536,9 +536,8 @@ See https://docs.toit.io/language/sdk/display
 */
 class TwoColorPixelDisplay_ extends PixelDisplay:
   constructor driver/AbstractDriver --inverted/bool=false --portrait/bool=false --transform/Transform?=null:
-    super driver --inverted=inverted --portrait=portrait --transform=transform
+    super driver --inverted=inverted --portrait=portrait --transform=transform --max-patch-size=4000
     background_ = two-color.WHITE
-    max-patch-size = 4000
 
   max-canvas-height_ width/int -> int:
     height := 0
@@ -595,8 +594,7 @@ abstract class TwoBitPixelDisplay_ extends PixelDisplay:
   background_ := three-color.WHITE
 
   constructor driver/AbstractDriver --inverted/bool=false --portrait/bool=false --transform/Transform?=null:
-    super driver --inverted=inverted --portrait=portrait --transform=transform
-    max-patch-size = 8000
+    super driver --inverted=inverted --portrait=portrait --transform=transform --max-patch-size=8000
 
   max-canvas-height_ width:
     width-rounded := round-up width 8
@@ -625,7 +623,7 @@ See https://docs.toit.io/language/sdk/display
 */
 class GrayScalePixelDisplay_ extends PixelDisplay:
   constructor driver/AbstractDriver --inverted/bool=false --portrait/bool=false --transform/Transform?=null:
-    super driver --inverted=inverted --portrait=portrait --transform=transform
+    super driver --inverted=inverted --portrait=portrait --transform=transform --max-patch-size=2000
     background_ = gray-scale.WHITE
 
   max-canvas-height_ width:
@@ -651,7 +649,7 @@ See https://docs.toit.io/language/sdk/display
 */
 class SeveralColorPixelDisplay_ extends PixelDisplay:
   constructor driver/AbstractDriver --inverted/bool=false --portrait/bool=false --transform/Transform?=null:
-    super driver --inverted=inverted --portrait=portrait --transform=transform
+    super driver --inverted=inverted --portrait=portrait --transform=transform --max-patch-size=2000
     background_ = 0
 
   max-canvas-height_ width:
