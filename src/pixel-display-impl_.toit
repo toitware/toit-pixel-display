@@ -675,9 +675,8 @@ See https://docs.toit.io/language/sdk/display
 */
 class TrueColorPixelDisplay_ extends PixelDisplay:
   constructor driver/AbstractDriver --inverted/bool=false --portrait/bool=false --transform/Transform?=null:
-    super driver --inverted=inverted --portrait=portrait --transform=transform
+    super driver --inverted=inverted --portrait=portrait --transform=transform --max-patch-size=6000
     background_ = true-color.WHITE
-    max-patch-size = 6000
 
   max-canvas-height_ width:
     height := 0
