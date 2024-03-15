@@ -49,6 +49,9 @@ main args:
   // Window-relative coordinates.
   text.move-to -10 7
 
+  // Larger patches.
+  display.max-patch-size = 10_0000
+
   display.draw
 
   driver.write-png

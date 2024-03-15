@@ -77,6 +77,17 @@ abstract class PixelDisplay implements Window:
   inner-width: return driver_.width
   inner-height: return driver_.width
 
+  /**
+    By default, the display is rendered in patches that have
+      a max size of 2-8k, depending on the bits per pixel.  On devices
+      with a large amount of memory this patch size can be increased,
+      which may improve performance.
+    During rendering, the display may allocate extra buffers for
+      multiple color components, transparency, and clipping, so the
+      effective memory use may be higher than this number.
+  */
+  max-patch-size/int := 2000
+
   // Need-to-redraw is tracked as a bit array of dirty bits, arranged in
   // SSD1306 layout so we can use bitmap-rectangle to invalidate areas.
   // One bit in the dirty map covers an area of 8x8 pixels of the display.
@@ -527,17 +538,18 @@ class TwoColorPixelDisplay_ extends PixelDisplay:
   constructor driver/AbstractDriver --inverted/bool=false --portrait/bool=false --transform/Transform?=null:
     super driver --inverted=inverted --portrait=portrait --transform=transform
     background_ = two-color.WHITE
+    max-patch-size = 4000
 
   max-canvas-height_ width/int -> int:
     height := 0
     width-rounded := round-up width 8
     height-rounded := round-up driver_.height 8
-    if width-rounded * height-rounded >> 3 < 4000:
+    if width-rounded * height-rounded >> 3 < max-patch-size:
       // If we can fit both the red and black plane in < 8k then do that.
       height = height-rounded
     else:
       // Some multiple of 8 where each plane fits in one page.
-      height = (4000 / width-rounded) << 3
+      height = (max-patch-size / width-rounded) << 3
     // We can't work well with canvases that are less than 8 pixels tall.
     return max 8 height
 
@@ -584,17 +596,19 @@ abstract class TwoBitPixelDisplay_ extends PixelDisplay:
 
   constructor driver/AbstractDriver --inverted/bool=false --portrait/bool=false --transform/Transform?=null:
     super driver --inverted=inverted --portrait=portrait --transform=transform
+    max-patch-size = 8000
 
   max-canvas-height_ width:
     width-rounded := round-up width 8
     height-rounded := round-up driver_.height 8
     height := ?
-    if width-rounded * height-rounded >> 3 < 4000:
+    per-plane-size := max-patch-size >> 1
+    if width-rounded * height-rounded >> 3 < per-plane-size:
       // If we can fit both the red and black plane in < 8k then do that.
       height = height-rounded
     else:
       // Some multiple of 8 where each plane fits in one page.
-      height = (4000 / width-rounded) << 3
+      height = (per-plane-size / width-rounded) << 3
     // We can't work well with canvases that are less than 8 pixels tall.
     return max 8 height
 
@@ -617,7 +631,7 @@ class GrayScalePixelDisplay_ extends PixelDisplay:
   max-canvas-height_ width:
     height := 0
     // Keep each color component under 2k so you can fit two on a page.
-    height = round-down (2000 / width) 8
+    height = round-down (max-patch-size / width) 8
     // We can't work well with canvases that are less than 4 pixels tall.
     return height < 8 ? 4 : height
 
@@ -643,7 +657,7 @@ class SeveralColorPixelDisplay_ extends PixelDisplay:
   max-canvas-height_ width:
     height := 0
     // Keep each color component under 2k so you can fit two on a page.
-    height = round-down (2000 / width) 8
+    height = round-down (max-patch-size / width) 8
     // We can't work well with canvases that are less than 4 pixels tall.
     return height < 8 ? 4 : height
 
@@ -665,12 +679,14 @@ class TrueColorPixelDisplay_ extends PixelDisplay:
   constructor driver/AbstractDriver --inverted/bool=false --portrait/bool=false --transform/Transform?=null:
     super driver --inverted=inverted --portrait=portrait --transform=transform
     background_ = true-color.WHITE
+    max-patch-size = 6000
 
   max-canvas-height_ width:
     height := 0
+    max-component-size := max-patch-size / 3
     // Keep each color component under 2k then the packed 3-colors-in-2-bytes
     // format is still less than a page.
-    height = round-down (2000 / width) 8
+    height = round-down (max-component-size / width) 8
     // We can't work well with canvases that are less than 4 pixels tall.
     return max 4 height
 
