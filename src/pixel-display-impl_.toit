@@ -208,7 +208,7 @@ abstract class PixelDisplay implements Window:
      that the display driver is exactly square, a rotated orientation is used.
   The orientation is rotated by 180 degrees if $inverted is true.
   */
-  constructor .driver_ --inverted/bool?=false --transform/Transform?=null --portrait/bool?=null --.max-patch-size=2000:
+  constructor .driver_ --inverted/bool?=false --transform/Transform?=null --portrait/bool?=null --.max-patch-size=4000:
     x-rounding_ = driver_.x-rounding
     y-rounding_ = driver_.y-rounding
     height := round-up driver_.height y-rounding_
@@ -536,6 +536,9 @@ See https://docs.toit.io/language/sdk/display
 */
 class TwoColorPixelDisplay_ extends PixelDisplay:
   constructor driver/AbstractDriver --inverted/bool=false --portrait/bool=false --transform/Transform?=null:
+    // We have a somewhat larger default max-patch-size here because 2-color
+    // displays are often e-paper and don't react well to very small
+    // incremental updates.
     super driver --inverted=inverted --portrait=portrait --transform=transform --max-patch-size=4000
     background_ = two-color.WHITE
 
@@ -594,6 +597,9 @@ abstract class TwoBitPixelDisplay_ extends PixelDisplay:
   background_ := three-color.WHITE
 
   constructor driver/AbstractDriver --inverted/bool=false --portrait/bool=false --transform/Transform?=null:
+    // We have a somewhat larger default max-patch-size here because 2-bit
+    // displays are often e-paper and don't react well to very small
+    // incremental updates.
     super driver --inverted=inverted --portrait=portrait --transform=transform --max-patch-size=8000
 
   max-canvas-height_ width:
@@ -675,6 +681,9 @@ See https://docs.toit.io/language/sdk/display
 */
 class TrueColorPixelDisplay_ extends PixelDisplay:
   constructor driver/AbstractDriver --inverted/bool=false --portrait/bool=false --transform/Transform?=null:
+    // Since the true color display has three pixel buffers (one per color)
+    // the patches would be excessively small if we stuck with patches of
+    // only 2k of memory.
     super driver --inverted=inverted --portrait=portrait --transform=transform --max-patch-size=6000
     background_ = true-color.WHITE
 
