@@ -77,6 +77,17 @@ abstract class PixelDisplay implements Window:
   inner-width: return driver_.width
   inner-height: return driver_.width
 
+  /**
+    By default, the display is rendered in patches that have
+      a max size of 2-8k, depending on the bits per pixel.  On devices
+      with a large amount of memory this patch size can be increased,
+      which may improve performance.
+    During rendering, the display may allocate extra buffers for
+      multiple color components, transparency, and clipping, so the
+      effective memory use may be higher than this number.
+  */
+  max-patch-size/int := ?
+
   // Need-to-redraw is tracked as a bit array of dirty bits, arranged in
   // SSD1306 layout so we can use bitmap-rectangle to invalidate areas.
   // One bit in the dirty map covers an area of 8x8 pixels of the display.
@@ -197,7 +208,7 @@ abstract class PixelDisplay implements Window:
      that the display driver is exactly square, a rotated orientation is used.
   The orientation is rotated by 180 degrees if $inverted is true.
   */
-  constructor .driver_ --inverted/bool?=false --transform/Transform?=null --portrait/bool?=null:
+  constructor .driver_ --inverted/bool?=false --transform/Transform?=null --portrait/bool?=null --.max-patch-size=4000:
     x-rounding_ = driver_.x-rounding
     y-rounding_ = driver_.y-rounding
     height := round-up driver_.height y-rounding_
@@ -525,19 +536,22 @@ See https://docs.toit.io/language/sdk/display
 */
 class TwoColorPixelDisplay_ extends PixelDisplay:
   constructor driver/AbstractDriver --inverted/bool=false --portrait/bool=false --transform/Transform?=null:
-    super driver --inverted=inverted --portrait=portrait --transform=transform
+    // We have a somewhat larger default max-patch-size here because 2-color
+    // displays are often e-paper and don't react well to very small
+    // incremental updates.
+    super driver --inverted=inverted --portrait=portrait --transform=transform --max-patch-size=4000
     background_ = two-color.WHITE
 
   max-canvas-height_ width/int -> int:
     height := 0
     width-rounded := round-up width 8
     height-rounded := round-up driver_.height 8
-    if width-rounded * height-rounded >> 3 < 4000:
+    if width-rounded * height-rounded >> 3 < max-patch-size:
       // If we can fit both the red and black plane in < 8k then do that.
       height = height-rounded
     else:
       // Some multiple of 8 where each plane fits in one page.
-      height = (4000 / width-rounded) << 3
+      height = (max-patch-size / width-rounded) << 3
     // We can't work well with canvases that are less than 8 pixels tall.
     return max 8 height
 
@@ -583,18 +597,22 @@ abstract class TwoBitPixelDisplay_ extends PixelDisplay:
   background_ := three-color.WHITE
 
   constructor driver/AbstractDriver --inverted/bool=false --portrait/bool=false --transform/Transform?=null:
-    super driver --inverted=inverted --portrait=portrait --transform=transform
+    // We have a somewhat larger default max-patch-size here because 2-bit
+    // displays are often e-paper and don't react well to very small
+    // incremental updates.
+    super driver --inverted=inverted --portrait=portrait --transform=transform --max-patch-size=8000
 
   max-canvas-height_ width:
     width-rounded := round-up width 8
     height-rounded := round-up driver_.height 8
     height := ?
-    if width-rounded * height-rounded >> 3 < 4000:
+    per-plane-size := max-patch-size >> 1
+    if width-rounded * height-rounded >> 3 < per-plane-size:
       // If we can fit both the red and black plane in < 8k then do that.
       height = height-rounded
     else:
       // Some multiple of 8 where each plane fits in one page.
-      height = (4000 / width-rounded) << 3
+      height = (per-plane-size / width-rounded) << 3
     // We can't work well with canvases that are less than 8 pixels tall.
     return max 8 height
 
@@ -611,13 +629,13 @@ See https://docs.toit.io/language/sdk/display
 */
 class GrayScalePixelDisplay_ extends PixelDisplay:
   constructor driver/AbstractDriver --inverted/bool=false --portrait/bool=false --transform/Transform?=null:
-    super driver --inverted=inverted --portrait=portrait --transform=transform
+    super driver --inverted=inverted --portrait=portrait --transform=transform --max-patch-size=2000
     background_ = gray-scale.WHITE
 
   max-canvas-height_ width:
     height := 0
     // Keep each color component under 2k so you can fit two on a page.
-    height = round-down (2000 / width) 8
+    height = round-down (max-patch-size / width) 8
     // We can't work well with canvases that are less than 4 pixels tall.
     return height < 8 ? 4 : height
 
@@ -637,13 +655,13 @@ See https://docs.toit.io/language/sdk/display
 */
 class SeveralColorPixelDisplay_ extends PixelDisplay:
   constructor driver/AbstractDriver --inverted/bool=false --portrait/bool=false --transform/Transform?=null:
-    super driver --inverted=inverted --portrait=portrait --transform=transform
+    super driver --inverted=inverted --portrait=portrait --transform=transform --max-patch-size=2000
     background_ = 0
 
   max-canvas-height_ width:
     height := 0
     // Keep each color component under 2k so you can fit two on a page.
-    height = round-down (2000 / width) 8
+    height = round-down (max-patch-size / width) 8
     // We can't work well with canvases that are less than 4 pixels tall.
     return height < 8 ? 4 : height
 
@@ -663,14 +681,18 @@ See https://docs.toit.io/language/sdk/display
 */
 class TrueColorPixelDisplay_ extends PixelDisplay:
   constructor driver/AbstractDriver --inverted/bool=false --portrait/bool=false --transform/Transform?=null:
-    super driver --inverted=inverted --portrait=portrait --transform=transform
+    // Since the true color display has three pixel buffers (one per color)
+    // the patches would be excessively small if we stuck with patches of
+    // only 2k of memory.
+    super driver --inverted=inverted --portrait=portrait --transform=transform --max-patch-size=6000
     background_ = true-color.WHITE
 
   max-canvas-height_ width:
     height := 0
+    max-component-size := max-patch-size / 3
     // Keep each color component under 2k then the packed 3-colors-in-2-bytes
     // format is still less than a page.
-    height = round-down (2000 / width) 8
+    height = round-down (max-component-size / width) 8
     // We can't work well with canvases that are less than 4 pixels tall.
     return max 4 height
 
