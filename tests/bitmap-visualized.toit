@@ -27,6 +27,8 @@ main args:
 do basename/string w/int h/int:
   driver := TrueColorPngVisualizer w h basename --outline=0xc0c0ff
   display := PixelDisplay.true-color driver
+  expect-equals w display.width
+  expect-equals h display.height
   display.background = 0x808080
 
   // A 1-bit PNG file that is uncompressed, so we can use the PngRandomAccess
