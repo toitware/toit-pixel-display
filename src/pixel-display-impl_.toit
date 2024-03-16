@@ -73,9 +73,11 @@ abstract class PixelDisplay implements Window:
   elements_ := {}
   background_ := null
   width: return driver_.width
-  height: return driver_.width
+  height: return driver_.height
+  /// Deprecated.
   inner-width: return driver_.width
-  inner-height: return driver_.width
+  /// Deprecated.
+  inner-height: return driver_.height
 
   /**
     By default, the display is rendered in patches that have
