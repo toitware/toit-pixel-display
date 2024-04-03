@@ -1,4 +1,4 @@
-sdk: ^2.0.0-alpha.121
+sdk: ^2.0.0-alpha.128
 prefixes:
   host: pkg-host
   pictogrammers_icons: toit-icons-pictogrammers
@@ -12,8 +12,8 @@ packages:
   pkg-host:
     url: github.com/toitlang/pkg-host
     name: host
-    version: 1.10.0
-    hash: e1c11a0e0bf65fe810520e8d893e554a8fe33b78
+    version: 1.14.1
+    hash: da453fb59f7ef3d37f39e4b438495f7c16614733
   toit-icons-pictogrammers:
     url: github.com/toitware/toit-icons-pictogrammers
     name: pictogrammers_icons
