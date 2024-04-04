@@ -8,7 +8,7 @@ Functions and constants useful for the RGB
 See for example https://pkg.toit.io/package/github.com%2Ftoitware%2Ftoit-color-tft
 */
 
-import binary show BIG-ENDIAN
+import io show BIG-ENDIAN
 import bitmap show *
 import font show Font
 

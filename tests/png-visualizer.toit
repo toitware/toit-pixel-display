@@ -2,7 +2,7 @@
 // Use of this source code is governed by an MIT-style license that can be
 // found in the LICENSE file.
 
-import binary show BIG-ENDIAN byte-swap-32
+import io show BIG-ENDIAN ByteOrder
 import bitmap show *
 import bytes show Buffer
 import crypto.crc show *
@@ -402,7 +402,7 @@ SEVERAL-MAX-COLOR_ ::= 9
 
 byte-swap_ ba/ByteArray -> ByteArray:
   result := ba.copy
-  byte-swap-32 result
+  ByteOrder.swap-32 result
   return result
 
 class SwapRedAndBlack implements png.PaletteTransformer:
