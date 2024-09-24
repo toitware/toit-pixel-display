@@ -12,8 +12,9 @@ build/CMakeCache.txt:
 install-pkgs: rebuild-cmake
 	@(cd build && ninja install-pkgs)
 	@[ -f tests/toit-png-tools/Makefile ] || \
-		(echo "Toit-png-tools directory doesn't contain a makefile. Run 'git submodule update --init' to get the submodule." \
-			&& exit 1)
+		(echo "The 'tests/toit-png-tools/' directory doesn't contain a makefile." && \
+		 echo "Run 'git submodule update --init' to get the submodule." && \
+		 exit 1)
 	@(cd tests/toit-png-tools && $(MAKE) rebuild-cmake)
 	@(cd tests/toit-png-tools && cmake -DTOITRUN:FILEPATH="$${TOITRUN:-toit.run}" -DTOITPKG:FILEPATH="$${TOITPKG:-toit.pkg}" build)
 	@(cd tests/toit-png-tools && $(MAKE) install-pkgs)
