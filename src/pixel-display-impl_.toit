@@ -34,9 +34,9 @@ FLAG-PARTIAL-UPDATES ::= 0b1000000
 /**
 Abstract superclass for all pixel display drivers.
 For example, implemented by the drivers in
-  https://pkg.toit.io/package/color_tft&url=github.com%2Ftoitware%2Ftoit-color-tft&index=latest
+  https://pkg.toit.io/package/github.com%2Ftoitware%2Ftoit-color-tft
   and
-  https://pkg.toit.io/package/ssd1306&url=github.com%2Ftoitware%2Ftoit-ssd1306&index=latest
+  https://pkg.toit.io/package/github.com%2Ftoitware%2Ftoit-ssd1306
 */
 abstract class AbstractDriver:
   abstract width -> int
@@ -59,6 +59,31 @@ abstract class AbstractDriver:
   draw-true-color l/int t/int r/int b/int red/ByteArray green/ByteArray blue/ByteArray -> none:
     throw "Not a true-color driver"
   close -> none:
+
+  /**
+  The transform that should be used depending on whether $inverted and $portrait is set.
+
+  If the parameter $portrait is set to null the driver is free to choose its default orientation.
+  */
+  base-transform --inverted/bool --portrait/bool? -> Transform:
+    transform_/Transform := ?
+    rotation := 0
+    if portrait != null:
+      if portrait == (width < height):
+        rotation = inverted ? 180 : 0
+      else:
+        rotation = inverted ? 270 : 90
+    else if inverted:
+      rotation = 180
+    if rotation == 0:
+      transform_ = Transform.identity
+    else if rotation == 90:
+      transform_ = (Transform.identity.translate 0 height).rotate-left
+    else if rotation == 180:
+      transform_ = (Transform.identity.translate width height).rotate-left.rotate-left
+    else:
+      transform_ = (Transform.identity.translate width 0).rotate-right
+    return transform_
 
 /**
 Common code for pixel-based displays connected to devices.
@@ -219,26 +244,9 @@ abstract class PixelDisplay implements Window:
       dirty-strips := (height >> 6) + 1  // 8-tall strips of dirty bits.
       dirty_ = ByteArray dirty-bytes-per-line_ * dirty-strips
 
+    transform_ = driver_.base-transform --inverted=inverted --portrait=portrait
     if transform:
-      if portrait != null or inverted: throw "INVALID_ARGUMENT"
-      transform_ = transform
-    else:
-      rotation := 0
-      if portrait != null:
-        if portrait == (driver_.width < driver_.height):
-          rotation = inverted ? 180 : 0
-        else:
-          rotation = inverted ? 270 : 90
-      else if inverted:
-        rotation = 180
-      if rotation == 0:
-        transform_ = Transform.identity
-      else if rotation == 90:
-        transform_ = (Transform.identity.translate 0 driver_.height).rotate-left
-      else if rotation == 180:
-        transform_ = (Transform.identity.translate driver_.width driver_.height).rotate-left.rotate-left
-      else:
-        transform_ = (Transform.identity.translate driver_.width 0).rotate-right
+      transform_ = transform_.apply transform
 
     if driver_.flags & FLAG-PARTIAL-UPDATES != 0:
       all-is-dirty_
@@ -1032,7 +1040,7 @@ abstract class Canvas:
       --source-width/int
       --orientation/int=ORIENTATION-0
       --source-line-stride/int=source-width:
-   throw "Unimplemented"
+    throw "Unimplemented"
 
   /**
   Draws the given 24-bit pixmap on the canvas.
@@ -1053,10 +1061,10 @@ abstract class Canvas:
       --orientation/int=ORIENTATION-0:
     throw "UNSUPPORTED"  // Only on true color canvas.
 
-TRANSFORM-IDENTITY_ ::= Transform.with_ --x1=1 --x2=0 --y1=0 --y2=1 --tx=0 --ty=0
-TRANSFORM-90_ ::= Transform.with_ --x1=0 --x2=-1 --y1=1 --y2=0 --tx=0 --ty=0
-TRANSFORM-180_ ::= Transform.with_ --x1=-1 --x2=0 --y1=0 --y2=-1 --tx=0 --ty=0
-TRANSFORM-270_ ::= Transform.with_ --x1=0 --x2=1 --y1=-1 --y2=0 --tx=0 --ty=0
+TRANSFORM-IDENTITY_ ::= Transform --x1=1 --x2=0 --y1=0 --y2=1 --tx=0 --ty=0
+TRANSFORM-90_ ::= Transform --x1=0 --x2=-1 --y1=1 --y2=0 --tx=0 --ty=0
+TRANSFORM-180_ ::= Transform --x1=-1 --x2=0 --y1=0 --y2=-1 --tx=0 --ty=0
+TRANSFORM-270_ ::= Transform --x1=0 --x2=1 --y1=-1 --y2=0 --tx=0 --ty=0
 
 /**
 Classic 3x3 matrix for 2D transformations.
@@ -1077,13 +1085,20 @@ class Transform:
   constructor.identity:
     return TRANSFORM-IDENTITY_
 
-  constructor.with_ --x1/int --y1/int --x2/int --y2/int --tx/int --ty/int:
+  constructor --x1/int --y1/int --x2/int --y2/int --tx/int --ty/int:
+    if x1 * y2 - y1 * x2 != 1:
+      throw "Unsupported scaling"
     x1_ = x1
     x2_ = x2
     tx_ = tx
     y1_ = y1
     y2_ = y2
     ty_ = ty
+
+  constructor.with_ --x1/int --y1/int --x2/int --y2/int --tx/int --ty/int:
+    if x1 == 1 and y1 == 0 and x2 == 0 and y2 == 1 and tx == 0 and ty == 0:
+      return TRANSFORM-IDENTITY_
+    return Transform --x1=x1 --y1=y1 --x2=x2 --y2=y2 --tx=tx --ty=ty
 
   /**
   Applies the other transform to this transform.
@@ -1252,6 +1267,9 @@ class Transform:
   */
   height width/int height/int -> int:
     return width * y1_ + height * y2_
+
+  stringify -> string:
+    return "Transform x1=$x1_ y1=$y1_ x2=$x2_ y2=$y2_ tx=$tx_ ty=$ty_"
 
 class TextExtent_:
   x := 0

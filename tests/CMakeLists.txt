@@ -10,7 +10,6 @@ set(TOITPKG toit.pkg${CMAKE_EXECUTABLE_SUFFIX} CACHE FILEPATH "The executable us
 set(TEST_TIMEOUT 40 CACHE STRING "The maximal amount of time each test is allowed to run")
 set(SLOW_TEST_TIMEOUT 200 CACHE STRING "The maximal amount of time each slow test is allowed to run")
 
-message("TPKG: ${TOITPKG}")
 add_custom_target(
   "install-pkgs"
   COMMAND "${TOITPKG}" install
@@ -29,8 +28,12 @@ add_custom_target(
 set(TEST_PREFIX "")
 include(fail.cmake OPTIONAL)
 
-message("Failing tests: ${FAILING_TESTS}")
-message("Skipped tests: ${SKIP_TESTS}")
+if (FAILING_TESTS)
+  message("Failing tests: ${FAILING_TESTS}")
+endif()
+if (SKIP_TESTS)
+  message("Skipped tests: ${SKIP_TESTS}")
+endif()
 
 foreach(file ${TESTS})
   set(test_name "/tests/${file}")

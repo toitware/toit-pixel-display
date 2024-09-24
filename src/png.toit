@@ -13,7 +13,7 @@ Element that draws a PNG image.
 The width and height of the element is determined by the image.
 The image is given by a byte array, png-file, which must be a valid PNG file.
 The PNG file can be converted to a Toit byte array using the
-   xxxd tool (https://github.com/toitware/xxxd).
+  xxxd tool (https://github.com/toitware/xxxd).
 The PNG file can be compressed (a normal PNG file) or uncompressed.
   Uncompressed PNG files are produced by pngunzip, which is part of
   the releases of the png-tools package at
