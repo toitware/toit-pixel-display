@@ -274,6 +274,15 @@ class Div extends Element:
     if change-tracker and x and y and w and h:
       change-tracker.child-invalidated x y w h
 
+  child-invalidated x/int y/int w/int h/int --clip/bool=false -> none:
+    if clip:
+      super x y w h
+    else:
+      if change-tracker:
+        x2 := x_ + x
+        y2 := y_ + y
+        change-tracker.child-invalidated x2 y2 w h
+
   w -> int?: return w_
   h -> int?: return h_
 
@@ -598,6 +607,9 @@ class ClippingDiv_ extends Div:
     if change-tracker and x and y and w and h:
       extent --x=x --y=y --w=w --h=h: | outer-x outer-y outer-w outer-h |
         change-tracker.child-invalidated outer-x outer-y outer-w outer-h
+
+  child-invalidated x/int y/int w/int h/int -> none:
+    super x y w h --clip
 
   static is-all-transparent opacity -> bool:
     if opacity is not ByteArray: return false
