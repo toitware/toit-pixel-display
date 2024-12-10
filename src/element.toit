@@ -277,11 +277,10 @@ class Div extends Element:
   child-invalidated x/int y/int w/int h/int --clip/bool=false -> none:
     if clip:
       super x y w h
-    else:
-      if change-tracker:
-        x2 := x_ + x
-        y2 := y_ + y
-        change-tracker.child-invalidated x2 y2 w h
+    else if change-tracker:
+      x2 := x_ + x
+      y2 := y_ + y
+      change-tracker.child-invalidated x2 y2 w h
 
   w -> int?: return w_
   h -> int?: return h_
