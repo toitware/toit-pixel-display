@@ -39,9 +39,19 @@ For example, implemented by the drivers in
   https://pkg.toit.io/package/github.com%2Ftoitware%2Ftoit-ssd1306
 */
 abstract class AbstractDriver:
+  /** The width of the display. */
   abstract width -> int
+
+  /** The height of the display. */
   abstract height -> int
+
+  /**
+  The flags of the display.
+
+  See $FLAG-2-COLOR and similar for the possible flags.
+  */
   abstract flags -> int
+
   x-rounding -> int: return 8
   y-rounding -> int: return 8
   start-partial-update speed/int -> none:
@@ -136,6 +146,8 @@ abstract class PixelDisplay implements Window:
   speed_ := 50  // Speed-quality of current screen update.
 
   transform_ /Transform
+
+  styles_ /List? := null
 
   /**
   Constructs a display connected via a $driver_ to a device.
@@ -257,6 +269,7 @@ abstract class PixelDisplay implements Window:
       child-invalidated_ 0 0 driver_.width driver_.height
 
   set-styles styles/List -> none:
+    styles_ = styles
     elements_.do:
       if it is Element:
         element := it as Element
@@ -273,6 +286,7 @@ abstract class PixelDisplay implements Window:
   add element/Element -> none:
     elements_.add element
     element.change-tracker = this
+    if styles_: element.set-styles styles_
     element.invalidate
 
   /**
@@ -756,6 +770,22 @@ interface Window:
     to a subtypes of $Element, for example to a variable of type Div.
   */
   get-element-by-id id/string -> any
+
+  /**
+  Sets the given $styles.
+
+  Replaces the existing styles (if there are any) with the
+    new $styles.
+
+  Each element of the list must be of type $Style.
+  Use an empty list to remove the current styles.
+
+  # Inheritance
+  If subclasses can have children, then they should store the
+    list so that the style can be applied when a new child
+    is added at a later point.
+  */
+  set-styles styles/List -> none
 
 /**
 A canvas to draw on.

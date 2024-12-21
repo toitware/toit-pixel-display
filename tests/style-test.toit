@@ -4,7 +4,13 @@
 
 import expect show *
 
-import pixel-display show Canvas Element SolidBorder Style
+import pixel-display show
+    AbstractDriver
+    Canvas
+    Element
+    PixelDisplay
+    SolidBorder
+    Style
 
 /// Test that the examples from style.toit are well-formed.
 toit-doc-examples-test:
@@ -140,6 +146,34 @@ no-global-style-test:
   expect-equals "bar"
       (elements.get-element-by-id "first-foo-haver").foo
 
+
+/**
+Tests that an element can be added or moved to a new parent and
+  receives the style from the parent.
+*/
+add-test:
+  style := Style
+      --type-map={
+        "foo-haver": Style { "foo": "bar" },
+      }
+
+  elements := Div --style=style []
+  haver := FooHaver --id="first-foo-haver"
+  elements.add haver
+
+  expect-equals "bar"
+      (elements.get-element-by-id "first-foo-haver").foo
+
+  display := PixelDisplay.gray-scale TestDriver
+  display.set-styles [style]
+
+  haver2 := FooHaver --id="second-foo-haver"
+  display.add haver2
+
+  expect-equals "bar"
+      (display.get-element-by-id "second-foo-haver").foo
+
+
 /// A class that stubs out the display methods we don't need
 ///   for test purposes.
 abstract class TestElement extends Element:
@@ -194,10 +228,15 @@ class FooHaver extends TestElement:
 
   constructor --style/Style?=null --classes/List?=null --id/string?=null children/List?=null:
     super --style=style --classes=classes --id=id children
-  
+
   set-attribute_ key/string value -> none:
     if key == "foo":
       foo = value
+
+class TestDriver extends AbstractDriver:
+  width -> int: return 320
+  height -> int: return 240
+  flags -> int: return 0
 
 main:
   toit-doc-examples-test
@@ -206,3 +245,4 @@ main:
   single-element-style-test
   extra-properties-test
   no-global-style-test
+  add-test
