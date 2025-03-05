@@ -217,6 +217,9 @@ class Div extends Element:
     children, so they can accidentally extend beyond the bounds of the Div.
     This is a efficiency win, but if you want clipping, use the $Div.clipping
     constructor.
+  The $background or $border is only drawn if the div has a width and height.
+    To provide these values, pass $w and $h parameters, call the corresponding
+    setters, or apply a style.
   Because it has no clipping and compositing, it is restricted to simple
     borders without rounded corners and shadows.
   See $Element.constructor for a description of the other parameters.
@@ -276,15 +279,15 @@ class Div extends Element:
         children
 
   invalidate:
-    if change-tracker and x and y and w and h:
-      change-tracker.child-invalidated x y w h
+    if change-tracker and w_ and h_:
+      change-tracker.child-invalidated (x_ or 0) (y_ or 0) w_ h_
 
   child-invalidated x/int y/int w/int h/int --clip/bool=false -> none:
     if clip:
       super x y w h
     else if change-tracker:
-      x2 := x_ + x
-      y2 := y_ + y
+      x2 := (x_ or 0) + x
+      y2 := (y_ or 0) + y
       change-tracker.child-invalidated x2 y2 w h
 
   w -> int?: return w_
@@ -319,10 +322,12 @@ class Div extends Element:
 
   draw canvas/Canvas -> none:
     old-transform := canvas.transform
-    canvas.transform = old-transform.translate x_ y_
-    Background.draw background_ canvas 0 0 w h --no-autoclipped
+    if x_ or y_:
+      canvas.transform = old-transform.translate (x_ or 0) (y_ or 0)
+    if background_ and w_ and h_:
+      Background.draw background_ canvas 0 0 w_ h_ --no-autoclipped
     custom-draw canvas
-    if border_: border_.draw canvas 0 0 w h
+    if border_ and w_ and h_: border_.draw canvas 0 0 w_ h_
     canvas.transform = old-transform
 
   custom-draw canvas/Canvas -> none:

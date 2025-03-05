@@ -34,4 +34,20 @@ main args:
   label.text = "bar"
   display.draw
 
+  label.y = 25
+  // As long as there isn't any background or border we don't need the
+  // dimensions of non-clipping divs.
+  div = Div [label]
+  display.remove-all
+  display.add div
+  display.draw
+
+  div.background = 0x404040
+  // Without dimensions, the background is ignored.
+  display.draw
+
+  div.w = WIDTH - 60
+  div.h = HEIGHT - 60
+  display.draw
+
   driver.write-png
