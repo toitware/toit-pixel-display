@@ -73,6 +73,9 @@ abstract class Element implements Window:
 
   abstract invalidate -> none
 
+  is-mounted -> bool:
+    return change-tracker != null and change-tracker.is-mounted
+
   /**
   Finds an Element in the tree with the given id.
   Returns null if no element is found.
@@ -481,7 +484,11 @@ class Label extends Element implements ColoredElement:
 
   text= value/string -> none:
     if value == text_: return
-    if orientation_ == ORIENTATION-0 and change-tracker and x and y:
+    if not is-mounted:
+      text_ = value
+      left_ = null  // Trigger recalculation.
+      return
+    if orientation_ == ORIENTATION-0 and change-tracker and x and y and font_ and text_:
       text-get-bounding-boxes_ text_ value alignment_ font_: | old/TextExtent_ new/TextExtent_ |
         change-tracker.child-invalidated (x_ + old.x) (y_ + old.y) old.w old.h
         change-tracker.child-invalidated (x_ + new.x) (y_ + new.y) new.w new.h
