@@ -263,6 +263,8 @@ abstract class PixelDisplay implements Window:
     if driver_.flags & FLAG-PARTIAL-UPDATES != 0:
       all-is-dirty_
 
+  is-mounted -> bool: return true
+
   background= color/int -> none:
     if background_ != color:
       background_ = color
@@ -786,6 +788,13 @@ interface Window:
     is added at a later point.
   */
   set-styles styles/List -> none
+
+  /**
+  Whether the window is currently mounted on the display.
+
+  A window is mounted, when its (transitive) parent is a display.
+  */
+  is-mounted -> bool
 
 /**
 A canvas to draw on.
