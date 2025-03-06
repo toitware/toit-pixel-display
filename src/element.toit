@@ -22,6 +22,7 @@ abstract class Element implements Window:
   classes/List? := ?
   id/string? := ?
   children/List? := ?
+  children-styles_/List? := null
   background_ := null
   border_/Border? := null
 
@@ -89,6 +90,7 @@ abstract class Element implements Window:
   add element/Element -> none:
     if not children: children = []
     children.add element
+    if children-styles_: element.set-styles children-styles_
     element.change-tracker = this
     element.invalidate
 
@@ -158,14 +160,14 @@ abstract class Element implements Window:
       style.matching-styles --type=type --classes=classes --id=id: | style/Style |
         style.iterate-properties: | key/string value |
           set-attribute_ key value
-        if children:
-          if not styles-for-children: styles-for-children = styles.copy
-          styles-for-children.add style
+        if not styles-for-children: styles-for-children = styles.copy
+        styles-for-children.add style
     styles.do install-style
     if style_:
       style_.iterate-properties: | key/string value |
         set-attribute_ key value
       install-style.call style_
+    children-styles_ = styles-for-children or styles
     if children:
       children.do: | child/Element |
         child.set-styles (styles-for-children or styles)
