@@ -33,12 +33,12 @@ do basename/string w/int h/int:
 
   // A 1-bit PNG file that is uncompressed, so we can use the PngRandomAccess
   // class to display it straight from flash.
-  purifier := file.read-content "tests/third_party/pictogrammers/air-purifier-bit-unzip.png"
+  purifier := file.read-contents "tests/third_party/pictogrammers/air-purifier-bit-unzip.png"
   // A 1-bit PNG file that is compressed, so it takes less flash, but we have
   // to decompress it to display it.  This file also has an almost-transparent
   // background, so we test the code path where we display a 1-bit image with
   // a real alpha channel (and it has a gray background in the output).
-  purifier-compressed := file.read-content "tests/third_party/pictogrammers/air-purifier-bit.png"
+  purifier-compressed := file.read-contents "tests/third_party/pictogrammers/air-purifier-bit.png"
 
   gradient := GradientBackground --angle=160 --specifiers=[
       GradientSpecifier --color=0xe0e0ff 10,

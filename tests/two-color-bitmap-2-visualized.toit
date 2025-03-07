@@ -27,14 +27,14 @@ main args:
   display := PixelDisplay.two-color driver
   display.background = WHITE
 
-  heater-red := file.read-content "tests/third_party/pictogrammers/heater-red.png"
-  heater-red-uncompressed := file.read-content "tests/third_party/pictogrammers/heater-red-uncompressed.png"
-  heater-2-bit := file.read-content "tests/third_party/pictogrammers/heater-2-bit.png"
-  heater-2-bit-uncompressed := file.read-content "tests/third_party/pictogrammers/heater-2-bit-uncompressed.png"
-  heater-bw := file.read-content "tests/third_party/pictogrammers/heater-bw.png"
-  heater-bw-uncompressed := file.read-content "tests/third_party/pictogrammers/heater-bw-uncompressed.png"
-  heater-white-bg := file.read-content "tests/third_party/pictogrammers/heater-white-bg.png"
-  heater-white-bg-uncompressed := file.read-content "tests/third_party/pictogrammers/heater-white-bg-uncompressed.png"
+  heater-red := file.read-contents "tests/third_party/pictogrammers/heater-red.png"
+  heater-red-uncompressed := file.read-contents "tests/third_party/pictogrammers/heater-red-uncompressed.png"
+  heater-2-bit := file.read-contents "tests/third_party/pictogrammers/heater-2-bit.png"
+  heater-2-bit-uncompressed := file.read-contents "tests/third_party/pictogrammers/heater-2-bit-uncompressed.png"
+  heater-bw := file.read-contents "tests/third_party/pictogrammers/heater-bw.png"
+  heater-bw-uncompressed := file.read-contents "tests/third_party/pictogrammers/heater-bw-uncompressed.png"
+  heater-white-bg := file.read-contents "tests/third_party/pictogrammers/heater-white-bg.png"
+  heater-white-bg-uncompressed := file.read-contents "tests/third_party/pictogrammers/heater-white-bg-uncompressed.png"
 
   display.add (Png --x=100 --y=32 --png-file=heater-red)
   display.add (Png --x=184 --y=32 --png-file=heater-2-bit)
