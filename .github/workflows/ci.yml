@@ -6,7 +6,7 @@ on:
     types: [published]
 
 env:
-  TOIT_VERSION: v2.0.0-alpha.146
+  TOIT_VERSION: v2.0.0-alpha.170
 
 jobs:
   build:
@@ -27,27 +27,6 @@ jobs:
         uses: toitlang/action-setup@v1
         with:
           toit-version: ${{ env.TOIT_VERSION }}
-
-      # Fetch the dependencies. Different for each platform.
-      - name: Install dependencies - Linux
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install ninja-build
-          ninja --version
-          cmake --version
-      - name: Install dependencies - macOS
-        if: runner.os == 'macOS'
-        run: |
-          brew install ninja
-          ninja --version
-          cmake --version
-      - name: Install dependencies - Windows
-        if: runner.os == 'Windows'
-        run: |
-          choco install ninja
-          ninja --version
-          cmake --version
 
       - name: Run cmake
         shell: bash
