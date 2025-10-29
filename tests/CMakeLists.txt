@@ -5,14 +5,13 @@
 file(GLOB TESTS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*-test.toit" "*-test-slow.toit")
 file(GLOB VISUALIZED RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*-visualized.toit" "*-visualized-slow.toit")
 
-set(TOITRUN toit.run${CMAKE_EXECUTABLE_SUFFIX} CACHE FILEPATH "The executable used to run the tests")
-set(TOITPKG toit.pkg${CMAKE_EXECUTABLE_SUFFIX} CACHE FILEPATH "The executable used to install the packages")
+set(TOIT_EXE toit${CMAKE_EXECUTABLE_SUFFIX} CACHE FILEPATH "The executable used to run the tests")
 set(TEST_TIMEOUT 40 CACHE STRING "The maximal amount of time each test is allowed to run")
 set(SLOW_TEST_TIMEOUT 200 CACHE STRING "The maximal amount of time each slow test is allowed to run")
 
 add_custom_target(
   "install-pkgs"
-  COMMAND "${TOITPKG}" install
+  COMMAND "${TOIT_EXE}" pkg install
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
@@ -43,7 +42,7 @@ foreach(file ${TESTS})
 
   add_test(
     NAME "${test_name}"
-    COMMAND ${TOITRUN} "tests/${file}"
+    COMMAND ${TOIT_EXE} "tests/${file}"
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
   )
 
@@ -66,7 +65,7 @@ foreach(file ${VISUALIZED})
 
   add_test(
     NAME "${test_name}"
-    COMMAND bash tests/visualized.sh "${TOITRUN}" ${file}
+    COMMAND bash tests/visualized.sh "${TOIT_EXE}" ${file}
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
   )
 
