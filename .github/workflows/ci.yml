@@ -6,7 +6,7 @@ on:
     types: [published]
 
 env:
-  TOIT_VERSION: v2.0.0-alpha.170
+  TOIT_VERSION: v2.0.0-alpha.189
 
 jobs:
   build:
